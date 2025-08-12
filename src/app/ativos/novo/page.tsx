@@ -80,7 +80,7 @@ export default function CreateAssetPage() {
             console.error("Erro ao criar ativo:", error);
             toaster.create({
                 title: "Erro ao Registar Ativo.",
-                description: error.response?.data?.error || "Ocorreu um erro inesperado. Tente novamente.",
+                description: error.response?.data?.error || "Ocorreu um erro inesperado. Tente novamente mais tarde.",
                 type: "error",
             });
         }
