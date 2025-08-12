@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Provider from "./providers"
+import { Container } from "@chakra-ui/react";
+import { Header } from "./components/layout/Header";
 
 
 const geistSans = Geist({
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Awer Shop",
-  description: "A maior loja tech do país",
+  title: "Mazzotini",
+  description: "Acompanhamento do seu crédito na palma da sua mão",
 };
 
 
@@ -29,7 +31,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Provider>
-          {children}
+          <Container bg={'bodyBg'}>
+            <Header />
+            {children}
+          </Container>
         </Provider>
       </body>
     </html>
