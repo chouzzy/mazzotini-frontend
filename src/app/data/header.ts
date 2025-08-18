@@ -9,7 +9,7 @@ export const headerData = {
         },
         {
             title: 'Ativos',
-            href: '/ativos'
+            href: '/dashboard'
         },
         {
             title: 'Novo Ativo',

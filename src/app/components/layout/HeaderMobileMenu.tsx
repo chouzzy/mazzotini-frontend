@@ -14,7 +14,6 @@ import { PiList, PiSignOut } from "react-icons/pi";
 
 // --- Dados Locais ---
 import { useAuth0 } from "@auth0/auth0-react";
-import { useProfile } from "@/app/contexts/ProfileContext";
 import { headerData } from "@/app/data/header";
 import { CustomText } from "../ui/CustomText";
 import { UserAvatar } from "./UserAvatar";
@@ -26,45 +25,16 @@ import { UserAvatar } from "./UserAvatar";
 
 interface HeaderMobileMenuProps {
     isAuthenticated: boolean;
-    isAwerClient: boolean;
 }
 
-export function HeaderMobileMenu({ isAuthenticated, isAwerClient }: HeaderMobileMenuProps) {
+export function HeaderMobileMenu({ isAuthenticated }: HeaderMobileMenuProps) {
 
     const { loginWithRedirect } = useAuth0();
-    const { isLoading: isProfileLoading } = useProfile();
 
     return (
         // Container que só exibe este componente em telas pequenas ('base')
         // e o esconde em telas a partir de 'md' (medium).
         <Box display={{ base: 'block', md: 'none' }} gap={8}>
-            {isAuthenticated && (
-                isProfileLoading ? (
-                    // Mostra um spinner enquanto o perfil está a ser carregado
-                    <Spinner size="sm" />
-                ) : (
-                    // Se o perfil foi carregado e o utilizador é um cliente, mostra o link
-                    isAwerClient && (
-                        <ChakraLink
-                            href="/dashboard" // A nova página do dashboard
-                            _hover={{ cursor: 'pointer', color: 'brand.500', textDecoration: 'none' }}
-                        >
-                            <CustomText
-                                borderRadius={'md'}
-                                bgColor={'ghostWhite'}
-                                py={1}
-                                px={2}
-                                mr={4}
-                                color={'brand.500'} // Cor de destaque
-                                _hover={{ bgColor: 'brand.600', color: 'white', transition: 'all 0.3s ease' }}
-                                text="Painel"
-                                letterSpacing={1.8}
-                                textTransform={'uppercase'}
-                            />
-                        </ChakraLink>
-                    )
-                )
-            )}
 
             {isAuthenticated ? (
                 <UserAvatar />

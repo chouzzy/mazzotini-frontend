@@ -22,7 +22,6 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { CustomText } from "../ui/CustomText";
 import { HeaderMobileMenu } from "./HeaderMobileMenu";
 import { UserAvatar } from "./UserAvatar";
-import { useProfile } from "@/app/contexts/ProfileContext"; // 1. Importa o nosso hook de perfil
 import { headerData } from "@/app/data/header";
 
 // ============================================================================
@@ -48,7 +47,6 @@ export function Header() {
     const MotionFlex = motion(Flex);
     const { isAuthenticated, loginWithRedirect } = useAuth0();
     // 2. Obtém os dados do perfil do nosso contexto
-    const { profile, isLoading: isProfileLoading } = useProfile();
 
     // --- Renderização do Componente ---
     return (
@@ -102,34 +100,6 @@ export function Header() {
                         </ChakraLink>
                     ))}
                     
-                    {/* 3. LÓGICA CONDICIONAL PARA O DASHBOARD */}
-                    {isAuthenticated && (
-                        isProfileLoading ? (
-                            // Mostra um spinner enquanto o perfil está a ser carregado
-                            <Spinner size="sm" />
-                        ) : (
-                            // Se o perfil foi carregado e o utilizador é um cliente, mostra o link
-                            profile?.isAwerClient && (
-                                 <ChakraLink
-                                    href="/dashboard" // A nova página do dashboard
-                                    _hover={{ cursor: 'pointer', color: 'brand.500', textDecoration: 'none' }}
-                                >
-                                    <CustomText
-                                        borderRadius={'md'}
-                                        bgColor={'ghostWhite'}
-                                        py={1}
-                                        px={2}
-                                        mr={4}
-                                        color={'brand.500'} // Cor de destaque
-                                        _hover={{ bgColor: 'brand.600', color: 'white', transition: 'all 0.3s ease' }}
-                                        text="Painel"
-                                        letterSpacing={1.8}
-                                        textTransform={'uppercase'}
-                                    />
-                                </ChakraLink>
-                            )
-                        )
-                    )}
 
                     {/* Lógica para mostrar o Avatar ou o botão de "Entrar" */}
                     {isAuthenticated ? (
@@ -151,7 +121,6 @@ export function Header() {
                 {/* Menu Mobile (Hamburger) */}
                 <HeaderMobileMenu 
                     isAuthenticated={isAuthenticated} 
-                    isAwerClient={profile?.isAwerClient || false}
                 />
 
             </Flex>

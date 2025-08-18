@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Provider from "./providers"
 import { Container } from "@chakra-ui/react";
 import { Header } from "./components/layout/Header";
+import { useAuth0 } from "@auth0/auth0-react";
 
 
 const geistSans = Geist({
@@ -27,6 +28,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
