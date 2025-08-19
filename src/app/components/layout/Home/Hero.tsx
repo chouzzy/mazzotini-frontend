@@ -82,13 +82,14 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                     >
                         {pageData.hero.subtitle}
                     </MotionText>
-                    <Flex flexDir={'row'} gap={{ base: 4, md: 16 }} justifyContent={'center'} alignItems={'center'}>
+                    <Flex flexDir={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 16 }} justifyContent={'center'} alignItems={'center'}>
 
                         <MotionButton
                             onClick={() => window.open(whatsappLink(), '_blank')}
-                            size="xl"
+                            size={{ base: 'md', md: 'xl' }}
                             py={4}
                             px={12}
+                            minW={64}
                             border={'1px solid'}
                             borderColor={'brand.600'}
                             bgColor={'transparent'}
@@ -103,9 +104,10 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                         </MotionButton>
                         <MotionButton
                             onClick={() => loginWithRedirect()}
-                            size="xl"
+                            size={{ base: 'md', md: 'xl' }}
                             py={4}
                             px={12}
+                            minW={64}
                             bgColor={'brand.600'}
                             _hover={{ bgColor: 'ghostWhite', color: 'brand.700', transition: '0.3s', border: '1px solid' }}
                             color={'white'}
@@ -119,9 +121,9 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                         </MotionButton>
                     </Flex>
                 </VStack>
-                <Flex flexDir={'row'} position={'relative'} w='100%' alignItems={'center'} justifyContent={'center'} gap={16} mt={10} overflowX={'hidden'}>
+                <Flex flexDir={'row'} position={'relative'} w='100%' alignItems={'center'} justifyContent={'center'} gap={16} mt={{base:2, md:10}} overflowX={'hidden'} display={{base:'none', md:'flex'}}>
                     <Image boxSize={'md'} objectFit={'contain'} src={pageData.hero.dashboardImage[0]} alt={pageData.hero.title} />
-                    <Image w={600} position={'absolute'} mx='auto' src={pageData.hero.dashboardImage[1]} alt={pageData.hero.title} />
+                    <Image w={{base: 600, md: 600}} position={'absolute'} mx='auto' src={pageData.hero.dashboardImage[1]} alt={pageData.hero.title} />
                     <Image boxSize={'md'} objectFit={'contain'} src={pageData.hero.dashboardImage[2]} alt={pageData.hero.title} />
                 </Flex>
             </MotionFlex >
