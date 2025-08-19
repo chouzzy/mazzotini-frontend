@@ -44,8 +44,8 @@ export default function DashboardPage() {
     }
 
     return (
-        <AuthenticationGuard>
-            <Container maxW="container.xl" py={10}>
+        
+            <Flex w='100%'>
                 <VStack gap={8} align="stretch">
                     {/* Cabeçalho */}
                     <Box>
@@ -72,7 +72,6 @@ export default function DashboardPage() {
                         </VStack>
                     </Box>
                 </VStack>
-            </Container>
-        </AuthenticationGuard>
+            </Flex>
     );
 }

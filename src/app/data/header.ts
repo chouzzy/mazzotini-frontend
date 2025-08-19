@@ -4,16 +4,8 @@ export const headerData = {
     homeText: 'Home',
     menu: [
         {
-            title: 'Home',
-            href: '/'
-        },
-        {
-            title: 'Ativos',
-            href: '/dashboard'
-        },
-        {
-            title: 'Novo Ativo',
-            href: '/ativos/novo'
+            title: 'Quem somos',
+            href: 'https://mazzotiniadvogados.com.br/'
         }
     ]
 };

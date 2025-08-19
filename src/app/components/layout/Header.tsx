@@ -58,7 +58,7 @@ export function Header() {
             justifyContent={'space-between'}
             alignItems="center"
             py={4}
-            px={{ base: 4, md: 0 }}
+            px={{ base: 4, md: 8 }}
             w='100%'
             color={'headerColor'}
             maxW={{ base: '100%', md: '1920px' }} 
@@ -70,7 +70,7 @@ export function Header() {
                         src={headerData.logoSrc}
                         alt="Logo da Mazzotini"
                         objectFit={'contain'}
-                        maxW={{ base: 32, md: 32 }}
+                        maxW={{ base: 32, md: 40 }}
                     />
                 </ChakraLink>
             </Flex>

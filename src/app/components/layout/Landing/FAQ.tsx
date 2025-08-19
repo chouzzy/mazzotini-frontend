@@ -20,13 +20,13 @@ const faqData = [
 
 export function FaqSection() {
     return (
-        <Flex flexDir={'column'} py={{ base: 16, md: 20 }} bgColor={'black'} w='100%' alignItems={'center'} justifyContent={'center'}>
+        <Flex flexDir={'column'} px={{ base: 4, md: 8 }} py={{ base: 16, md: 20 }} bgColor={'black'} w='100%' alignItems={'center'} justifyContent={'center'}>
             <VStack gap={8} maxW={{ base: '100%', md: '1920px' }} w='100%'>
                 <Heading as="h2" size="xl">Dúvidas Frequentes</Heading>
                 <Accordion.Root collapsible defaultValue={[]}>
                     {faqData.map((item, index) => (
                         <Accordion.Item key={index} value={String(index)}>
-                            <Accordion.ItemTrigger>
+                            <Accordion.ItemTrigger cursor={'pointer'}>
                                 <Span flex="1" textAlign="left" fontSize="lg" fontWeight="semibold">{item.question}</Span>
                                 <Accordion.ItemIndicator />
                             </Accordion.ItemTrigger>
