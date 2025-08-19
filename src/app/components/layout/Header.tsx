@@ -58,9 +58,10 @@ export function Header() {
             justifyContent={'space-between'}
             alignItems="center"
             py={4}
-            px={{ base: 4, md: 12 }}
+            px={{ base: 4, md: 0 }}
             w='100%'
             color={'headerColor'}
+            maxW={{ base: '100%', md: '1920px' }} 
         >
             {/* Seção Esquerda: Logo */}
             <Flex alignItems={'center'} gap={{ base: 2, md: 8 }}>

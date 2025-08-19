@@ -25,80 +25,13 @@ import { Header } from "./layout/Header";
 import { PiChartLineUp, PiSignIn, PiWallet } from "react-icons/pi";
 import NextLink from 'next/link';
 import { Footer } from "./layout/Footer";
+import { Hero } from "./layout/Home/Hero";
+import homepageData from "../data/homepage";
+import { FaqSection } from "./layout/Home/FAQ";
+import { AdvantagesSection } from "./layout/Home/AdvantagesSection";
+import { FeedbacksCarousel } from "./layout/Feedbacks/FeedbacksCarousel";
 
-// ============================================================================
-//  SEÇÃO "HERO" PARA VISITANTES (NÃO LOGADOS)
-// ============================================================================
-function HeroSection() {
-    const { loginWithRedirect } = useAuth0();
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-        >
-            <Container maxW="container.lg" py={{ base: 16, md: 24 }} textAlign="center">
-                <VStack gap={6}>
-                    <Heading as="h1" size={{ base: "xl", md: "3xl" }} fontWeight="extrabold">
-                        Transforme Ativos Judiciais em Liquidez Imediata
-                    </Heading>
-                    <Text fontSize={{ base: "lg", md: "xl" }} color="gray.400" maxW="3xl" mx="auto">
-                        A Mazzotini conecta investidores a oportunidades de crédito judicial, oferecendo rentabilidade superior com a segurança da taxa IPCA, enquanto proporciona liquidez para quem mais precisa.
-                    </Text>
-                    <Button
-                        size="lg"
-                        colorScheme="blue"
-                        onClick={() => loginWithRedirect()}
-                    >
-                        Acessar Plataforma
-                        <Icon as={PiSignIn} />
-                    </Button>
-                </VStack>
-            </Container>
-        </motion.div>
-    );
-}
 
-// ============================================================================
-//  SEÇÃO DE PERGUNTAS FREQUENTES (FAQ)
-// ============================================================================
-const faqData = [
-    {
-        question: "O que é um ativo de crédito judicial?",
-        answer: "É um direito de receber um valor determinado em uma ação judicial, que pode ser vendido a um investidor. A pessoa que tem o direito vende por um valor menor para receber o dinheiro imediatamente (liquidez), e o investidor assume o direito de receber o valor total no futuro, lucrando com a valorização."
-    },
-    {
-        question: "Qual a rentabilidade esperada?",
-        answer: "A maioria dos nossos ativos é corrigida pela taxa do IPCA (Índice Nacional de Preços ao Consumidor Amplo), protegendo seu capital da inflação. Além disso, podem haver juros contratuais que aumentam a rentabilidade. É uma forma de investimento de baixo risco com retornos atrativos."
-    },
-    {
-        question: "Como posso acompanhar meus investimentos?",
-        answer: "Nossa plataforma SGI (Sistema de Gestão de Investimentos) permite que você, investidor, acesse sua carteira a qualquer momento, visualize o valor atualizado de cada ativo, o status do processo e a rentabilidade acumulada."
-    }
-];
-
-function FaqSection() {
-    return (
-        <Container maxW="container.lg" py={{ base: 16, md: 20 }}>
-            <VStack gap={8}>
-                <Heading as="h2" size="xl">Dúvidas Frequentes</Heading>
-                <Accordion.Root collapsible defaultValue={[]}>
-                    {faqData.map((item, index) => (
-                        <Accordion.Item key={index} value={String(index)}>
-                            <Accordion.ItemTrigger>
-                                <Span flex="1" textAlign="left" fontSize="lg" fontWeight="semibold">{item.question}</Span>
-                                <Accordion.ItemIndicator />
-                            </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
-                                <Accordion.ItemBody fontSize="md" color="gray.300">{item.answer}</Accordion.ItemBody>
-                            </Accordion.ItemContent>
-                        </Accordion.Item>
-                    ))}
-                </Accordion.Root>
-            </VStack>
-        </Container>
-    );
-}
 
 // ============================================================================
 //  PAINEL DE BOAS-VINDAS (USUÁRIO LOGADO)
@@ -163,19 +96,22 @@ export function Homepage() {
     }
 
     return (
-        <Flex flexDir={'column'}>
-            <Box as="main" flex={1}>
+        <Flex flexDir={'column'} w='100%' alignItems={'center'} justifyContent={'center'}>
+            <Flex as="main" flex={1}
+            w='100%'
+                flexDir={'column'}
+            >
                 {isAuthenticated ? (
                     <LoggedInWelcome />
                 ) : (
                     <>
-                        <HeroSection />
-                        <FaqSection />
+                        <Hero pageData={homepageData} />
+                        <AdvantagesSection />
+                        <FeedbacksCarousel/>
                     </>
                 )}
-            </Box>
-
-            <Footer />
+            </Flex>
+            <FaqSection />
         </Flex>
     )
 }

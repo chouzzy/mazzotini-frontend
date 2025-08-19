@@ -28,7 +28,8 @@ const config = defineConfig({
                                     700: { value: "#9E905A" },
                                     800: { value: "#847946" },
                                     900: { value: "#6A6232" },
-                                }
+                                },
+                                wave: { value: "#ccb98c" }
                 // Cores padrão 'gray', 'blue', etc., vêm do defaultConfig
             },
             // fonts: { heading: { value: ... }, body: { value: ... } },

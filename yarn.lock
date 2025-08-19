@@ -2660,6 +2660,7 @@ __metadata:
     react-hook-form: ^7.62.0
     react-icons: ^5.5.0
     snippet: ^0.1.0
+    swiper: ^11.2.10
     swr: ^2.3.6
     tooltip: ^1.6.1
     typescript: ^5
@@ -6659,6 +6660,13 @@ __metadata:
   version: 1.0.0
   resolution: "supports-preserve-symlinks-flag@npm:1.0.0"
   checksum: 53b1e247e68e05db7b3808b99b892bd36fb096e6fba213a06da7fab22045e97597db425c724f2bbd6c99a3c295e1e73f3e4de78592289f38431049e1277ca0ae
+  languageName: node
+  linkType: hard
+
+"swiper@npm:^11.2.10":
+  version: 11.2.10
+  resolution: "swiper@npm:11.2.10"
+  checksum: a40ee5e252670d5b674f46517a2b6cb9477dff15cfccaa2dfdaf797a2de373e1c488302d1daeebe1b237c4bccc20238c3aed2c4a15f06db02be63e7936e94be5
   languageName: node
   linkType: hard
 

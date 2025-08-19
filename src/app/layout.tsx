@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Provider from "./providers"
-import { Container } from "@chakra-ui/react";
+import { Container, Flex } from "@chakra-ui/react";
 import { Header } from "./components/layout/Header";
 import { useAuth0 } from "@auth0/auth0-react";
+import { Footer } from "./components/layout/Footer";
 
 
 const geistSans = Geist({
@@ -33,10 +34,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Provider>
-          <Container bg={'bodyBg'}>
-            <Header />
-            {children}
-          </Container>
+          <Flex flexDir={'column'} bg={'bodyBg'}
+            bgImage={`url('/home/bg.png')`}
+            bgSize="cover"
+            bgRepeat={'no-repeat'}
+            bgPos="top"
+          >
+            <Flex flexDir={'column'} mx='auto' minH="100vh" w='100%' alignItems={'center'} justifyContent={'center'}>
+              <Header />
+              {children}
+              <Footer />
+            </Flex>
+          </Flex>
         </Provider>
       </body>
     </html>
