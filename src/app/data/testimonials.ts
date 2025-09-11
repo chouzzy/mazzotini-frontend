@@ -21,7 +21,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
     id: '2',
     quote:
       'O que mais me impressionou foi a clareza das informações. Consigo ver o valor atualizado dos meus ativos, o status de cada processo e a rentabilidade acumulada com apenas alguns cliques. A plataforma da Mazzotini desmistificou o investimento em créditos judiciais para mim. É a combinação perfeita de tecnologia e uma ótima oportunidade de negócio.',
-    authorName: 'Juliana Costa',
+    authorName: 'Juliana Costa Silva',
     authorTitle: 'Consultora Financeira',
     authorImage: 'https://randomuser.me/api/portraits/women/32.jpg',
     rating: 5,
