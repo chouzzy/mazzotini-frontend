@@ -41,7 +41,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
       'A equipe de suporte foi fundamental para me ajudar a entender os detalhes do meu primeiro investimento. Sempre muito atenciosos e dispostos a explicar cada etapa. Essa confiança no atendimento, somada à solidez dos ativos, me fez ter certeza de que fiz a escolha certa.',
     authorName: 'Fernanda Lima',
     authorTitle: 'Advogada',
-    authorImage: 'https://randomuser.me/api/portraits/women/36.jpg',
+    authorImage: 'https://randomuser.me/api/portraits/women/23.jpg',
     rating: 5,
   },
 ];
