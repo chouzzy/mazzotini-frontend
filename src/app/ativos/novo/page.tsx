@@ -1,4 +1,3 @@
-// src/app/ativos/novo/page.tsx
 'use client';
 
 // --- React e Frameworks ---
@@ -29,7 +28,7 @@ import { PiPlusCircle } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 
 // ============================================================================
-//   INTERFACE PARA OS VALORES DO FORMULÁRIO
+//  INTERFACE PARA OS VALORES DO FORMULÁRIO (ATUALIZADA)
 // ============================================================================
 interface FormValues {
     processNumber: string;
@@ -39,17 +38,20 @@ interface FormValues {
     acquisitionDate: string;
     investorId: string;
     investorShare: number;
-    investor: { label: string; value: string }[]; // Ajuste para o formato esperado pelo backend
+    associateId?: string; // Campo para o ID do associado (opcional)
 }
 
 // ============================================================================
-//   COMPONENTE PRINCIPAL: CreateAssetPage
+//  COMPONENTE PRINCIPAL: CreateAssetPage
 // ============================================================================
 export default function CreateAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
 
+    // Estados para os selects
     const [investors, setInvestors] = useState<{ label: string; value: string }[]>([]);
+    const [associates, setAssociates] = useState<{ label: string; value: string }[]>([]); // Inicializado vazio
+    
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -77,48 +79,48 @@ export default function CreateAssetPage() {
         }
     });
 
+    // Efeito para buscar os usuários (investidores e associados)
     useEffect(() => {
-        const fetchInvestors = async () => {
-            if (!isAuthenticated) return; // Garante que não executa sem estar logado
+        const fetchUsers = async () => {
+            if (!isAuthenticated) return;
             setIsLoading(true);
             try {
                 const token = await getAccessTokenSilently();
                 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-                // A MUDANÇA É AQUI:
                 const response = await axios.get(`${apiBaseUrl}/api/users`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
 
-                // A resposta da nossa API já vem no formato { label, value }, então a formatação muda
+                // A mesma lista de usuários irá popular ambos os selects por enquanto
                 setInvestors(response.data);
+                setAssociates(response.data);
 
             } catch (err: any) {
-                setError(err.message || 'Erro ao buscar investidores');
-                console.error("Erro ao buscar investidores:", err);
+                setError(err.message || 'Erro ao buscar usuários');
+                console.error("Erro ao buscar usuários:", err);
                 toaster.create({
-                    title: "Erro ao carregar investidores",
-                    description: "Não foi possível buscar a lista de investidores. Verifique suas permissões.",
+                    title: "Erro ao carregar dados",
+                    description: "Não foi possível buscar a lista de usuários. Verifique suas permissões.",
                     type: "error",
                 })
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchInvestors();
-    }, [isAuthenticated, getAccessTokenSilently]); // Adiciona dependências ao useEffect
+        fetchUsers();
+    }, [isAuthenticated, getAccessTokenSilently]);
 
-    const investorsCollection = createListCollection({
-        items: investors,
-    });
+    // Coleções para os selects
+    const investorsCollection = createListCollection({ items: investors });
+    const associatesCollection = createListCollection({ items: associates });
 
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
         try {
             const token = await getAccessTokenSilently();
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 
             await axios.post(`${apiBaseUrl}/api/assets`, data, {
                 headers: {
@@ -163,7 +165,7 @@ export default function CreateAssetPage() {
             <VStack w="100%" maxW="container.lg" mx="auto" gap={8} align="stretch">
                 <VStack align="start">
                     <Heading as="h1" size="xl">Registar Novo Ativo de Crédito</Heading>
-                    <Text color="gray.500">Preencha os dados iniciais para registar um novo processo e iniciar a busca de informações no Legal One.</Text>
+                    <Text color="gray.500">Preencha os dados iniciais para registar um novo processo.</Text>
                 </VStack>
 
                 <Flex as="form" onSubmit={handleSubmit(onSubmit)}>
@@ -171,7 +173,6 @@ export default function CreateAssetPage() {
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2}>
                             1. Identificação do Processo
                         </Heading>
-
                         <Field.Root invalid={!!errors.processNumber} required>
                             <Field.Label>Número do Processo</Field.Label>
                             <Input
@@ -190,51 +191,77 @@ export default function CreateAssetPage() {
                         </Field.Root>
 
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>
-                            2. Dados da Negociação e Investidor
+                            2. Dados da Negociação e Envolvidos
                         </Heading>
 
-                        <Controller
-                            name="investorId"
-                            control={control}
-                            rules={{ required: "Por favor, selecione um investidor" }} // Regras de validação
-                            render={({ field, fieldState: { error } }) => (
-                                <Field.Root invalid={!!error} required>
-                                    <Field.Label>Investidor Associado</Field.Label>
-                                    <Select.Root
-                                        collection={investorsCollection}
-                                        // Conecta o valor do react-hook-form ao Select do Chakra
-                                        // O Chakra v3 espera um array de strings para o valor.
-                                        value={field.value ? [field.value] : undefined}
-                                        // Conecta o evento de mudança do Chakra ao react-hook-form
-                                        // `details.value` é um array, pegamos o primeiro item para um select simples.
-                                        onValueChange={(details) => field.onChange(details.value[0])}
+                        <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+                            <Controller
+                                name="investorId"
+                                control={control}
+                                rules={{ required: "Por favor, selecione um investidor" }}
+                                render={({ field, fieldState: { error } }) => (
+                                    <Field.Root invalid={!!error} required>
+                                        <Field.Label>Investidor Associado</Field.Label>
+                                        <Select.Root
+                                            collection={investorsCollection}
+                                            value={field.value ? [field.value] : undefined}
+                                            onValueChange={(details) => field.onChange(details.value[0])}
+                                        >
+                                            <Select.Control>
+                                                <Select.Trigger ref={field.ref}>
+                                                    <Select.ValueText placeholder="Selecione um investidor..." />
+                                                </Select.Trigger>
+                                            </Select.Control>
+                                            <Portal>
+                                                <Select.Positioner>
+                                                    <Select.Content>
+                                                        {investorsCollection.items.map((investor) => (
+                                                            <Select.Item key={investor.value} item={investor}>
+                                                                {investor.label}
+                                                            </Select.Item>
+                                                        ))}
+                                                    </Select.Content>
+                                                </Select.Positioner>
+                                            </Portal>
+                                        </Select.Root>
+                                        {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
+                                    </Field.Root>
+                                )}
+                            />
 
-                                    // Você pode ligar o onBlur se precisar de validação "on blur"
-                                    // onOpenChange={(open) => !open && field.onBlur()}
-                                    >
-                                        <Select.Control>
-                                            <Select.Trigger ref={field.ref}>
-                                                <Select.ValueText placeholder="Selecione um investidor..." />
-                                            </Select.Trigger>
-                                        </Select.Control>
-                                        <Portal>
-                                            <Select.Positioner>
-                                                <Select.Content>
-                                                    {investorsCollection.items.map((investor) => (
-                                                        <Select.Item key={investor.value} item={investor}>
-                                                            {investor.label}
-                                                        </Select.Item>
-                                                    ))}
-                                                </Select.Content>
-                                            </Select.Positioner>
-                                        </Portal>
-                                    </Select.Root>
-                                    {/* Exibe a mensagem de erro, se houver */}
-                                    {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
-                                </Field.Root>
-                            )}
-                        />
-
+                            <Controller
+                                name="associateId"
+                                control={control}
+                                render={({ field, fieldState: { error } }) => (
+                                    <Field.Root invalid={!!error}>
+                                        <Field.Label>Associado Responsável (Opcional)</Field.Label>
+                                        <Select.Root
+                                            collection={associatesCollection}
+                                            value={field.value ? [field.value] : undefined}
+                                            onValueChange={(details) => field.onChange(details.value[0])}
+                                        >
+                                            <Select.Control>
+                                                <Select.Trigger ref={field.ref}>
+                                                    <Select.ValueText placeholder="Selecione um associado..." />
+                                                </Select.Trigger>
+                                            </Select.Control>
+                                            <Portal>
+                                                <Select.Positioner>
+                                                    <Select.Content>
+                                                        {associatesCollection.items.map((associate) => (
+                                                            <Select.Item key={associate.value} item={associate}>
+                                                                {associate.label}
+                                                            </Select.Item>
+                                                        ))}
+                                                    </Select.Content>
+                                                </Select.Positioner>
+                                            </Portal>
+                                        </Select.Root>
+                                        {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
+                                    </Field.Root>
+                                )}
+                            />
+                        </SimpleGrid>
 
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                             <Field.Root invalid={!!errors.acquisitionValue} required>

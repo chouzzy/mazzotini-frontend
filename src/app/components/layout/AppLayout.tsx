@@ -94,7 +94,7 @@ const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps
 // ============================================================================
 const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: () => void }) => {
     const pathname = usePathname();
-    const isActive = pathname === href;
+    const isActive = pathname.startsWith(href) && href !== '/'; // Destaque apenas se for a rota exata ou subrota, exceto para a home
 
     return (
         <Link as={NextLink} href={href} style={{ textDecoration: 'none' }} onClick={onClick}>
