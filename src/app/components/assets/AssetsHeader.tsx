@@ -35,7 +35,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
   return (
     <VStack w="100%" align="stretch" gap={8}>
       {/* Cabeçalho */}
-      <Flex justify="space-between" align="center">
+      <Flex justify="space-between" align="center" pl={1}>
         <VStack align="start" gap={0}>
           <Text color="gray.400">Processo N°</Text>
           <Heading as="h1" size="lg">
