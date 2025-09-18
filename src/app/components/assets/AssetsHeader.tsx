@@ -50,7 +50,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
       {/* Métricas Principais */}
       <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
         <Stat.Root bg="gray.900" p={5} borderRadius="md">
-          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiWallet} /> Valor Atual</Stat.Label>
+          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiWallet} />Valor Atual</Stat.Label>
           <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
         </Stat.Root>
         <Stat.Root bg="gray.900" p={5} borderRadius="md">
