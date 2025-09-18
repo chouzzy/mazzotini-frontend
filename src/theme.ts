@@ -8,27 +8,28 @@ const config = defineConfig({
         "html, body": {
             margin: '0',
             padding: '0',
-            bgColor:'white'
+            bgColor:'{colors.gray.800}'
         },
     },
     theme: {
         tokens: {
             colors: {
-                black: { value: "#1A202C" }, // Preto padrão Chakra (quase preto)
-                white: { value: "#FFFFFF" },
-                brand: { // Sua cor de destaque
-                    // ... (sua escala de cores brand)
-                    50: { value: "#FFF5F5" },
-                    100: { value: "#FFD6D6" },
-                    200: { value: "#FFB7B7" },
-                    300: { value: "#FF9998" },
-                    400: { value: "#FF7A79" },
-                    500: { value: "#FF5F5E" },
-                    600: { value: "#E55554" },
-                    700: { value: "#CC4B4A" },
-                    800: { value: "#B24140" },
-                    900: { value: "#993736" },
-                }
+                 // Preto padrão Chakra (quase preto)
+                                white: { value: "#FFFFFF" },
+                                brand: { // Sua cor de destaque
+                                    // ... (sua escala de cores brand)
+                                    50: { value: "#F9F6EE" },
+                                    100: { value: "#F0EAD6" },
+                                    200: { value: "#E6DBC0" },
+                                    300: { value: "#DCD0AA" },
+                                    400: { value: "#D2C594" },
+                                    500: { value: "#d2be82" },
+                                    600: { value: "#B8A76E" },
+                                    700: { value: "#9E905A" },
+                                    800: { value: "#847946" },
+                                    900: { value: "#6A6232" },
+                                },
+                                wave: { value: "#ccb98c" }
                 // Cores padrão 'gray', 'blue', etc., vêm do defaultConfig
             },
             // fonts: { heading: { value: ... }, body: { value: ... } },
@@ -40,20 +41,20 @@ const config = defineConfig({
                 bodyBg: {
                     // Valor literal 'white' para base
                     // String de referência '{colors.path.to.token}' para _dark
-                    value: { base: "white", _dark: "{colors.gray.800}" }
+                    value: { base: "{colors.gray.800}", _dark: "{colors.gray.800}" }
                 },
                 // Cor principal do texto no corpo
                 textPrimary: {
-                    value: { base: "{colors.gray.800}", _dark: "{colors.whiteAlpha.900}" }
+                    value: { base: "{colors.whiteAlpha.900}", _dark: "{colors.whiteAlpha.900}" }
                 },
                 // Cor de texto secundária/mais clara
                 textSecondary: {
-                    value: { base: "{colors.gray.600}", _dark: "{colors.gray.400}" }
+                    value: { base: "{colors.gray.400}", _dark: "{colors.gray.400}" }
                 },
                 // Cor de fundo do cabeçalho (Exemplo)
                 headerBg: {
                     // Pode usar um literal ou referenciar outro token
-                    value: { base: "white", _dark: "{colors.gray.800}" }
+                    value: { base: "{colors.gray.800}", _dark: "{colors.gray.800}" }
                 },
                 // Cor do texto no cabeçalho (Exemplo)
                 headerText: {
@@ -63,15 +64,15 @@ const config = defineConfig({
                 },
                 // Cor de destaque (sua cor #FF5F5E)
                 accent: {
-                    value: { base: "{colors.brand.500}", _dark: "{colors.brand.400}" }
+                    value: { base: "{colors.brand.400}", _dark: "{colors.brand.400}" }
                 },
                 // Cor para bordas discretas
                 borderSubtle: {
-                    value: { base: "{colors.gray.200}", _dark: "{colors.whiteAlpha.300}" }
+                    value: { base: "{colors.whiteAlpha.300}", _dark: "{colors.whiteAlpha.300}" }
                 },
                 // Cor de fundo para elementos como cards
                 cardBg: {
-                    value: { base: "{colors.gray.50}", _dark: "{colors.gray.700}" }
+                    value: { base: "{colors.gray.700}", _dark: "{colors.gray.700}" }
                 }
                 // ... adicione outros tokens semânticos ...
             }

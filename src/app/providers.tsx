@@ -4,6 +4,7 @@ import system from "@/theme"
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
 import { ThemeProvider } from "next-themes"
 import { ColorModeProvider } from "./components/ui/color-mode"
+import { Auth0ProviderWithHistory } from "./components/providers/Auth0ProviderWithHistory"
 
 
 export default function RootLayout(props: { children: React.ReactNode }) {
@@ -11,7 +12,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     <ChakraProvider value={system}>
       <ColorModeProvider>
         <ThemeProvider attribute="class" disableTransitionOnChange>
-          {props.children}
+          <Auth0ProviderWithHistory>
+            {props.children}
+          </Auth0ProviderWithHistory>
         </ThemeProvider>
       </ColorModeProvider>
     </ChakraProvider>
