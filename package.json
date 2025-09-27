@@ -11,7 +11,7 @@
   "dependencies": {
     "@auth0/auth0-react": "^2.4.0",
     "@chakra-ui/cli": "^3.24.2",
-    "@chakra-ui/react": "^3.16.1",
+    "@chakra-ui/react": "3.19.2",
     "@emotion/react": "^11.14.0",
     "add": "^2.0.6",
     "axios": "^1.11.0",
@@ -24,6 +24,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.62.0",
     "react-icons": "^5.5.0",
+    "recharts": "^3.2.1",
     "snippet": "^0.1.0",
     "swiper": "^11.2.10",
     "swr": "^2.3.6",
