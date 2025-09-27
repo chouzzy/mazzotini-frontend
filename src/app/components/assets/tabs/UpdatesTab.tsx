@@ -94,7 +94,7 @@ export function UpdatesTab({ asset }: TabProps) {
                                 <Flex flexDir={'column'} p={6} border="1px solid" borderColor="gray.700" borderTop="none" bg="gray.900" borderBottomRadius="md" gap={4}>
                                     <Flex align="center" gap={2}>
                                         <Tag.Root size="xl" colorPalette={'black'}>
-                                            <Tag.Label> {upd.type}</Tag.Label>
+                                            <Tag.Label> Andamento</Tag.Label>
                                         </Tag.Root>
                                        
                                     </Flex>
