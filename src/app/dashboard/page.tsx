@@ -1,24 +1,37 @@
-// src/app/dashboard/page.tsx
+// src\app\ativos\page.tsx
 'use client';
 
-import { Box, Container, Heading, VStack, Text, Flex, Icon, Spinner } from '@chakra-ui/react';
+import { Box, Heading, VStack, Text, Flex, Icon, Spinner, SimpleGrid } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
-import { CreditAssetCard, InvestorCreditAsset } from '../components/dashboard/CreditAssetCard';
-import { DashboardSummary } from '../components/dashboard/DashboardSummary';
-import { mockInvestorAssets } from '../data/dashboardData';
+import { useState, useMemo } from 'react';
+
+
 import { useApi } from '@/hooks/useApi';
 import { PiWarningCircle } from 'react-icons/pi';
+import { AssetsTable } from '../components/dashboard/AssetsTable';
+import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
+import { InvestorCreditAsset, CreditAssetCard } from '../components/dashboard/CreditAssetCard';
+import { DashboardSummary } from '../components/dashboard/DashboardSummary';
+import { EmptyState } from '../components/dashboard/EmptyState';
 
-
-
-export default function DashboardPage() {
-
+export default function AtivosPage() {
     const { user } = useAuth0();
     const { data: assets, isLoading, error } = useApi<InvestorCreditAsset[]>('/api/investments/me');
 
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // NOVO: Tratamento de estado de carregamento (loading).
+    const filteredAssets = useMemo(() => {
+        if (!assets) return [];
+        return assets
+            .filter(asset => filterStatus ? asset.status === filterStatus : true)
+            .filter(asset =>
+                asset.processNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                asset.originalCreditor.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+    }, [assets, filterStatus, searchQuery]);
+
     if (isLoading) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center">
@@ -33,45 +46,63 @@ export default function DashboardPage() {
     if (error) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center" p={4}>
-                <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
+                 <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os seus investimentos.</Text>
-                    <Text fontSize="sm" color="gray.400" pt={2}>Detalhes: {error.message}</Text>
                 </VStack>
             </Flex>
         )
     }
 
+    // Lida com o caso de não haver ativos na carteira
+    if (!assets || assets.length === 0) {
+        return <EmptyState />;
+    }
+
     return (
-        
-            <Flex w='100%'>
-                <VStack gap={8} align="stretch">
-                    {/* Cabeçalho */}
-                    <Box>
-                        <Heading as="h1" size="xl">
-                            Bem-vindo(a), {user?.name || 'Investidor'}!
-                        </Heading>
-                        <Text color="gray.400" mt={2}>
-                            Acompanhe em tempo real a performance dos seus ativos de crédito.
-                        </Text>
-                    </Box>
+        <Flex w='100%'>
+            <VStack gap={8} align="stretch" w="100%">
+                <Box>
+                    <Heading as="h1" size="xl">Meus Ativos</Heading>
+                    <Text color="gray.400" mt={2}>
+                        Acompanhe em tempo real a performance da sua carteira de créditos.
+                    </Text>
+                </Box>
+                
+                {/* NOVO: Grid para organizar o topo do dashboard */}
+                <Flex direction={{ base: 'column', lg: 'column' }} gap={8}>
+                    <DashboardSummary assets={assets} />
+                    {/* <PortfolioChart assets={assets} /> */}
+                </Flex>
 
-                    {/* Sumário */}
-                    <DashboardSummary assets={assets || []} />
+                <Box>
+                    <Heading as="h2" size="lg" mb={6}>Lista de Ativos</Heading>
+                    <AssetsToolbar
+                        assets={assets}
+                        viewMode={viewMode}
+                        onViewChange={setViewMode}
+                        onFilterChange={setFilterStatus}
+                        onSearch={setSearchQuery}
+                    />
 
-                    {/* Lista de Ativos */}
-                    <Box>
-                        <Heading as="h2" size="lg" mb={6}>
-                            Meus Créditos
-                        </Heading>
-                        <VStack gap={6} align="stretch">
-                            {assets?.map((asset) => (
-                                <CreditAssetCard key={asset.processNumber} asset={asset} />
-                            ))}
-                        </VStack>
-                    </Box>
-                </VStack>
-            </Flex>
+                    {filteredAssets.length > 0 ? (
+                        viewMode === 'grid' ? (
+                            <Flex gap={6} align="stretch" wrap="wrap" w='100%'>
+                                {filteredAssets.map((asset) => (
+                                    <CreditAssetCard key={asset.processNumber} asset={asset} />
+                                ))}
+                            </Flex>
+                        ) : (
+                            <AssetsTable assets={filteredAssets} />
+                        )
+                    ) : (
+                        <Flex justify="center" p={10} bg="gray.900" borderRadius="md">
+                            <Text>Nenhum ativo encontrado com os filtros aplicados.</Text>
+                        </Flex>
+                    )}
+                </Box>
+            </VStack>
+        </Flex>
     );
 }

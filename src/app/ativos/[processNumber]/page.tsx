@@ -16,11 +16,14 @@ import { AssetHeader } from '@/app/components/assets/AssetsHeader';
 
 
 // Tipagem para os dados detalhados do ativo que a API vai retornar
-// Exportado para ser usado pelos sub-componentes
-export interface DetailedCreditAsset {
+export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-componentes
+  id: string; // Adicionado para a navegação
   processNumber: string;
   originalCreditor: string;
   status: string;
+  origemProcesso: string; // Campo que será preenchido pelo enrich
+  lawsuitType?: string; // NOVO CAMPO (opcional)
+  lawyerResponsible?: string; // NOVO CAMPO (opcional)
   acquisitionDate: string;
   currentValue: number;
   acquisitionValue: number;
@@ -28,7 +31,7 @@ export interface DetailedCreditAsset {
   updateIndexType?: string;
   associate?: { name: string };
   investors: { user: { name: string }; investorShare: number }[];
-  updates: { date: string; updatedValue: number; description?: string }[];
+  updates: { id: string; date: string; updatedValue: number; description?: string, type?: string, read?: boolean, fullDescription?: string }[];
   documents: { name: string; url: string; category: string }[];
 }
 
@@ -73,4 +76,3 @@ export default function AssetDetailsPage() {
     </VStack>
   );
 }
-

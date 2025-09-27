@@ -1,5 +1,5 @@
 // ============================================================================
-//   FICHEIRO 1: src/components/providers/Auth0ProviderWithHistory.tsx (NOVO FICHEIRO)
+// src/components/providers/Auth0ProviderWithHistory.tsx
 // ============================================================================
 // Este componente configura o provedor do Auth0 para a sua aplicação.
 

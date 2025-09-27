@@ -93,8 +93,23 @@ const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps
 //  COMPONENTE: Item de Navegação
 // ============================================================================
 const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: () => void }) => {
+
     const pathname = usePathname();
-    const isActive = pathname.startsWith(href) && href !== '/'; // Destaque apenas se for a rota exata ou subrota, exceto para a home
+
+    // LÓGICA CORRIGIDA E FINAL
+    let isActive = pathname === href; // Começamos com a comparação exata
+
+    // Adicionamos uma exceção para o link "pai"
+    // Se o href for '/ativos' E a página atual for uma sub-página de detalhe...
+    if (href === '/ativos' && pathname.startsWith('/ativos/')) {
+        // ... então ativamos o link "Meus Ativos".
+        isActive = true;
+    }
+
+    // Para evitar que os dois fiquem ativos, a página mais específica (novo) anula a do pai.
+    if (pathname.startsWith('/ativos/novo') && href === '/ativos') {
+        isActive = false;
+    }
 
     return (
         <Link as={NextLink} href={href} style={{ textDecoration: 'none' }} onClick={onClick}>

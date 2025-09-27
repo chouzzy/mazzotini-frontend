@@ -8,7 +8,7 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
     {
         processNumber: '0012345-67.2022.8.26.0100',
         originalCreditor: 'Banco ABC S.A.',
-        status: 'Ativo',
+        status: 'ACTIVE',
         acquisitionDate: new Date('2023-05-20T00:00:00Z'),
         investedValue: 50000,
         currentValue: 54250.75,
@@ -18,7 +18,7 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
     {
         processNumber: '0098765-43.2021.8.26.0500',
         originalCreditor: 'Companhia Aérea XYZ',
-        status: 'Ativo',
+        status: 'ACTIVE',
         acquisitionDate: new Date('2023-09-10T00:00:00Z'),
         investedValue: 120000,
         currentValue: 129880.00,

@@ -32,7 +32,7 @@ export function HistoryTab({ asset }: TabProps) {
                     <VStack align="stretch">
                         {asset.updates.length > 0 ? asset.updates.map(upd => (
                             <Flex key={upd.date} justify="space-between">
-                                <Text><Icon as={PiClockClockwise} mr={2} /> {new Date(upd.date).toLocaleDateString('pt-BR')}</Text>
+                                <Text><Icon as={PiClockClockwise} mr={2} color={'brand.600'} /> {new Date(upd.date).toLocaleDateString('pt-BR')}</Text>
                                 <Text fontWeight="bold">{formatCurrency(upd.updatedValue)}</Text>
                             </Flex>
                         )) : <Text color="gray.500">Nenhum histórico para exibir.</Text>}

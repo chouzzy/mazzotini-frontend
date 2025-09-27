@@ -3,8 +3,9 @@
 import { Tabs } from '@chakra-ui/react';
 import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
 import { OverviewTab } from './tabs/OverviewTab';
-import { HistoryTab } from './tabs/HistoryTab';
+import { UpdatesTab } from './tabs/UpdatesTab';
 import { ChartsTab } from './tabs/ChartsTab';
+import { DocumentsTab } from './tabs/DocumentsTab';
 
 interface AssetTabsProps {
     asset: DetailedCreditAsset;
@@ -12,25 +13,25 @@ interface AssetTabsProps {
 
 export function AssetTabs({ asset }: AssetTabsProps) {
   return (
-    <Tabs.Root variant="enclosed" colorScheme="blue" defaultValue="overview">
+    <Tabs.Root variant="enclosed" colorPalette="white" defaultValue="overview">
       <Tabs.List>
-            <Tabs.Trigger value="overview">Visão Geral</Tabs.Trigger>
-            <Tabs.Trigger value="charts">Análise Gráfica</Tabs.Trigger>
-            <Tabs.Trigger value="history">Histórico & Documentos</Tabs.Trigger>
+            <Tabs.Trigger _selected={{bgColor:'brand.800', color:'white'}} value="overview">Visão Geral</Tabs.Trigger>
+            <Tabs.Trigger _selected={{bgColor:'brand.800', color:'white'}} value="charts">Análise Gráfica</Tabs.Trigger>
+            <Tabs.Trigger _selected={{bgColor:'brand.800', color:'white'}} value="updates">Histórico Processual</Tabs.Trigger>
+            <Tabs.Trigger _selected={{bgColor:'brand.800', color:'white'}} value="documents">Documentos</Tabs.Trigger>
       </Tabs.List>
-      
       <Tabs.Content value="overview" pt={6}>
         <OverviewTab asset={asset} />
       </Tabs.Content>
-      
-      <Tabs.Content value="history" pt={6}>
-        <HistoryTab asset={asset} />
+      <Tabs.Content value="updates" pt={6}>
+        <UpdatesTab asset={asset} />
       </Tabs.Content>
-      
+      <Tabs.Content value="documents" pt={6}>
+        <DocumentsTab asset={asset} />
+      </Tabs.Content>
       <Tabs.Content value="charts" pt={6}>
         <ChartsTab />
       </Tabs.Content>
     </Tabs.Root>
   )
 }
-
