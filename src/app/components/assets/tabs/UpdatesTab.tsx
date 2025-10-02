@@ -62,7 +62,7 @@ export function UpdatesTab({ asset }: TabProps) {
     const updatesToDisplay = asset.updates && asset.updates.length > 0 ? asset.updates : mockUpdates;
 
     return (
-        <Card.Root variant="outline" bg="gray.900">
+        <Card.Root  bg="gray.900">
             <Card.Body>
                 <Card.Title>Histórico de Atualizações do Processo</Card.Title>
                 <VStack align="stretch" gap={2} mt={4}>
@@ -107,7 +107,7 @@ export function UpdatesTab({ asset }: TabProps) {
                                         <Button
                                             _hover={{ bg: 'brand.500', color: 'black' }}
                                             size="sm"
-                                            variant="outline"
+                                            
                                             mt={4}
                                         >
                                             Ver Detalhes Completos

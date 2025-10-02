@@ -106,7 +106,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             loading={isSyncing}
             loadingText="A Sincronizar"
             colorScheme="blue"
-            variant="outline"
+            
           >
             <PiArrowsClockwise />
             Sincronizar Andamentos

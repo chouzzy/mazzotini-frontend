@@ -149,7 +149,7 @@ const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
             <IconButton
                 display={{ base: 'flex', md: 'none' }}
                 onClick={onOpen}
-                variant="outline"
+                
                 aria-label="Abrir menu"
             >
                 <PiList />

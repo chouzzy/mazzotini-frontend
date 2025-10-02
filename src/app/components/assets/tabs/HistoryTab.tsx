@@ -26,7 +26,7 @@ interface TabProps {
 export function HistoryTab({ asset }: TabProps) {
     return (
         <SimpleGrid columns={{ base: 1, lg: 2 }} gap={8}>
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title>Histórico de Atualizações</Card.Title>
                     <VStack align="stretch">
@@ -39,13 +39,13 @@ export function HistoryTab({ asset }: TabProps) {
                     </VStack>
                 </Card.Body>
             </Card.Root>
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title>Documentos</Card.Title>
                     <VStack align="stretch">
                         {asset.documents.length > 0 ? asset.documents.map(doc => (
                             <Link as={NextLink} href={doc.url} key={doc.name} target='_blank' rel='noopener noreferrer' _hover={{ textDecoration: 'none' }}>
-                                <Button variant="outline" w="100%" justifyContent="flex-start">
+                                <Button  w="100%" justifyContent="flex-start">
                                     <PiFilePdf />
                                     {doc.name} ({doc.category})
                                 </Button>

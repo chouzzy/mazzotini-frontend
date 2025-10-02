@@ -27,7 +27,7 @@ interface AssetsToolbarProps {
 // Opções para o filtro de status
 const statusOptions = createListCollection({
     items: [
-        { label: "Ativo", value: "ACTIVE" },
+        { label: "Ativo", value: "Ativo" },
         { label: "Em Negociação", value: "Em Negociação" },
         { label: "Liquidado", value: "Liquidado" },
     ]
@@ -103,14 +103,14 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                 >
                     <Select.Control>
                         <Select.Trigger border={'1px solid'} borderColor="gray.600" bgColor={'gray.950'} cursor={'pointer'}>
-                            <Select.ValueText placeholder="Filtrar por status" />
+                            <Select.ValueText color={'gray.200'} placeholder="Filtrar por status" />
                         </Select.Trigger>
                     </Select.Control>
                     <Portal>
                         <Select.Positioner>
                             <Select.Content>
                                 {statusOptions.items.map((option) => (
-                                    <Select.Item item={option} key={option.value}>
+                                    <Select.Item item={option} key={option.value} >
                                         {option.label}
                                     </Select.Item>
                                 ))}
@@ -123,14 +123,15 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     <IconButton
                         aria-label="Ver em Grade"
                         onClick={() => onViewChange('grid')}
-                        variant={viewMode === 'grid' ? 'solid' : 'outline'}
+                        _hover={{ bg: 'brand.600' }}
                     >
                         <PiSquaresFour/>
                     </IconButton>
                     <IconButton
                         aria-label="Ver em Lista"
                         onClick={() => onViewChange('list')}
-                        variant={viewMode === 'list' ? 'solid' : 'outline'}
+                        bgColor={'gray.600'}
+                        _hover={{ bg: 'brand.600' }}
                     >
                         <PiFunction />
                     </IconButton>

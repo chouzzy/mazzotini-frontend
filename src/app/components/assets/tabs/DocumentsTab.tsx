@@ -41,13 +41,13 @@ export function DocumentsTab({ asset }: TabProps) {
     const documentsToDisplay = asset.documents && asset.documents.length > 0 ? asset.documents : mockDocuments;
 
     return (
-        <Card.Root variant="outline" bg="gray.900">
+        <Card.Root  bg="gray.900">
             <Card.Body>
                 <Card.Title>Documentos do Processo</Card.Title>
                 <VStack align="stretch" mt={4}>
                     {documentsToDisplay.length > 0 ? documentsToDisplay.map(doc => (
                         <Link as={NextLink} href={doc.url} key={doc.name} target='_blank' _hover={{ textDecoration: 'none' }}>
-                            <Button variant="outline" w="100%" justifyContent="flex-start" >
+                            <Button  w="100%" justifyContent="flex-start" >
                                 <PiFilePdf style={{ marginRight: '8px' }} />
                                 {doc.name} ({doc.category})
                             </Button>

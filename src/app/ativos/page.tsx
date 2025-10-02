@@ -128,7 +128,7 @@ export default function OperatorAssetsPage() {
                     />
 
                     {filteredAssets.length > 0 ? (
-                        <Table.Root variant="line">
+                        <Table.Root colorPalette={'green'} variant={'outline'}>
                             <Table.Header>
                                 <Table.Row>
                                     <Table.ColumnHeader>Nº do Processo</Table.ColumnHeader>
@@ -140,7 +140,7 @@ export default function OperatorAssetsPage() {
                             </Table.Header>
                             <Table.Body>
                                 {filteredAssets.map((asset) => (
-                                    <Table.Row key={asset.id} _hover={{ bg: 'gray.700', cursor: 'pointer' }} onClick={() => window.location.href = `/ativos/${encodeURIComponent(asset.processNumber)}`}>
+                                    <Table.Row key={asset.id} _hover={{ bg: 'gray.700', cursor: 'pointer' }} onClick={() => window.location.href = `/ativos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
                                         <Table.Cell fontWeight="medium">{asset.processNumber}</Table.Cell>
                                         <Table.Cell>{asset.mainInvestorName}</Table.Cell>
                                         <Table.Cell>{asset.originalCreditor}</Table.Cell>

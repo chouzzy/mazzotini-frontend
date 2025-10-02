@@ -60,7 +60,7 @@ export function Header() {
             py={4}
             px={{ base: 4, md: 8 }}
             w='100%'
-            color={'headerColor'}
+            color={'textPrimary'}
             maxW={{ base: '100%', md: '1920px' }} 
         >
             {/* Seção Esquerda: Logo */}
@@ -93,7 +93,7 @@ export function Header() {
                             _hover={{ cursor: 'pointer', color: 'brand.500', textDecoration: 'none' }}
                         >
                             <CustomText
-                                color={'headerColor'}
+                                color={'textPrimary'}
                                 text={item.title}
                                 letterSpacing={1.8}
                                 textTransform={'uppercase'}
@@ -107,7 +107,7 @@ export function Header() {
                         <UserAvatar />
                     ) : (
                         <Button
-                            color={'ghostWhite'}
+                            color={'textPrimary'}
                             bgColor='transparent'
                             border='1px solid'
                             borderColor='whiteAlpha.300'
