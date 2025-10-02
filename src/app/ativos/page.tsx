@@ -1,5 +1,5 @@
-'use client';
 // /src/app/ativos/page.tsx
+'use client';
 
 import {
     Box,

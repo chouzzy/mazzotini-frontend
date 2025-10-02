@@ -40,6 +40,7 @@ export default function RootLayout({
             bgSize="cover"
             bgRepeat={'no-repeat'}
             bgPos="top"
+            color={'textPrimary'}
           >
             <Flex
               flexDir={'column'}

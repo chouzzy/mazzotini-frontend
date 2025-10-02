@@ -30,7 +30,7 @@ export function AssetTabs({ asset }: AssetTabsProps) {
         <DocumentsTab asset={asset} />
       </Tabs.Content>
       <Tabs.Content value="charts" pt={6}>
-        <ChartsTab />
+        <ChartsTab asset={asset} />
       </Tabs.Content>
     </Tabs.Root>
   )
