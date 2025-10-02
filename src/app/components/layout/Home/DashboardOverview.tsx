@@ -58,8 +58,8 @@ function RecentAssetItem({ asset }: { asset: InvestorCreditAsset }) {
                 </Text>
             </VStack>
             {/* CORREÇÃO: A sintaxe Link as NextLink é a correta para navegação interna */}
-            <Link as={NextLink} href={`/ativos/${asset.processNumber}`}>
-                <Button size="sm" variant="outline">
+            <Link as={NextLink} href={`/ativos/${asset.processNumber}`} _hover={{ textDecoration: 'none' }}>
+                <Button size="sm" _hover={{ bg: 'brand.600' }} >
                     Ver Detalhes <Icon as={PiArrowRight} ml={2} />
                 </Button>
             </Link>
@@ -124,13 +124,13 @@ export function DashboardOverview() {
                 {/* Cards de Estatísticas */}
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} w="100%">
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                        <Stat.Label display="flex" alignItems="center" gap={2}>
+                        <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
                             <Icon as={PiWallet} /> Ativos na Carteira
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl">{totalAssets}</Stat.ValueText>
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                        <Stat.Label display="flex" alignItems="center" gap={2}>
+                        <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
                             <Icon as={PiChartLineUp} /> Rendimento Acumulado
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl" color="green.400">
@@ -138,7 +138,7 @@ export function DashboardOverview() {
                         </Stat.ValueText>
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                        <Stat.Label display="flex" alignItems="center" gap={2}>
+                        <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
                             <Icon as={PiArrowRight} /> Rentabilidade Média
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl">{yieldPercentage.toFixed(2)}%</Stat.ValueText>
@@ -181,7 +181,7 @@ export function DashboardOverview() {
                                 </Button>
                             </Link>
                             <Link as={NextLink} href="/ativos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button w="100%" size="lg" variant="outline">
+                                <Button w="100%" size="lg" >
                                     <PiPlusCircle />
                                     Registrar Novo Ativo
                                 </Button>

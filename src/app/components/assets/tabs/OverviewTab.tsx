@@ -47,7 +47,7 @@ export function OverviewTab({ asset }: TabProps) {
     return (
         <SimpleGrid columns={{ base: 1, lg: 2 }} gap={8}>
             {/* Card de Detalhes da Aquisição */}
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Detalhes da Aquisição</Card.Title>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Original:</strong> {asset.originalCreditor}</Text>
@@ -57,7 +57,7 @@ export function OverviewTab({ asset }: TabProps) {
             </Card.Root>
             
             {/* Card de Envolvidos */}
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
                     {asset.investors.map(inv => (
@@ -68,7 +68,7 @@ export function OverviewTab({ asset }: TabProps) {
             </Card.Root>
 
             {/* Card de Resumo do Histórico */}
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Última Atualização Processual</Card.Title>
                     {lastUpdate ? (
@@ -91,7 +91,7 @@ export function OverviewTab({ asset }: TabProps) {
             </Card.Root>
             
             {/* Card de Resumo dos Documentos */}
-            <Card.Root variant="outline" bg="gray.900">
+            <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Documentos Anexados</Card.Title>
                      {documentCount > 0 ? (

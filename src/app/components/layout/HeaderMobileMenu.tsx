@@ -41,7 +41,7 @@ export function HeaderMobileMenu({ isAuthenticated }: HeaderMobileMenuProps) {
             ) : (
                 <Button
                     mr={4}
-                    color={'ghostWhite'}
+                    color={'textPrimary'}
                     bgColor='transparent'
                     border='1px solid'
                     borderColor='whiteAlpha.300'
@@ -57,7 +57,7 @@ export function HeaderMobileMenu({ isAuthenticated }: HeaderMobileMenuProps) {
 
                 {/* O botão que aciona a abertura do menu (ícone de lista/hamburger) */}
                 <Menu.Trigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button  size="sm">
                         <PiList />
                     </Button>
                 </Menu.Trigger>

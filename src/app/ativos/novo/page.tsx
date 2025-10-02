@@ -24,7 +24,7 @@ import axios from 'axios';
 import { useEffect, useState } from "react";
 
 // --- Ícones ---
-import { PiPlusCircle } from "react-icons/pi";
+import { PiArrowDownDuotone, PiCaretDownDuotone, PiPlusCircle } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 
 // ============================================================================
@@ -51,7 +51,7 @@ export default function CreateAssetPage() {
     // Estados para os selects
     const [investors, setInvestors] = useState<{ label: string; value: string }[]>([]);
     const [associates, setAssociates] = useState<{ label: string; value: string }[]>([]); // Inicializado vazio
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -177,6 +177,8 @@ export default function CreateAssetPage() {
                             <Field.Label>Número do Processo</Field.Label>
                             <Input
                                 placeholder="Ex: 0012345-67.2023.5.02.0001"
+                                _placeholder={{ color: 'gray.400' }}
+                                borderColor={'gray.700'}
                                 {...register("processNumber", { required: "Este campo é obrigatório" })}
                             />
                             <Field.ErrorText>{errors.processNumber?.message}</Field.ErrorText>
@@ -186,6 +188,8 @@ export default function CreateAssetPage() {
                             <Field.Label>Credor Original (Nome ou CPF/CNPJ)</Field.Label>
                             <Input
                                 placeholder="O identificador usado para a busca no Legal One"
+                                _placeholder={{ color: 'gray.400' }}
+                                borderColor={'gray.700'}
                                 {...register("originalCreditor", { required: "Este campo é obrigatório" })}
                             />
                         </Field.Root>
@@ -208,15 +212,20 @@ export default function CreateAssetPage() {
                                             onValueChange={(details) => field.onChange(details.value[0])}
                                         >
                                             <Select.Control>
-                                                <Select.Trigger ref={field.ref}>
-                                                    <Select.ValueText placeholder="Selecione um investidor..." />
+                                                <Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}>
+                                                    <Select.ValueText
+                                                        _placeholder={{ color: 'gray.400' }}
+                                                        borderColor={'gray.700'}
+                                                        placeholder="Selecione um investidor..."
+                                                    />
+                                                    <PiCaretDownDuotone />
                                                 </Select.Trigger>
                                             </Select.Control>
                                             <Portal>
                                                 <Select.Positioner>
-                                                    <Select.Content>
+                                                    <Select.Content >
                                                         {investorsCollection.items.map((investor) => (
-                                                            <Select.Item key={investor.value} item={investor}>
+                                                            <Select.Item key={investor.value} item={investor} >
                                                                 {investor.label}
                                                             </Select.Item>
                                                         ))}
@@ -241,8 +250,9 @@ export default function CreateAssetPage() {
                                             onValueChange={(details) => field.onChange(details.value[0])}
                                         >
                                             <Select.Control>
-                                                <Select.Trigger ref={field.ref}>
+                                                <Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}>
                                                     <Select.ValueText placeholder="Selecione um associado..." />
+                                                    <PiCaretDownDuotone />
                                                 </Select.Trigger>
                                             </Select.Control>
                                             <Portal>
@@ -267,6 +277,8 @@ export default function CreateAssetPage() {
                             <Field.Root invalid={!!errors.acquisitionValue} required>
                                 <Field.Label>Valor de Aquisição (R$)</Field.Label>
                                 <Input
+                                    _placeholder={{ color: 'gray.400' }}
+                                    borderColor={'gray.700'}
                                     type="number"
                                     step="0.01"
                                     placeholder="30000.00"
@@ -276,6 +288,8 @@ export default function CreateAssetPage() {
                             <Field.Root invalid={!!errors.originalValue} required>
                                 <Field.Label>Valor Original do Ativo (R$)</Field.Label>
                                 <Input
+                                    _placeholder={{ color: 'gray.400' }}
+                                    borderColor={'gray.700'}
                                     type="number"
                                     step="0.01"
                                     placeholder="50000.00"
@@ -285,6 +299,8 @@ export default function CreateAssetPage() {
                             <Field.Root invalid={!!errors.investorShare} required>
                                 <Field.Label>Percentual do Investidor (%)</Field.Label>
                                 <Input
+                                    _placeholder={{ color: 'gray.400' }}
+                                    borderColor={'gray.700'}
                                     type="number"
                                     step="0.1"
                                     placeholder="80"
@@ -293,17 +309,20 @@ export default function CreateAssetPage() {
                             </Field.Root>
                         </SimpleGrid>
 
-                        <Field.Root invalid={!!errors.acquisitionDate} required>
+                        <Field.Root invalid={!!errors.acquisitionDate} required >
                             <Field.Label>Data de Aquisição</Field.Label>
                             <Input
+                                _placeholder={{ color: 'gray.400' }}
+                                borderColor={'gray.700'}
                                 type="date"
+                                cursor={'pointer'}
                                 {...register("acquisitionDate", { required: "Este campo é obrigatório" })}
                             />
                         </Field.Root>
 
                         <Button
                             type="submit"
-                            colorScheme="blue"
+                            colorPalette="blue"
                             size="lg"
                             w={{ base: '100%', md: 'auto' }}
                             alignSelf="flex-end"
