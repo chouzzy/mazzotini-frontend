@@ -1,3 +1,4 @@
+// /src/app/components/assets/tabs/DocumentsTab.tsx
 'use client';
 
 import {
@@ -5,56 +6,88 @@ import {
     CardTitle,
     Text,
     VStack,
-    Link,
-    Button
+    Button,
+    Icon
 } from '@chakra-ui/react';
+import { useState } from 'react';
 import { PiFilePdf } from 'react-icons/pi';
-import NextLink from 'next/link';
 import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
-
-// DADOS MOCKADOS PARA OS DOCUMENTOS
-const mockDocuments = [
-    {
-        name: 'Contrato de Cessão de Crédito.pdf',
-        url: 'https://file-examples.com/storage/fedaf045be68cc6ad9396d2/2017/10/file-sample_150kB.pdf',
-        category: 'Contrato'
-    },
-    {
-        name: 'Sentença Judicial - Primeira Instância.pdf',
-        url: 'https://file-examples.com/storage/fedaf045be68cc6ad9396d2/2017/10/file-sample_150kB.pdf',
-        category: 'Decisão Judicial'
-    },
-    {
-        name: 'Comprovante de Protocolo.pdf',
-        url: 'https://file-examples.com/storage/fedaf045be68cc6ad9396d2/2017/10/file-sample_150kB.pdf',
-        category: 'Comprovante'
-    }
-];
-
+import { useAuth0 } from '@auth0/auth0-react';
+import axios from 'axios';
+import { Toaster, toaster } from '@/components/ui/toaster';
 
 interface TabProps {
     asset: DetailedCreditAsset;
 }
 
 export function DocumentsTab({ asset }: TabProps) {
-    // Lógica inteligente: se o ativo real não tiver documentos, usamos os dados mockados como fallback.
-    const documentsToDisplay = asset.documents && asset.documents.length > 0 ? asset.documents : mockDocuments;
+    const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
+    const { getAccessTokenSilently } = useAuth0();
+
+    const handleDownload = async (documentId: string, documentName: string) => {
+        setLoadingDocId(documentId);
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: process.env.NEXT_PUBLIC_API_AUDIENCE!,
+                },
+            });
+
+            const response = await axios.get(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/documents/${documentId}/download-url`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const { url } = response.data;
+            if (url) {
+                // Abre a URL recebida numa nova aba
+                window.open(url, '_blank');
+            } else {
+                throw new Error('URL de download não recebida do servidor.');
+            }
+
+        } catch (error) {
+            console.error("Erro ao obter URL de download:", error);
+            toaster.create({
+                title: "Erro ao gerar link.",
+                description: `Não foi possível obter o link de download para "${documentName}". Tente novamente mais tarde.`,
+                type: "error",
+                duration: 5000,
+                closable: true,
+            });
+        } finally {
+            setLoadingDocId(null);
+        }
+    };
 
     return (
-        <Card.Root  bg="gray.900">
+        <Card.Root variant="outline" bg="gray.900">
             <Card.Body>
                 <Card.Title>Documentos do Processo</Card.Title>
-                <VStack align="stretch" mt={4}>
-                    {documentsToDisplay.length > 0 ? documentsToDisplay.map(doc => (
-                        <Link as={NextLink} href={doc.url} key={doc.name} target='_blank' _hover={{ textDecoration: 'none' }}>
-                            <Button  w="100%" justifyContent="flex-start" >
-                                <PiFilePdf style={{ marginRight: '8px' }} />
-                                {doc.name} ({doc.category})
+                <VStack align="stretch" mt={4} gap={3}>
+                    <Toaster />
+                    {asset.documents.length > 0 ? (
+                        asset.documents.map(doc => (
+                            <Button
+                                key={doc.id}
+                                variant="outline"
+                                w="100%"
+                                justifyContent="flex-start"
+                                onClick={() => handleDownload(doc.id, doc.name)}
+                                loading={loadingDocId === doc.id}
+                                loadingText="Gerando documento, aguarde..."
+                                gap={2}
+                            >
+                                <Icon as={PiFilePdf} boxSize={5} />
+                                {doc.name} ({doc.category || 'Indefinido'})
                             </Button>
-                        </Link>
-                    )) : <Text color="gray.500">Nenhum documento anexado.</Text>}
+                        ))
+                    ) : (
+                        <Text color="gray.500">Nenhum documento sincronizado para este ativo.</Text>
+                    )}
                 </VStack>
             </Card.Body>
         </Card.Root>
     );
 }
+

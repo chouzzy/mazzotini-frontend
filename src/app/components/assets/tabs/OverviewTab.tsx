@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { PiUser, PiClockClockwise, PiFilePdf } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { extractFreeText } from '@/utils';
 
 // DADOS MOCKADOS (importados ou definidos para fallback)
 const mockUpdates = [
@@ -44,6 +45,8 @@ export function OverviewTab({ asset }: TabProps) {
     const lastUpdate = updates[0];
     const documentCount = documents.length;
 
+    const titleText = extractFreeText(lastUpdate.description);
+
     return (
         <SimpleGrid columns={{ base: 1, lg: 2 }} gap={8}>
             {/* Card de Detalhes da Aquisição */}
@@ -74,7 +77,7 @@ export function OverviewTab({ asset }: TabProps) {
                     {lastUpdate ? (
                         <VStack align="stretch" mt={4} gap={2}>
                             <Flex justify="space-between" align="center">
-                                <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} />{lastUpdate.description || 'Atualização de Valor'}</Text>
+                                <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} />Atualização de crédito: {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}</Text>
                                 {!lastUpdate.read && <Badge colorScheme="blue">Novo</Badge>}
                             </Flex>
                             <Text fontSize="sm" color="gray.400">
