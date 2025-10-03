@@ -73,6 +73,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
           duration: 5000,
           closable: true,
         });
+        window.location.reload(); // Recarrega a página
       }, 3000); // Um delay para dar tempo ao backend
 
     } catch (error) {

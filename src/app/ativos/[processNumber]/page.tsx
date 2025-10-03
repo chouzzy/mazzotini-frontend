@@ -32,7 +32,7 @@ export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-com
   associate?: { name: string };
   investors: { user: { name: string }; investorShare: number }[];
   updates: { id: string; date: string; updatedValue: number; description?: string, type?: string, read?: boolean, fullDescription?: string }[];
-  documents: { name: string; url: string; category: string }[];
+  documents: { id: string; legalOneDocumentId: number; name: string; url: string; category: string }[];
 }
 
 // Componente principal da página
