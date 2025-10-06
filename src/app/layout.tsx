@@ -40,12 +40,14 @@ export default function RootLayout({
             bgSize="cover"
             bgRepeat={'no-repeat'}
             bgPos="top"
+            minH={'100vh'}
             color={'textPrimary'}
           >
             <Flex
               flexDir={'column'}
               mx="auto"
               minH="100vh"
+              h='100%'
               w="100%"
               alignItems={'center'}
               justifyContent={'center'}

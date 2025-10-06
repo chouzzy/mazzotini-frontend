@@ -2,6 +2,7 @@
 'use client';
 
 import { Tooltip } from '@/components/ui/tooltip';
+import { AssetSummary } from '@/types/api';
 import {
     Box,
     Heading,
@@ -40,11 +41,11 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-export function CreditAssetCard({ asset }: { asset: InvestorCreditAsset }) {
+export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
     const yieldValue = asset.currentValue - asset.investedValue;
     const yieldPercentage = (yieldValue / asset.investedValue) * 100;
 
-    const getStatusColorScheme = (status: 'ACTIVE' | 'Liquidado' | 'Em Negociação') => {
+    const getStatusColorScheme = (status: string) => {
         switch (status) {
             case 'ACTIVE':
                 return 'green';
