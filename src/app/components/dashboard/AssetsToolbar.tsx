@@ -12,12 +12,12 @@ import {
     createListCollection
 } from '@chakra-ui/react';
 import { PiFunction, PiSquaresFour } from 'react-icons/pi';
-import { InvestorCreditAsset } from './CreditAssetCard';
 import { useMemo } from 'react';
+import { AssetSummary } from '@/types/api';
 
 // Props atualizadas para receber os ativos para o Combobox
 interface AssetsToolbarProps {
-    assets: InvestorCreditAsset[];
+    assets: AssetSummary[];
     viewMode: 'grid' | 'list';
     onViewChange: (mode: 'grid' | 'list') => void;
     onFilterChange: (status: string) => void;

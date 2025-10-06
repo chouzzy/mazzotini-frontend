@@ -1,22 +1,28 @@
-// src\app\ativos\page.tsx
+// /src/app/dashboard/page.tsx
 'use client';
 
-import { Box, Heading, VStack, Text, Flex, Icon, Spinner, SimpleGrid } from '@chakra-ui/react';
+import { Box, Heading, VStack, Text, Flex, Icon, Spinner } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
+import { CreditAssetCard, InvestorCreditAsset } from '../components/dashboard/CreditAssetCard';
+import { DashboardSummary } from '../components/dashboard/DashboardSummary';
+import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
+import { AssetsTable } from '../components/dashboard/AssetsTable';
+import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
 import { PiWarningCircle } from 'react-icons/pi';
-import { AssetsTable } from '../components/dashboard/AssetsTable';
-import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
-import { InvestorCreditAsset, CreditAssetCard } from '../components/dashboard/CreditAssetCard';
-import { DashboardSummary } from '../components/dashboard/DashboardSummary';
-import { EmptyState } from '../components/dashboard/EmptyState';
 
-export default function AtivosPage() {
+// Esta página agora usa a mesma tipagem de retorno que a página do operador
+import { AssetSummary } from '@/types/api';
+
+
+export default function DashboardPage() {
     const { user } = useAuth0();
-    const { data: assets, isLoading, error } = useApi<InvestorCreditAsset[]>('/api/investments/me');
+    // CORREÇÃO: A página do investidor agora chama o mesmo endpoint que a do operador.
+    // O backend é responsável por filtrar e devolver apenas os ativos corretos.
+    const { data: assets, isLoading, error } = useApi<AssetSummary[]>('/api/assets');
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [filterStatus, setFilterStatus] = useState('');
@@ -46,7 +52,7 @@ export default function AtivosPage() {
     if (error) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center" p={4}>
-                 <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
+                <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os seus investimentos.</Text>
@@ -55,26 +61,28 @@ export default function AtivosPage() {
         )
     }
 
-    // Lida com o caso de não haver ativos na carteira
     if (!assets || assets.length === 0) {
-        return <EmptyState />;
+        return <EmptyState 
+            title="Nenhum Ativo na Sua Carteira"
+            description="Você ainda não possui nenhum ativo de crédito. Quando um ativo for associado a si, ele aparecerá aqui."
+            buttonLabel="Contactar Suporte" // Um call-to-action mais apropriado para o investidor
+            buttonHref="#" // Podemos colocar o link do WhatsApp aqui
+        />;
     }
 
     return (
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
                 <Box>
-                    <Heading as="h1" size="xl">Meus Ativos</Heading>
+                    <Heading as="h1" size="xl">
+                        Meus Ativos
+                    </Heading>
                     <Text color="gray.400" mt={2}>
                         Acompanhe em tempo real a performance da sua carteira de créditos.
                     </Text>
                 </Box>
-                
-                {/* NOVO: Grid para organizar o topo do dashboard */}
-                <Flex direction={{ base: 'column', lg: 'column' }} gap={8}>
-                    <DashboardSummary assets={assets} />
-                    {/* <PortfolioChart assets={assets} /> */}
-                </Flex>
+
+                <DashboardSummary assets={assets} />
 
                 <Box>
                     <Heading as="h2" size="lg" mb={6}>Lista de Ativos</Heading>
@@ -106,3 +114,4 @@ export default function AtivosPage() {
         </Flex>
     );
 }
+

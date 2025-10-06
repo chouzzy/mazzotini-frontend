@@ -1,4 +1,4 @@
-import { PiHouseDuotone, PiChartPieSlice, PiScales, PiList, PiUser, PiGear } from "react-icons/pi";
+import { PiHouseDuotone, PiChartPieSlice, PiScales, PiList, PiUser, PiGear, PiUsers } from "react-icons/pi";
 
 const SideBarItems = [
     { name: 'Home', icon: PiHouseDuotone, href: '/' },
@@ -6,6 +6,7 @@ const SideBarItems = [
     { name: 'Meus Ativos', icon: PiScales, href: '/ativos' },
     { name: 'Novo Ativo', icon: PiList, href: '/ativos/novo' },
     { name: 'Meu Perfil', icon: PiUser, href: '/perfil' },
+    { name: 'Usuários', icon: PiUsers, href: '/gestao/utilizadores' },
     { name: 'Configurações', icon: PiGear, href: '/configuracoes' },
 ];
 

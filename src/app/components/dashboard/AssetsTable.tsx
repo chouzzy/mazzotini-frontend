@@ -6,7 +6,7 @@ import {
     Link
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
-import { InvestorCreditAsset } from './CreditAssetCard';
+import { AssetSummary } from '@/types/api';
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
@@ -20,7 +20,7 @@ const getStatusColorScheme = (status: string) => {
 };
 
 interface AssetsTableProps {
-    assets: InvestorCreditAsset[];
+    assets: AssetSummary[];
 }
 
 export function AssetsTable({ assets }: AssetsTableProps) {

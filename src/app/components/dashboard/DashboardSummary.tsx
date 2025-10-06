@@ -3,7 +3,7 @@
 
 import { SimpleGrid, Stat, Icon } from '@chakra-ui/react';
 import { PiChartLineUp, PiWallet, PiArrowRight } from 'react-icons/pi';
-import { InvestorCreditAsset } from './CreditAssetCard';
+import { AssetSummary } from '@/types/api';
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number) => {
@@ -14,7 +14,7 @@ const formatCurrency = (value: number) => {
 };
 
 
-export function DashboardSummary({ assets }: { assets: InvestorCreditAsset[] }) {
+export function DashboardSummary({ assets }: { assets: AssetSummary[] }) {
     const totalInvested = assets.reduce((sum, asset) => sum + asset.investedValue, 0);
     const totalCurrentValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
     const totalYield = totalCurrentValue - totalInvested;

@@ -23,6 +23,7 @@ import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
 import { PiWarningCircle, PiPlusCircle } from 'react-icons/pi';
+import { AssetSummary } from '@/types/api';
 
 // Tipagem para os dados que o endpoint GET /api/assets retorna
 export interface OperatorAsset {
@@ -51,7 +52,7 @@ const getStatusColorScheme = (status: string) => {
 export default function OperatorAssetsPage() {
     const { user } = useAuth0();
     // ATENÇÃO: Chamando o novo endpoint para TODOS os ativos
-    const { data: assets, isLoading, error } = useApi<OperatorAsset[]>('/api/assets');
+    const { data: assets, isLoading, error } = useApi<AssetSummary[]>('/api/assets');
 
     // Estados de filtro e busca
     const [filterStatus, setFilterStatus] = useState('');
