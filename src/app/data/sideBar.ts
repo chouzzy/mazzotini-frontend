@@ -6,7 +6,7 @@ const SideBarItems = [
     { name: 'Meus Ativos', icon: PiScales, href: '/ativos' },
     { name: 'Novo Ativo', icon: PiList, href: '/ativos/novo' },
     { name: 'Meu Perfil', icon: PiUser, href: '/perfil' },
-    { name: 'Usuários', icon: PiUsers, href: '/gestao/utilizadores' },
+    { name: 'Usuários', icon: PiUsers, href: '/gestao/usuarios' },
     { name: 'Configurações', icon: PiGear, href: '/configuracoes' },
 ];
 

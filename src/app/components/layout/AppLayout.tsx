@@ -111,6 +111,10 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
         isActive = false;
     }
 
+    if (pathname.startsWith('/perfil') && href === '/perfil') {
+        isActive = true;
+    }
+
     return (
         <Link as={NextLink} href={href} style={{ textDecoration: 'none' }} onClick={onClick}>
             <Flex

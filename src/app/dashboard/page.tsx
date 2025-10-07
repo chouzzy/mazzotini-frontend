@@ -42,7 +42,7 @@ export default function DashboardPage() {
         return (
             <Flex w="100%" flex={1} justify="center" align="center">
                 <VStack gap={4}>
-                    <Spinner size="xl" color="blue.500" />
+                    <Spinner size="xl" color="#9E905A" />
                     <Text>A carregar os seus investimentos...</Text>
                 </VStack>
             </Flex>
