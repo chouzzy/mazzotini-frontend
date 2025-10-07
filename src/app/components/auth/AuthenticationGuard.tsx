@@ -11,7 +11,7 @@ import { PiEnvelope, PiSignIn } from 'react-icons/pi';
 function LoadingScreen() {
     return (
         <Flex w="100%" flex={1} justify="center" align="center">
-            <Spinner size="xl" color="blue.500" />
+            <Spinner size="xl" color="#9E905A" />
         </Flex>
     );
 }

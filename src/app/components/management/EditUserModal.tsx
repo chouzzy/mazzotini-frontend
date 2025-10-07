@@ -14,7 +14,7 @@ import { useApi } from '@/hooks/useApi';
 import { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { toaster } from "@/components/ui/toaster";
+import { Toaster, toaster } from "@/components/ui/toaster";
 
 // Tipagem para os dados do utilizador
 interface UserManagementInfo {
@@ -83,12 +83,14 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
                 type: "error",
             });
         } finally {
+            onUpdateSuccess();
             setIsSubmitting(false);
         }
     };
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={(details) => !details.open && onClose()}>
+            <Toaster/>
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content bg="gray.800">
@@ -111,9 +113,9 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
                                     <Stack gap={3} direction="column">
                                         {allRoles?.map(role => (
 
-                                            <RadioGroup.Item key={role.id} value={role.name!}>
-                                                <RadioGroup.ItemHiddenInput />
-                                                <RadioGroup.ItemIndicator />
+                                            <RadioGroup.Item key={role.id} value={role.name!} cursor={'pointer'}>
+                                                <RadioGroup.ItemHiddenInput  />
+                                                <RadioGroup.ItemIndicator bgColor={'brand.600'} cursor={'pointer'}/>
                                                 <RadioGroup.ItemText>{role.name}</RadioGroup.ItemText>
                                             </RadioGroup.Item>
                                         ))}
@@ -123,8 +125,8 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
                         </VStack>
                     </Dialog.Body>
                     <Dialog.Footer>
-                        <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                        <Button colorPalette="blue" ml={3} onClick={handleSave} loading={isSubmitting}>
+                        <Button variant="solid" colorPalette={'red'} onClick={onClose}>Cancelar</Button>
+                        <Button  bgColor= 'brand.700' color= 'white' _hover={{ bgColor:'brand.800'}} ml={3} onClick={handleSave} loading={isSubmitting}>
                             Salvar Alteração
                         </Button>
                     </Dialog.Footer>
