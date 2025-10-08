@@ -1,3 +1,5 @@
+// src\app\components\layout\AppLayout.tsx
+
 'use client';
 
 import {
@@ -14,6 +16,7 @@ import {
     Button,
     VStack,
     Image,
+    useBreakpointValue,
 } from '@chakra-ui/react';
 import {
     PiChartPieSlice,
@@ -137,7 +140,7 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
 // ============================================================================
 //  COMPONENTE: Barra de Navegação Superior (Header)
 // ============================================================================
-const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
+export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
     const { isAuthenticated, loginWithRedirect } = useAuth0();
     return (
         <Flex
@@ -153,7 +156,10 @@ const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
             <IconButton
                 display={{ base: 'flex', md: 'none' }}
                 onClick={onOpen}
-                
+                bgColor={'transparent'}
+                border={'1px solid'}
+                borderColor={'gray.600'}
+                color={'brand.600'}
                 aria-label="Abrir menu"
             >
                 <PiList />
@@ -179,10 +185,14 @@ const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { open, onOpen, onClose } = useDisclosure();
 
+    const showSidebar = useBreakpointValue({ base: false, lg: true });
+    const pathname = usePathname();
+    const shouldShowSidebar = !(pathname && pathname.startsWith('/perfil/completar'));
+
     return (
         <Flex w="100%" minH="100vh" bg="gray.800">
             {/* Coluna da Esquerda: Sidebar visível apenas no desktop */}
-            <SidebarContent onClose={onClose} display={{ base: 'none', md: 'flex' }} />
+            {showSidebar && shouldShowSidebar && <SidebarContent onClose={onClose} display={{ base: 'none', sm: 'none', lg: 'flex' }} />}
 
             {/* Drawer para a sidebar no mobile */}
             <Drawer.Root open={open} placement="start">

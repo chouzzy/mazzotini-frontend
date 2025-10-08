@@ -1,3 +1,4 @@
+// src\app\providers.tsx
 "use client"
 
 import system from "@/theme"
@@ -5,7 +6,7 @@ import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
 import { ThemeProvider } from "next-themes"
 import { ColorModeProvider } from "./components/ui/color-mode"
 import { Auth0ProviderWithHistory } from "./components/providers/Auth0ProviderWithHistory"
-import { ProfileCompletionGuard } from "./components/auth/ProfileCompletionGuard"
+// import { ProfileCompletionGuard } from "./components/auth/ProfileCompletionGuard"
 
 
 export default function RootLayout(props: { children: React.ReactNode }) {
