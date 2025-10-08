@@ -1,9 +1,12 @@
 // src/components/auth/AuthenticationGuard.tsx
 'use client';
 
+import { Toaster, toaster } from '@/components/ui/toaster';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Flex, Spinner, Heading, Text, VStack, Icon, Button } from '@chakra-ui/react';
-import { PiEnvelope, PiSignIn } from 'react-icons/pi';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { PiEnvelope, PiPaperPlaneTilt, PiSignIn } from 'react-icons/pi';
 
 // ============================================================================
 //   SUB-COMPONENTE: Ecrã de Carregamento
@@ -38,21 +41,89 @@ function LoginScreen() {
     );
 }
 
+
 // ============================================================================
-//   SUB-COMPONENTE: Ecrã de Verificação de E-mail
+//  SUB-COMPONENTE: Ecrã de Verificação de E-mail (AGORA INTELIGENTE)
 // ============================================================================
 function VerifyEmailScreen() {
+    const { getAccessTokenSilently, user } = useAuth0();
+    const [isLoading, setIsLoading] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (cooldown > 0) {
+            timer = setTimeout(() => {
+                setCooldown(cooldown - 1);
+            }, 1000);
+        } else if (cooldown === 0) {
+            // Recarrega a página quando o cooldown chega a zero
+            window.location.reload();
+        }
+        return () => clearTimeout(timer);
+    }, [cooldown]);
+
+    const handleResendEmail = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
+            });
+
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/resend-verification`,
+                {}, // Corpo vazio
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            toaster.create({
+                title: "E-mail Reenviado!",
+                description: `Enviamos um novo link de verificação para ${user?.email}.`,
+                type: "success",
+            });
+            // Inicia o cooldown de 30 segundos
+            setCooldown(30);
+
+        } catch (error) {
+            console.error("Erro ao reenviar e-mail:", error);
+            toaster.create({
+                title: "Erro",
+                description: "Não foi possível reenviar o e-mail. Tente novamente mais tarde.",
+                type: "error",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
     return (
         <Flex w="100%" flex={1} justify="center" align="center" color="white" p={4}>
+            <Toaster />
             <VStack gap={6} p={10} bg="gray.800" borderRadius="lg" boxShadow="lg" textAlign="center">
-                <Icon as={PiEnvelope} boxSize={16} color="blue.400" />
+                <Icon as={PiEnvelope} boxSize={16} color="brand.500" />
                 <Heading size="lg">Verifique o seu E-mail</Heading>
                 <Text maxW="md">
-                    Enviámos um link de verificação para o seu endereço de e-mail. Por favor, clique no link para ativar a sua conta e poder aceder ao sistema.
+                    Enviámos um link de verificação para o seu endereço de e-mail. Por favor, clique no link para ativar a sua conta.
                 </Text>
-                <Text fontSize="sm" color="gray.400" pt={4}>
-                    Não recebeu o e-mail? Verifique a sua pasta de spam.
+                <Text fontSize="sm" color="gray.400" pt={2}>
+                    Não recebeu o e-mail? Verifique a sua pasta de spam ou clique abaixo.
                 </Text>
+                <Button
+                    mt={4}
+                    color='white'
+                    onClick={handleResendEmail}
+                    loading={isLoading}
+                    disabled={cooldown > 0} // Desativa o botão durante o cooldown
+                    loadingText="A enviar..."
+                    gap={2}
+                    border={'1px solid'}
+                    borderColor={'brand.600'}
+                    bgColor={'gray.900'}
+                    _hover={{ bgColor: 'brand.600' }}
+                >
+                    <Icon as={PiPaperPlaneTilt} />
+                    {cooldown > 0 ? `Aguarde (${cooldown}s)` : 'Enviar Novamente'}
+                </Button>
             </VStack>
         </Flex>
     );
