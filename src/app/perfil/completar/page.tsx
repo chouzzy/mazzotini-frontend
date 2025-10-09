@@ -159,7 +159,7 @@ export default function CompleteProfilePage() {
                 <Flex flexDir={'column'} maxW="breakpoint-md" w='100%' gap={8}>
                     <VStack align="start" w="100%">
                         <Heading as="h1" size="xl">Complete o seu Perfil</Heading>
-                        <Text color="gray.400">Para aceder à plataforma, por favor, preencha as suas informações cadastrais.</Text>
+                        <Text color="gray.400">Para acessar à plataforma, por favor, preencha as suas informações cadastrais.</Text>
                     </VStack>
 
                     <Flex w='100%' flexDir='column' gap={4}>

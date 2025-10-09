@@ -45,7 +45,7 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
                 <VStack gap={4} bg="red.900" p={8} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Acesso Negado</Heading>
-                    <Text>Apenas administradores podem aceder a esta página.</Text>
+                    <Text>Apenas administradores podem acessar a esta página.</Text>
                 </VStack>
             </Flex>
         );
@@ -112,13 +112,13 @@ export default function UserManagementPage() {
                     {!users || users.length === 0 ? (
                         <EmptyState title="Nenhum Usuário Encontrado" description="Não há outros usuários no sistema para gerir." buttonHref='#' />
                     ) : (
-                        <Table.Root variant={'none'} size={'md'}>
+                        <Table.Root variant={'outline'} size={'md'}>
                             <Table.Header >
                                 <Table.Row fontSize={'xl'}>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} py={8}>Usuário</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} py={8}>Roles</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} py={8}>Último Login</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} py={8}>Ações</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Usuário</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Roles</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Último Login</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Ações</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body alignItems={'center'} justifyContent={'center'}>

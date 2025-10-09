@@ -149,7 +149,7 @@ export default function CreateAssetPage() {
     }
 
     if (!isAuthenticated) {
-        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Por favor, faça login para aceder a esta página.</Text></Flex>;
+        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Por favor, faça login para acessar a esta página.</Text></Flex>;
     }
 
     return (
