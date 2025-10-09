@@ -55,7 +55,7 @@
 //         );
 //     }
     
-//     // Se o perfil ESTIVER completo, mostra o conteúdo da página que o utilizador tentou aceder.
+//     // Se o perfil ESTIVER completo, mostra o conteúdo da página que o utilizador tentou acessar.
 //     if (userProfile?.profileCompleted) {
 //         return <>{children}</>;
 //     }
