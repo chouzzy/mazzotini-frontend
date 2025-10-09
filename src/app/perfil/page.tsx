@@ -82,6 +82,8 @@ export default function ProfilePage() {
                             cursor="pointer"
                             border={'1px solid'}
                             borderColor={'brand.600'}
+                            bgColor={'bodyBg'}
+                            color={'textPrimary'}
                         >
                             <Avatar.Fallback name={userProfile.name} />
                             <Avatar.Image src={userProfile.picture} alt={userProfile.name} />
@@ -99,11 +101,11 @@ export default function ProfilePage() {
                     </Link>
                 </Flex>
 
-                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4}>
-                    <Card.Root variant="outline" bg="gray.900">
+                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4} >
+                    <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Dados Pessoais</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3}>
+                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
                                 <ProfileField label="CPF/CNPJ" value={userProfile.cpfOrCnpj} icon={PiIdentificationCard}/>
                                 <ProfileField label="Nacionalidade" value={userProfile.nationality} icon={PiGlobe} />
                                 <ProfileField label="Estado Civil" value={userProfile.maritalStatus} icon={PiHeart} />
@@ -111,20 +113,20 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root variant="outline" bg="gray.900">
+                    <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Informações de Contato</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3}>
+                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
                                 <ProfileField label="Celular" value={userProfile.cellPhone} icon={PiPhone} />
                                 <ProfileField label="Telefone Fixo" value={userProfile.phone} icon={PiPhone} />
                             </VStack>
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root variant="outline" bg="gray.900" gridColumn={{ lg: 'span 2' }}>
+                    <Card.Root variant="subtle" bg="gray.900" gridColumn={{ lg: 'span 2' }}>
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Endereço</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3}>
+                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
                                 <ProfileField label="Endereço Completo" value={userProfile.address} icon={PiMapPin} />
                             </VStack>
                         </Card.Body>
