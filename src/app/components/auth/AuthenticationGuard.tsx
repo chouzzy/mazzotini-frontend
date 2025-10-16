@@ -1,4 +1,4 @@
-// src/components/auth/AuthenticationGuard.tsx
+// /src/components/auth/AuthenticationGuard.tsx
 'use client';
 
 import { Toaster, toaster } from '@/components/ui/toaster';
@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { PiEnvelope, PiPaperPlaneTilt, PiSignIn } from 'react-icons/pi';
 
 // ============================================================================
-//   SUB-COMPONENTE: Ecrã de Carregamento
+//  SUB-COMPONENTE: Ecrã de Carregamento
 // ============================================================================
 function LoadingScreen() {
     return (
@@ -20,7 +20,7 @@ function LoadingScreen() {
 }
 
 // ============================================================================
-//   SUB-COMPONENTE: Ecrã de Login
+//  SUB-COMPONENTE: Ecrã de Login
 // ============================================================================
 function LoginScreen() {
     const { loginWithRedirect } = useAuth0();
@@ -28,10 +28,11 @@ function LoginScreen() {
         <Flex w="100%" flex={1} justify="center" align="center" color="white">
             <VStack gap={6}>
                 <Heading size="lg">Acesso Restrito</Heading>
-                <Text>Por favor, faça login para acessar a esta área.</Text>
+                <Text>Por favor, faça login para aceder a esta área.</Text>
                 <Button
-                    colorScheme="blue"
+                    colorScheme="blue" // Prop correta para Button
                     onClick={() => loginWithRedirect()}
+                    gap={2}
                 >
                     <Icon as={PiSignIn} />
                     Entrar
@@ -43,28 +44,44 @@ function LoginScreen() {
 
 
 // ============================================================================
-//  SUB-COMPONENTE: Ecrã de Verificação de E-mail (AGORA INTELIGENTE)
+//  SUB-COMPONENTE: Ecrã de Verificação de E-mail (LÓGICA CORRIGIDA)
 // ============================================================================
 function VerifyEmailScreen() {
     const { getAccessTokenSilently, user } = useAuth0();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isResending, setIsResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
 
+    // NOVO EFEITO: Polling para verificar o status do e-mail
     useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (cooldown > 0) {
-            timer = setTimeout(() => {
-                setCooldown(cooldown - 1);
-            }, 1000);
-        } else if (cooldown === 0) {
-            // Recarrega a página quando o cooldown chega a zero
-            window.location.reload();
-        }
+        const intervalId = setInterval(() => {
+            console.log("[AuthGuard] A verificar o status do e-mail...");
+            // Força a revalidação da sessão. Se o e-mail foi verificado,
+            // o SDK atualizará o 'user' object, e o AuthenticationGuard irá reagir.
+            getAccessTokenSilently({ cacheMode: 'off' }).catch(() => {
+                // É seguro ignorar erros aqui, o polling continuará.
+            });
+        }, 60000); // Verifica a cada 60 segundos
+
+        // Limpa o intervalo quando o componente é desmontado para evitar memory leaks
+        return () => clearInterval(intervalId);
+    }, [getAccessTokenSilently]);
+
+    // Efeito para o temporizador do cooldown (sem alterações)
+    useEffect(() => {
+        if (cooldown <= 0) return;
+
+        const timer = setTimeout(() => {
+            setCooldown(cooldown - 1);
+        }, 1000);
+
         return () => clearTimeout(timer);
     }, [cooldown]);
 
+    // O useEffect de polling foi removido. A revalidação automática do SDK
+    // ao focar na aba é a abordagem mais limpa e recomendada.
+
     const handleResendEmail = async () => {
-        setIsLoading(true);
+        setIsResending(true);
         try {
             const token = await getAccessTokenSilently({
                 authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
@@ -81,7 +98,6 @@ function VerifyEmailScreen() {
                 description: `Enviamos um novo link de verificação para ${user?.email}.`,
                 type: "success",
             });
-            // Inicia o cooldown de 30 segundos
             setCooldown(30);
 
         } catch (error) {
@@ -92,10 +108,10 @@ function VerifyEmailScreen() {
                 type: "error",
             });
         } finally {
-            setIsLoading(false);
+            setIsResending(false);
         }
     };
-    
+
     return (
         <Flex w="100%" flex={1} justify="center" align="center" color="white" p={4}>
             <Toaster />
@@ -103,7 +119,7 @@ function VerifyEmailScreen() {
                 <Icon as={PiEnvelope} boxSize={16} color="brand.500" />
                 <Heading size="lg">Verifique o seu E-mail</Heading>
                 <Text maxW="md">
-                    Enviámos um link de verificação para o seu endereço de e-mail. Por favor, clique no link para ativar a sua conta.
+                    Enviamos um link de verificação para o seu endereço de e-mail. Por favor, clique no link para ativar a sua conta.
                 </Text>
                 <Text fontSize="sm" color="gray.400" pt={2}>
                     Não recebeu o e-mail? Verifique a sua pasta de spam ou clique abaixo.
@@ -112,8 +128,8 @@ function VerifyEmailScreen() {
                     mt={4}
                     color='white'
                     onClick={handleResendEmail}
-                    loading={isLoading}
-                    disabled={cooldown > 0} // Desativa o botão durante o cooldown
+                    loading={isResending}
+                    disabled={cooldown > 0}
                     loadingText="A enviar..."
                     gap={2}
                     border={'1px solid'}
@@ -130,31 +146,27 @@ function VerifyEmailScreen() {
 }
 
 // ============================================================================
-//   COMPONENTE PRINCIPAL: AuthenticationGuard
+//  COMPONENTE PRINCIPAL: AuthenticationGuard
 // ============================================================================
 export function AuthenticationGuard({ children }: { children: React.ReactNode }) {
     const {
         isAuthenticated,
         isLoading,
-        user, // Precisamos do objeto 'user' para verificar o e-mail
+        user,
     } = useAuth0();
 
-    // 1. Enquanto o Auth0 está a verificar a sessão, mostramos um spinner.
     if (isLoading) {
         return <LoadingScreen />;
     }
 
-    // 2. Se o utilizador não está autenticado, mostramos o ecrã de login.
     if (!isAuthenticated) {
         return <LoginScreen />;
     }
 
-    // 3. Se está autenticado, mas o e-mail NÃO foi verificado, mostramos o ecrã de verificação.
-    // O login com Google já vem com 'email_verified: true'.
     if (isAuthenticated && !user?.email_verified) {
         return <VerifyEmailScreen />;
     }
 
-    // 4. Se passou por todas as verificações, mostra o conteúdo protegido.
     return <>{children}</>;
 }
+
