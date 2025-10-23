@@ -62,7 +62,7 @@ export default function DashboardPage() {
     }
 
     if (!assets || assets.length === 0) {
-        return <EmptyState 
+        return <EmptyState
             title="Nenhum Ativo na Sua Carteira"
             description="Você ainda não possui nenhum ativo de crédito. Quando um ativo for associado a si, ele aparecerá aqui."
             buttonLabel="Contactar Suporte" // Um call-to-action mais apropriado para o investidor
@@ -73,19 +73,25 @@ export default function DashboardPage() {
     return (
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
-                <Box>
+                {/* <Box>
                     <Heading as="h1" size="xl">
                         Meus Ativos
                     </Heading>
                     <Text color="gray.400" mt={2}>
                         Acompanhe em tempo real a performance da sua carteira de créditos.
                     </Text>
-                </Box>
+                    </Box> */}
 
-                <DashboardSummary assets={assets} />
+                {/* <DashboardSummary assets={assets} /> */}
 
                 <Box>
-                    <Heading as="h2" size="lg" mb={6}>Lista de Ativos</Heading>
+                    <Flex flexDir={'column'} mb={6}>
+                        <Heading as="h1" size="lg">Meus Processos</Heading>
+                        <Text color="gray.400" mt={2}>
+                            Acompanhe em tempo real a performance da sua carteira de processos.
+                        </Text>
+                    </Flex>
+
                     <AssetsToolbar
                         assets={assets}
                         viewMode={viewMode}
@@ -106,7 +112,7 @@ export default function DashboardPage() {
                         )
                     ) : (
                         <Flex justify="center" p={10} bg="gray.900" borderRadius="md">
-                            <Text>Nenhum ativo encontrado com os filtros aplicados.</Text>
+                            <Text>Nenhum processo encontrado com os filtros aplicados.</Text>
                         </Flex>
                     )}
                 </Box>

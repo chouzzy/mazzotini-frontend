@@ -80,34 +80,29 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                     {/* Credor Original */}
                     <HStack color="gray.400">
                         <Icon as={PiBank} />
-                        <Text color='textPrimary' fontSize="sm">Credor Original: {asset.originalCreditor}</Text>
+                        <Text color='textPrimary' fontSize="sm">Parte(s) Contrária(s): {asset.originalCreditor}</Text>
                     </HStack>
 
                     {/* Grid de Stats */}
-                    <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} pt={4}>
+                    <SimpleGrid columns={{ base: 1, md: 2}} gap={4} pt={4}>
                         <Stat.Root>
-                            <Stat.Label color="gray.400">Valor Investido</Stat.Label>
+                            <Stat.Label color="gray.400">Custo de Aquisição</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.investedValue)}</Stat.ValueText>
                         </Stat.Root>
                         <Stat.Root>
-                            <Stat.Label color="gray.400">Saldo Atual</Stat.Label>
+                            <Stat.Label color="gray.400">Estimativa Atual do Crédito</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.currentValue)}</Stat.ValueText>
                             <StatHelpText display="flex" alignItems="center" color={yieldValue >= 0 ? 'green.600' : 'red.600'}>
                                 <Icon as={PiChartLineUp} color="green.400" mr={1} />
                                 {formatCurrency(yieldValue)} ({yieldPercentage.toFixed(2)}%)
                             </StatHelpText>
                         </Stat.Root>
-                        <Stat.Root>
-                            <Stat.Label color="gray.400">Sua Participação</Stat.Label>
-                            <Stat.ValueText color={'textPrimary'}>{asset.investorShare.toFixed(2)}%</Stat.ValueText>
-                            <StatHelpText>{asset.updateIndexType}</StatHelpText>
-                        </Stat.Root>
                     </SimpleGrid>
 
                     {/* Rodapé */}
                     <HStack color="gray.500" pt={4} borderTop="1px" borderColor="gray.700">
                         <Icon as={PiCalendarBlank} />
-                        <Text fontSize="xs">Adquirido em: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
+                        <Text fontSize="xs">Posição Credora em: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
                     </HStack>
                 </VStack>
             </Box>

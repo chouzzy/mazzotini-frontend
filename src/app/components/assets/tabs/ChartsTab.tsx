@@ -4,7 +4,7 @@
 import { Box, Heading, VStack } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 
 interface TabProps {
     asset: DetailedCreditAsset;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Tabs } from '@chakra-ui/react';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { OverviewTab } from './tabs/OverviewTab';
 import { UpdatesTab } from './tabs/UpdatesTab';
 import { ChartsTab } from './tabs/ChartsTab';

@@ -1,33 +1,51 @@
-// src/components/layout/Header.tsx
+// /src/components/layout/Header.tsx
 'use client';
 
 // ============================================================================
-//   IMPORTS
+//  IMPORTS
 // ============================================================================
 
-// --- React e Frameworks ---
 import {
     Flex,
     Link as ChakraLink,
-    // Componentes para o Menu do Usuário
     Avatar,
     Menu,
     Portal,
     Button,
-    Text, // Adicionado para o menu
-    Icon, // Adicionado para o menu
+    Text,
+    Icon,
+    SkeletonCircle, // Adicionado para o estado de carregamento
 } from "@chakra-ui/react";
-import { useAuth0 } from '@auth0/auth0-react'; // Hook do Auth0
-
-// --- Componentes e Dados Locais ---
+import { useAuth0 } from '@auth0/auth0-react';
 import { whatsappLink } from "@/utils";
 import { PiSignOut } from "react-icons/pi";
 import { MotionButton } from "../ui/MotionButton";
+import { useApi } from "@/hooks/useApi"; // Importa o nosso hook de API
 
+// Tipagem para os dados do perfil que vêm do nosso endpoint /api/users/me
+interface MazzotiniUser {
+  name: string;
+  email: string;
+  profilePictureUrl?: string;
+}
 
 export function UserAvatar() {
-    const { isAuthenticated, user, logout } = useAuth0();
+    const { isAuthenticated, user: auth0User, logout } = useAuth0();
+    
+    // Abordagem Sénior: Buscamos o perfil do *nosso* backend para ter a foto atualizada
+    const { data: userProfile, isLoading: isProfileLoading } = useApi<MazzotiniUser>(
+        isAuthenticated ? '/api/users/me' : null
+    );
 
+    // 1. Enquanto o perfil está a ser carregado, mostramos um Skeleton
+    if (isProfileLoading) {
+        return <SkeletonCircle size="10" />; // "10" é o tamanho 'md' do Avatar
+    }
+
+    // 2. Determina qual foto de perfil e nome usar, com prioridade para os dados do nosso DB
+    const profilePicture = userProfile?.profilePictureUrl || auth0User?.picture;
+    const profileName = userProfile?.name || auth0User?.name;
+    
     return (
         <>
             {
@@ -37,23 +55,24 @@ export function UserAvatar() {
                             <Button h="auto" p="0" borderRadius="full" border="2px solid"
                                 borderColor="brand.500"
                             >
-                                {/* A MUDANÇA: Usando a nova sintaxe do Avatar do Chakra UI v3 */}
                                 <Avatar.Root
                                     size="md"
                                     cursor="pointer"
                                 >
-                                    <Avatar.Fallback name={user?.name} />
-                                    <Avatar.Image src={user?.picture} alt={user?.name} />
+                                    <Avatar.Fallback name={profileName} />
+                                    {/* 3. Usa a foto de perfil correta */}
+                                    <Avatar.Image src={profilePicture} alt={profileName} />
                                 </Avatar.Root>
                             </Button>
                         </Menu.Trigger>
                         <Portal>
                             <Menu.Positioner>
                                 <Menu.Content>
-                                    <Menu.Item value="profile" onClick={() => { window.location.href = '/minha-conta' }} cursor='pointer'>
+                                    <Menu.Item value="profile" onClick={() => { window.location.href = '/perfil' }} cursor='pointer'>
                                         <Flex direction="column">
-                                            <Text fontWeight="bold">{user?.name}</Text>
-                                            <Text fontSize="sm" color="gray.500">{user?.email}</Text>
+                                            {/* 4. Usa o nome correto */}
+                                            <Text fontWeight="bold">{profileName}</Text>
+                                            <Text fontSize="sm" color="gray.500">{auth0User?.email}</Text>
                                         </Flex>
                                     </Menu.Item>
                                     <Menu.Separator />
@@ -75,7 +94,8 @@ export function UserAvatar() {
                     <ChakraLink href={whatsappLink()} _hover={{ textDecoration: 'none' }} target="_blank">
                         <MotionButton />
                     </ChakraLink>
-                )}
+                )
+            }
         </>
     )
 }

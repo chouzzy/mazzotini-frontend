@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { PiClockClockwise, PiCaretDown } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { extractFreeText } from '@/utils';
 
 const formatCurrency = (value: number) => {

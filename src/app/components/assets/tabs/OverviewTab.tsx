@@ -11,7 +11,7 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { PiUser, PiClockClockwise, PiFilePdf } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { extractFreeText } from '@/utils';
 
 // DADOS MOCKADOS (importados ou definidos para fallback)
@@ -52,9 +52,10 @@ export function OverviewTab({ asset }: TabProps) {
             {/* Card de Detalhes da Aquisição */}
             <Card.Root  bg="gray.900">
                 <Card.Body>
-                    <Card.Title color={'brand.600'}>Detalhes da Aquisição</Card.Title>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Original:</strong> {asset.originalCreditor}</Text>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Data de Aquisição:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
+                    <Card.Title color={'brand.600'}>Detalhes do Processo</Card.Title>
+                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text>
+                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Parte(s) Contrária(s)/Executado(s):</strong> {asset.lawyerResponsible}</Text>
+                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
                 </Card.Body>
             </Card.Root>
@@ -63,9 +64,6 @@ export function OverviewTab({ asset }: TabProps) {
             <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
-                    {asset.investors.map(inv => (
-                        <Text key={inv.user.name}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Investidor:</strong> {inv.user.name} ({inv.investorShare}%)</Text>
-                    ))}
                     {asset.associate && <Text mt={2}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Associado:</strong> {asset.associate.name}</Text>}
                 </Card.Body>
             </Card.Root>
@@ -77,7 +75,7 @@ export function OverviewTab({ asset }: TabProps) {
                     {lastUpdate ? (
                         <VStack align="stretch" mt={4} gap={2}>
                             <Flex justify="space-between" align="center">
-                                <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} />Atualização de crédito: {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}</Text>
+                                <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} /> {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}</Text>
                                 {!lastUpdate.read && <Badge colorScheme="blue">Novo</Badge>}
                             </Flex>
                             <Text fontSize="sm" color="gray.400">
