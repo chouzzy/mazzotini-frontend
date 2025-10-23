@@ -12,7 +12,7 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -107,7 +107,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             loading={isSyncing}
             loadingText="A Sincronizar"
             colorScheme="blue"
-            
+
           >
             <PiArrowsClockwise />
             Sincronizar Andamentos
@@ -120,15 +120,15 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
 
       <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
         <Stat.Root bg="gray.900" p={5} borderRadius="md">
-          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiWallet} /> Valor Atual</Stat.Label>
+          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiWallet} /> Estimativa Atual do Crédito</Stat.Label>
           <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
         </Stat.Root>
         <Stat.Root bg="gray.900" p={5} borderRadius="md">
-          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiScales} /> Valor de Aquisição</Stat.Label>
+          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiScales} /> Custo de Aquisição</Stat.Label>
           <Stat.ValueText fontSize="2xl">{formatCurrency(asset.acquisitionValue)}</Stat.ValueText>
         </Stat.Root>
         <Stat.Root bg="gray.900" p={5} borderRadius="md">
-          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} /> Valor Original</Stat.Label>
+          <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} /> Valor Crédito na Data da Cessão</Stat.Label>
           <Stat.ValueText fontSize="2xl">{formatCurrency(asset.originalValue)}</Stat.ValueText>
         </Stat.Root>
       </SimpleGrid>

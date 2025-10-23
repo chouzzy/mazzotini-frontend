@@ -29,7 +29,12 @@ const config = defineConfig({
                                     800: { value: "#847946" },
                                     900: { value: "#6A6232" },
                                 },
-                                wave: { value: "#ccb98c" }
+                                wave: { value: "#ccb98c" },
+                                facebook: { value: "#1877F2" },
+                                twitter: { value: "#1DA1F2" },
+                                instagram: { value: "#E4405F" },
+                                linkedin: { value: "#0077B5" },
+                                whatsapp: { value: "#25D366" },
                 // Cores padrão 'gray', 'blue', etc., vêm do defaultConfig
             },
             // fonts: { heading: { value: ... }, body: { value: ... } },

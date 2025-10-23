@@ -1,4 +1,4 @@
-// /src/app/perfil/completar/page.tsx
+// /src/app/perfil/editar/page.tsx
 'use client';
 
 import {
@@ -22,18 +22,20 @@ import {
     RadioGroup,
     Avatar,
     CheckboxGroup,
-    FileUpload
+    FileUpload,
+    Link
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiEnvelope, PiFloppyDisk, PiLetterCircleHDuotone, PiUploadSimple, PiWhatsappLogoDuotone } from "react-icons/pi";
+import { PiCaretDownDuotone, PiDownloadDuotone, PiEnvelope, PiFloppyDisk, PiLetterCircleHDuotone, PiUploadSimple, PiWhatsappLogoDuotone } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask, maskCEP } from "@/utils/masks";
 import { useSWRConfig } from "swr";
 import { useApi } from "@/hooks/useApi";
+import { UserProfile } from "@/types";
 
 // Tipagem expandida para todos os novos campos
 interface OnboardingFormData {
@@ -117,9 +119,10 @@ interface AddressBlockProps {
     watch: (name: any) => any;
     setValue: UseFormSetValue<OnboardingFormData>;
     isDisabled?: boolean;
+    userProfile?: UserProfile;
 }
 
-function AddressBlock({ type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
+function AddressBlock({ userProfile, type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
     const [isCepLoading, setIsCepLoading] = useState(false);
     const cepValue = watch(`${type}Cep` as const);
 
@@ -164,29 +167,29 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
                     <Field.Label>Estado</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}State`, { required: isRequired })} readOnly />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialState : userProfile?.commercialState} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}State`, { required: isRequired })} readOnly />
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}City`]} required={isRequired}>
                     <Field.Label>Cidade</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}City`, { required: isRequired })} readOnly />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialCity : userProfile?.commercialCity} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}City`, { required: isRequired })} readOnly />
                 </Field.Root>
             </SimpleGrid>
             <Field.Root invalid={!!errors[`${type}Street`]} required={isRequired}>
                 <Field.Label>Rua / Logradouro</Field.Label>
-                <Input disabled bgColor={'gray.700'} {...register(`${type}Street`, { required: isRequired })} readOnly />
+                <Input defaultValue={type === 'residential' ? userProfile?.residentialStreet : userProfile?.commercialStreet} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Street`, { required: isRequired })} readOnly />
             </Field.Root>
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
                     <Field.Label>Número</Field.Label>
-                    <Input disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Number`, { required: isRequired ? "O número é obrigatório" : false })} />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialNumber : userProfile?.commercialNumber} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Number`, { required: isRequired ? "O número é obrigatório" : false })} />
                 </Field.Root>
                 <Field.Root>
                     <Field.Label>Complemento</Field.Label>
-                    <Input disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Complement`)} />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialComplement : userProfile?.commercialComplement} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Complement`)} />
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}Neighborhood`]} required={isRequired}>
                     <Field.Label>Bairro</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}Neighborhood`, { required: isRequired })} readOnly />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialNeighborhood : userProfile?.commercialNeighborhood} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Neighborhood`, { required: isRequired })} readOnly />
                 </Field.Root>
             </SimpleGrid>
         </VStack>
@@ -211,6 +214,8 @@ export default function CompleteProfilePage() {
     });
     const router = useRouter();
     const { mutate } = useSWRConfig();
+
+    const { data: userProfile, isLoading, error } = useApi<UserProfile>('/api/users/me');
 
     // Observa os campos necessários para a lógica da UI
     const useCommercialAddress = watch('useCommercialAddress');
@@ -323,28 +328,28 @@ export default function CompleteProfilePage() {
     };
 
     return (
-        <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
+        <Flex w="100%" p={2} bgColor={'bodyBg'} borderRadius="md" flexDir="column" justify="center" align="center" mx='auto'>
             <Toaster />
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
-                        <Heading as="h1" size="xl">Complete o seu Perfil</Heading>
+                        <Heading as="h1" size="xl">Edite o seu Perfil</Heading>
                         <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipe.</Text>
                     </VStack>
 
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
-                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
+                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
-                            <Avatar.Root size={'2xl'} my={8}>
+                            <Avatar.Root boxSize={52} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
-                                <Avatar.Image src={profilePicturePreview || ''} />
+                                <Avatar.Image src={userProfile?.profilePictureUrl || profilePicturePreview} />
                             </Avatar.Root>
                             {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
-                                <FileUpload.HiddenInput  />
+                                <FileUpload.HiddenInput />
                                 <FileUpload.Trigger asChild>
-                                    <Button cursor="pointer" bgColor={'gray.100'} color={'black'} _hover={{bgColor:'brand.600', color:'white'}} size="sm">
+                                    <Button cursor="pointer" bgColor={'gray.100'} color={'black'} _hover={{ bgColor: 'brand.600', color: 'white' }} size="sm">
                                         Subir foto
                                     </Button>
                                 </FileUpload.Trigger>
@@ -357,10 +362,10 @@ export default function CompleteProfilePage() {
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>Nome Completo</Field.Label>
-                            <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
+                            <Input defaultValue={userProfile?.name} bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                            <Field.Root invalid={!!errors.cpfOrCnpj} required>
+                                    <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
@@ -368,23 +373,23 @@ export default function CompleteProfilePage() {
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
                                 <Field.Label>RG</Field.Label>
-                                <Input bgColor={'gray.700'} {...register("rg")} />
+                                <Input  bgColor={'gray.700'} {...register("rg")}  />
                             </Field.Root>
                             <Field.Root invalid={!!errors.birthDate}>
                                 <Field.Label>Data de Nascimento</Field.Label>
-                                <Input type="date" bgColor={'gray.700'} {...register("birthDate")} />
+                                <Input type="date" defaultValue={userProfile?.birthDate} bgColor={'gray.700'} {...register("birthDate")} />
                             </Field.Root>
                         </SimpleGrid>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.profession}>
                                 <Field.Label>Profissão</Field.Label>
-                                <Input bgColor={'gray.700'} {...register("profession")} />
+                                <Input defaultValue={userProfile?.profession} bgColor={'gray.700'} {...register("profession")} />
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Nacionalidade</Field.Label>
                                 <Controller name="nationality" control={control} render={({ field }) => (
                                     <Select.Root collection={nacionalidadesCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText /></Select.Trigger></Select.Control>
+                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText defaultValue={userProfile?.nationality} /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{nacionalidadesCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
@@ -393,7 +398,7 @@ export default function CompleteProfilePage() {
                                 <Field.Label>Estado Civil</Field.Label>
                                 <Controller name="maritalStatus" control={control} render={({ field }) => (
                                     <Select.Root collection={estadoCivilCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
+                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText defaultValue={userProfile?.maritalStatus} placeholder="Selecione..." /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{estadoCivilCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
@@ -420,7 +425,7 @@ export default function CompleteProfilePage() {
                         </SimpleGrid>
                         <Field.Root>
                             <Field.Label>E-mail para Informações (Opcional)</Field.Label>
-                            <Input type="email" bgColor={'gray.700'} {...register("infoEmail")} />
+                            <Input defaultValue={userProfile?.infoEmail} type="email" bgColor={'gray.700'} {...register("infoEmail")} />
                         </Field.Root>
                         <Fieldset.Root>
                             <CheckboxGroup
@@ -485,7 +490,7 @@ export default function CompleteProfilePage() {
                     {/* ENDEREÇO RESIDENCIAL */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Residencial</Heading>
-                        <AddressBlock type="residential" {...{ control, register, errors, watch, setValue }} />
+                        <AddressBlock userProfile={userProfile} type="residential" {...{ control, register, errors, watch, setValue }} />
                     </VStack>
 
                     {/* ENDEREÇO COMERCIAL */}
@@ -550,6 +555,16 @@ export default function CompleteProfilePage() {
                                 <FileUpload.List /> {/* Lista os ficheiros automaticamente */}
                             </FileUpload.Root>
                         </Field.Root>
+                        <Flex gap={2} flexWrap="wrap">
+
+                            {userProfile?.personalDocumentUrls?.map((url, index) => (
+
+                                <Link key={index} href={url} target='_blank' color="brand.600">
+                                    <Button bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.900', color: 'white' }}><PiDownloadDuotone /> {decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Documento ${index + 1}`)}</Button>
+                                </Link>
+
+                            ))}
+                        </Flex>
                         {/* O VStack abaixo não é mais necessário, pois o FileUpload.List faz isso */}
                     </VStack>
 

@@ -1,4 +1,4 @@
-// /src/app/gestao/usuários/page.tsx
+// /src/app/gestao/utilizadores/page.tsx
 'use client';
 
 import {
@@ -24,12 +24,13 @@ import { useState } from 'react';
 import { EditUserModal } from '@/app/components/management/EditUserModal';
 import { InviteUserDialog } from '@/app/components/management/InviteUserDialog';
 
-// Tipagem para os dados do utilizador
+// Tipagem para os dados do utilizador (ATUALIZADA)
 interface UserManagementInfo {
     auth0UserId: string;
     email: string;
     name: string;
-    picture: string;
+    picture: string; // Foto do Auth0 (fallback)
+    profilePictureUrl?: string | null; // Foto do nosso DB (prioridade)
     lastLogin?: string;
     roles: string[];
 }
@@ -45,7 +46,7 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
                 <VStack gap={4} bg="red.900" p={8} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Acesso Negado</Heading>
-                    <Text>Apenas administradores podem acessar a esta página.</Text>
+                    <Text>Apenas administradores podem aceder a esta página.</Text>
                 </VStack>
             </Flex>
         );
@@ -56,7 +57,9 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
 
 
 export default function UserManagementPage() {
+    // A API /api/management/users já foi atualizada (no UseCase) para enviar os novos campos
     const { data: users, isLoading, error, mutate } = useApi<UserManagementInfo[]>('/api/management/users');
+    console.log('UserManagementPage: users = ', users);
 
     // Controles para os dois dialogs
     const { open: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
@@ -74,7 +77,7 @@ export default function UserManagementPage() {
             <Flex w="100%" flex={1} justify="center" align="center">
                 <VStack gap={4}>
                     <Spinner size="xl" color="blue.500" />
-                    <Text>A carregar a lista de usuários...</Text>
+                    <Text>A carregar a lista de utilizadores...</Text>
                 </VStack>
             </Flex>
         );
@@ -86,7 +89,7 @@ export default function UserManagementPage() {
                 <VStack gap={4} bg="red.900" p={8} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
-                    <Text>Não foi possível carregar os usuários. Verifique as suas permissões.</Text>
+                    <Text>Não foi possível carregar os utilizadores. Verifique as suas permissões.</Text>
                 </VStack>
             </Flex>
         );
@@ -98,24 +101,24 @@ export default function UserManagementPage() {
                 <VStack gap={8} align="stretch" w="100%">
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box>
-                            <Heading as="h1" size="xl">Gestão de Usuários</Heading>
+                            <Heading as="h1" size="xl">Gestão de Utilizadores</Heading>
                             <Text color="gray.400" mt={2}>
-                                Convide novos usuários e gira as suas permissões.
+                                Convide novos utilizadores e gira as suas permissões.
                             </Text>
                         </Box>
                         <Button colorPalette={'cyan'} gap={2} onClick={onInviteOpen}>
                             <Icon as={PiUserPlus} boxSize={5} />
-                            Novo usuário
+                            Novo utilizador
                         </Button>
                     </Flex>
 
                     {!users || users.length === 0 ? (
-                        <EmptyState title="Nenhum Usuário Encontrado" description="Não há outros usuários no sistema para gerir." buttonHref='#' />
+                        <EmptyState title="Nenhum Utilizador Encontrado" description="Não há outros utilizadores no sistema para gerir." buttonHref='#' />
                     ) : (
                         <Table.Root variant={'outline'} size={'md'}>
                             <Table.Header >
                                 <Table.Row fontSize={'xl'}>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Usuário</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Utilizador</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Roles</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Último Login</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Ações</Table.ColumnHeader>
@@ -128,7 +131,8 @@ export default function UserManagementPage() {
                                             <Flex align="center" gap={3}>
                                                 <Avatar.Root size="sm" key={user.auth0UserId}>
                                                     <Avatar.Fallback name={user.name} />
-                                                    <Avatar.Image src={user.picture} />
+                                                    {/* CORREÇÃO AQUI: Dá prioridade à foto do nosso DB */}
+                                                    <Avatar.Image src={user.profilePictureUrl || user.picture} />
                                                 </Avatar.Root>
                                                 <VStack align="start" gap={0}>
                                                     <Text fontWeight="medium">{user.name}</Text>
@@ -149,7 +153,6 @@ export default function UserManagementPage() {
                                             {user.lastLogin ? new Date(user.lastLogin).toLocaleString('pt-BR') : 'Nunca'}
                                         </Table.Cell>
                                         <Table.Cell>
-                                            {/* 3. LIGAÇÃO DO BOTÃO AO MODAL */}
                                             <Button size="sm" variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }} gap={2} onClick={() => handleEditClick(user)}>
                                                 <Icon as={PiPencilSimple} />
                                                 Editar permissões

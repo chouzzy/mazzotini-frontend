@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { PiClockClockwise, PiFilePdf } from 'react-icons/pi';
 import NextLink from 'next/link';
-import { DetailedCreditAsset } from '@/app/ativos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);

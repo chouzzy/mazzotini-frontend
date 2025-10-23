@@ -57,7 +57,7 @@ function RecentAssetItem({ asset }: { asset: InvestorCreditAsset }) {
             <VStack align="start" gap={0}>
                 <Text fontWeight="bold">{asset.processNumber}</Text>
                 <Text fontSize="sm" color="gray.400">
-                    Adquirido em: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
+                    Data da Contratação: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
                 </Text>
             </VStack>
             <Link as={NextLink} href={`/ativos/${asset.processNumber}`} _hover={{ textDecoration: 'none' }}>
@@ -131,13 +131,13 @@ export function DashboardOverview() {
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} w="100%">
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
-                            <Icon as={PiWallet} /> Ativos na Carteira
+                            <Icon as={PiWallet} /> Total de Processos (numeral)
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl">{totalAssets}</Stat.ValueText>
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
-                            <Icon as={PiChartLineUp} /> Rendimento Acumulado
+                            <Icon as={PiChartLineUp} /> Processos Ativos (numeral)
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl" color="green.400">
                             {formatCurrency(totalYield)}
@@ -145,7 +145,7 @@ export function DashboardOverview() {
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
-                            <Icon as={PiArrowRight} /> Rentabilidade Média
+                            <Icon as={PiArrowRight} /> Processos Encerrados
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl">{yieldPercentage.toFixed(2)}%</Stat.ValueText>
                     </Stat.Root>
@@ -161,7 +161,7 @@ export function DashboardOverview() {
                         gap={4}
                         w="100%"
                     >
-                        <Heading size="lg">Ativos Adquiridos Recentemente</Heading>
+                        <Heading size="lg">Meus Processos</Heading>
                         {recentAssets && recentAssets.length > 0 ? (
                             <VStack w="100%" gap={3}>
                                 {recentAssets.map((asset) => (
@@ -179,13 +179,13 @@ export function DashboardOverview() {
                             <Link as={NextLink} href="/ativos" w="100%" _hover={{ textDecoration: 'none' }}>
                                 <Button w="100%" size="lg" gap={2}>
                                     <PiWallet />
-                                    Ver Todos os Ativos
+                                    Ver Todos os Processos
                                 </Button>
                             </Link>
                             <Link as={NextLink} href="/ativos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
                                 <Button w="100%" size="lg" gap={2}>
                                     <PiPlusCircle />
-                                    Registrar Novo Ativo
+                                    Registrar Novo Processo
                                 </Button>
                             </Link>
                             <Button as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>

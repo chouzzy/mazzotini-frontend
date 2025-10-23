@@ -1,4 +1,4 @@
-// /src/app/ativos/page.tsx
+// /src/app/processos/page.tsx
 'use client';
 
 import {
@@ -97,7 +97,7 @@ export default function OperatorAssetsPage() {
             title="Nenhum Ativo Registado"
             description="Ainda não há nenhum ativo de crédito no sistema. Comece por registar o primeiro."
             buttonLabel="Registar Primeiro Ativo"
-            buttonHref="/ativos/novo"
+            buttonHref="/processos/novo"
          />;
     }
 
@@ -111,7 +111,7 @@ export default function OperatorAssetsPage() {
                             Visualize, pesquise e gira todos os ativos de crédito da plataforma.
                         </Text>
                     </Box>
-                    <Link as={NextLink} href="/ativos/novo" _hover={{textDecoration: 'none'}}>
+                    <Link as={NextLink} href="/processos/novo" _hover={{textDecoration: 'none'}}>
                         <Button colorPalette="blue" gap={2}>
                             <Icon as={PiPlusCircle} boxSize={5} />
                             Registar Novo Ativo
@@ -135,13 +135,13 @@ export default function OperatorAssetsPage() {
                                     <Table.ColumnHeader>Nº do Processo</Table.ColumnHeader>
                                     <Table.ColumnHeader>Investidor Principal</Table.ColumnHeader>
                                     <Table.ColumnHeader>Credor Original</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Valor Atual</Table.ColumnHeader>
+                                    <Table.ColumnHeader>Estimativa Atual do Crédito</Table.ColumnHeader>
                                     <Table.ColumnHeader>Status</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
                                 {filteredAssets.map((asset) => (
-                                    <Table.Row key={asset.id} _hover={{ bg: 'gray.700', cursor: 'pointer' }} onClick={() => window.location.href = `/ativos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
+                                    <Table.Row key={asset.id} _hover={{ bg: 'gray.700', cursor: 'pointer' }} onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
                                         <Table.Cell fontWeight="medium">{asset.processNumber}</Table.Cell>
                                         <Table.Cell>{asset.mainInvestorName}</Table.Cell>
                                         <Table.Cell>{asset.originalCreditor}</Table.Cell>

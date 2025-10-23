@@ -104,13 +104,13 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
 
     // Adicionamos uma exceção para o link "pai"
     // Se o href for '/ativos' E a página atual for uma sub-página de detalhe...
-    if (href === '/ativos' && pathname.startsWith('/ativos/')) {
-        // ... então ativamos o link "Meus Ativos".
+    if (href === '/processos' && pathname.startsWith('/processos/')) {
+        // ... então ativamos o link "Meus processos".
         isActive = true;
     }
 
-    // Para evitar que os dois fiquem ativos, a página mais específica (novo) anula a do pai.
-    if (pathname.startsWith('/ativos/novo') && href === '/ativos') {
+    // Para evitar que os dois fiquem processos, a página mais específica (novo) anula a do pai.
+    if (pathname.startsWith('/processos/novo') && href === '/processos') {
         isActive = false;
     }
 
