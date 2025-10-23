@@ -343,7 +343,7 @@ export default function CompleteProfilePage() {
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
                             <Avatar.Root boxSize={52} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
-                                <Avatar.Image src={userProfile?.profilePictureUrl || profilePicturePreview} />
+                                {profilePicturePreview ? <Avatar.Image src={profilePicturePreview} /> : <Avatar.Image src={userProfile?.profilePictureUrl || user?.picture} />}
                             </Avatar.Root>
                             {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
