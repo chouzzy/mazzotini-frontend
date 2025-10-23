@@ -343,7 +343,9 @@ export default function CompleteProfilePage() {
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
                             <Avatar.Root boxSize={52} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
-                                {profilePicturePreview ? <Avatar.Image src={profilePicturePreview} /> : <Avatar.Image src={userProfile?.profilePictureUrl || user?.picture} />}
+                                {userProfile?.profilePictureUrl ? <Avatar.Image src={userProfile?.profilePictureUrl} /> : (
+                                    profilePicturePreview ? <Avatar.Image src={profilePicturePreview} /> : <Avatar.Image src={user?.picture} />
+                                )}
                             </Avatar.Root>
                             {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
@@ -365,7 +367,7 @@ export default function CompleteProfilePage() {
                             <Input defaultValue={userProfile?.name} bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                                    <Field.Root invalid={!!errors.cpfOrCnpj} required>
+                            <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
@@ -373,7 +375,7 @@ export default function CompleteProfilePage() {
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
                                 <Field.Label>RG</Field.Label>
-                                <Input  bgColor={'gray.700'} {...register("rg")}  />
+                                <Input bgColor={'gray.700'} {...register("rg")} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.birthDate}>
                                 <Field.Label>Data de Nascimento</Field.Label>
