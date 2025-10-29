@@ -12,6 +12,7 @@ interface HeroHomepageData {
 
 // Tipagem para os dados do perfil que vêm do nosso backend
 interface UserProfile {
+    id: string;
     name: string;
     email: string;
     profilePictureUrl?: string | null;
@@ -46,6 +47,8 @@ interface UserProfile {
     maritalStatus?: string;
     personalDocumentUrls?: string[];
     referredById?: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export type {HeroHomepageData, UserProfile};
