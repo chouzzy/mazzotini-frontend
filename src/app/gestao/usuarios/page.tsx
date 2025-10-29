@@ -94,6 +94,8 @@ export default function UserManagementPage() {
             </Flex>
         );
     }
+    
+    const tableBgColor = 'gray.900';
 
     return (
         <AuthenticationGuard>
@@ -115,19 +117,19 @@ export default function UserManagementPage() {
                     {!users || users.length === 0 ? (
                         <EmptyState title="Nenhum Utilizador Encontrado" description="Não há outros utilizadores no sistema para gerir." buttonHref='#' />
                     ) : (
-                        <Table.Root variant={'outline'} size={'md'}>
-                            <Table.Header >
-                                <Table.Row fontSize={'xl'}>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Utilizador</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Roles</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Último Login</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={'bodyBg'} py={8}>Ações</Table.ColumnHeader>
+                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
+                            <Table.Header border={'1px solid transparent'}>
+                                <Table.Row fontSize={'xl'} borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Utilizador</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Roles</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Último Login</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
-                            <Table.Body alignItems={'center'} justifyContent={'center'}>
+                            <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid'} borderColor={'bodyBg'} bgColor={tableBgColor} >
                                 {users.map((user) => (
-                                    <Table.Row key={user.auth0UserId} borderColor={'bodyBg'}>
-                                        <Table.Cell>
+                                    <Table.Row key={user.auth0UserId} bgColor={tableBgColor}>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex align="center" gap={3}>
                                                 <Avatar.Root size="sm" key={user.auth0UserId}>
                                                     <Avatar.Fallback name={user.name} />
@@ -140,7 +142,7 @@ export default function UserManagementPage() {
                                                 </VStack>
                                             </Flex>
                                         </Table.Cell>
-                                        <Table.Cell>
+                                        <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex gap={2}>
                                                 {user.roles.map(role => (
                                                     <Tag.Root key={role} variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }}>
@@ -149,10 +151,10 @@ export default function UserManagementPage() {
                                                 ))}
                                             </Flex>
                                         </Table.Cell>
-                                        <Table.Cell>
+                                        <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             {user.lastLogin ? new Date(user.lastLogin).toLocaleString('pt-BR') : 'Nunca'}
                                         </Table.Cell>
-                                        <Table.Cell>
+                                        <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             <Button size="sm" variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }} gap={2} onClick={() => handleEditClick(user)}>
                                                 <Icon as={PiPencilSimple} />
                                                 Editar permissões

@@ -28,7 +28,7 @@ export default function ApprovalQueuePage() {
     // 1. Busca os perfis que estão a aguardar revisão
     const { data: pendingUsers, isLoading, error, mutate } = useApi<UserProfile[]>('/api/management/pending-users');
 
-    const {user: auth0user} = useAuth0()
+    const { user: auth0user } = useAuth0()
 
     const { open, onOpen, onClose } = useDisclosure();
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -80,18 +80,18 @@ export default function ApprovalQueuePage() {
                             buttonLabel='Voltar à Gestão'
                         />
                     ) : (
-                        <Table.Root variant={'none'} size={'md'}>
+                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
                             <Table.Header border={'1px solid transparent'}>
-                                <Table.Row fontSize={'xl'} borderBottom={'1px solid'} borderColor={'gray.700'}>
+                                <Table.Row fontSize={'xl'} borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Usuário</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} py={8}>Data do cadastro</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} py={8} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
-                            <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid transparent'} bgColor={tableBgColor} >
+                            <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid'} borderColor={'bodyBg'} bgColor={tableBgColor} >
                                 {pendingUsers.map((user) => (
-                                    <Table.Row key={user.id}>
-                                        <Table.Cell px={8} py={4} >
+                                    <Table.Row key={user.id} bgColor={tableBgColor}>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex align="center" gap={3}>
                                                 <Avatar.Root size="sm">
                                                     <Avatar.Fallback name={user.name} />
@@ -103,10 +103,10 @@ export default function ApprovalQueuePage() {
                                                 </VStack>
                                             </Flex>
                                         </Table.Cell>
-                                        <Table.Cell>
+                                        <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             {new Date(user.updatedAt).toLocaleDateString('pt-BR')}
                                         </Table.Cell>
-                                        <Table.Cell>
+                                        <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             <Button size="sm" variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }} gap={2} onClick={() => handleReviewClick(user)}>
                                                 <Icon as={PiEye} />
                                                 Rever Perfil
