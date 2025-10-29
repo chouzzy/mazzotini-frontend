@@ -108,6 +108,9 @@ const nacionalidadesCollection = createListCollection({
 
 const contactPreferenceItems = [{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'E-mail', value: 'email' }];
 
+// REMOVIDO: Os dados mockados não são mais necessários
+// const mockAssociates = [ ... ]
+
 // ============================================================================
 //  SUB-COMPONENTE REUTILIZÁVEL: Bloco de Endereço
 // ============================================================================
@@ -203,30 +206,49 @@ export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
-    const { register, handleSubmit, formState: { errors }, control, watch, setValue } = useForm<OnboardingFormData>({
-        defaultValues: {
-            name: user?.name,
-            nationality: 'Brasileira',
-            useCommercialAddress: false,
-            contactPreference: [],
-            correspondenceAddress: 'residential',
-        }
-    });
+    const { register, handleSubmit, formState: { errors }, control, watch, setValue, reset } = useForm<OnboardingFormData>();
     const router = useRouter();
     const { mutate } = useSWRConfig();
 
-    const { data: userProfile, isLoading, error } = useApi<UserProfile>('/api/users/me');
+    // --- LÓGICA DE PRÉ-PREENCHIMENTO (EDIÇÃO) ---
+    const { data: userProfile, isLoading: isLoadingProfile } = useApi<UserProfile>('/api/users/me');
+
+    useEffect(() => {
+        if (userProfile) {
+            const birthDate = userProfile.birthDate ? new Date(userProfile.birthDate).toISOString().split('T')[0] : '';
+            const contactPreference = userProfile.contactPreference ? userProfile.contactPreference.split(',') : [];
+
+            reset({
+                ...userProfile,
+                name: userProfile.name || user?.name, // Prioriza o nome do nosso DB
+                birthDate: birthDate,
+                contactPreference: contactPreference,
+                cpfOrCnpj: userProfile.cpfOrCnpj ? maskCPFOrCNPJ(userProfile.cpfOrCnpj) : '',
+                cellPhone: userProfile.cellPhone ? maskPhone(userProfile.cellPhone) : '',
+                phone: userProfile.phone ? maskPhone(userProfile.phone) : '',
+                residentialCep: userProfile.residentialCep ? maskCEP(userProfile.residentialCep) : '',
+                commercialCep: userProfile.commercialCep ? maskCEP(userProfile.commercialCep) : '',
+                useCommercialAddress: !!userProfile.commercialCep,
+                nationality: userProfile.nationality || 'Brasileira',
+                correspondenceAddress: userProfile.correspondenceAddress as "residential" | "commercial" || 'residential',
+                referredById: userProfile.referredById || '',
+            });
+        }
+    }, [userProfile, user, reset, setValue]);
+    // --- FIM DA LÓGICA DE PRÉ-PREENCHIMENTO ---
 
     // Observa os campos necessários para a lógica da UI
     const useCommercialAddress = watch('useCommercialAddress');
     const profilePictureFile = watch('profilePicture');
     const profilePicturePreview = profilePictureFile && profilePictureFile.length > 0
         ? URL.createObjectURL(profilePictureFile[0])
-        : user?.picture;
+        // Dá prioridade à foto do nosso DB, e depois ao Auth0
+        : (userProfile?.profilePictureUrl || user?.picture);
 
     // Busca a lista de associados (vendedores) para o select
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
 
+    // CORREÇÃO: A coleção agora usa os dados da API (associates)
     const associatesCollection = createListCollection({
         items: associates || [],
     });
@@ -243,9 +265,8 @@ export default function CompleteProfilePage() {
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
-            console.log("Dados do Formulário:", data);
             // --- Lógica de Upload da Foto de Perfil (Passo 1) ---
-            let profilePictureUrl = user?.picture; // Mantém a foto do Auth0 se não for alterada
+            let profilePictureUrl = userProfile?.profilePictureUrl || user?.picture;
 
             if (data.profilePicture && data.profilePicture.length > 0) {
                 const file = data.profilePicture[0];
@@ -258,7 +279,7 @@ export default function CompleteProfilePage() {
                         'Content-Type': 'multipart/form-data'
                     }
                 });
-                profilePictureUrl = response.data.url; // Guarda a nova URL
+                profilePictureUrl = response.data.url;
             }
 
             // --- Lógica de Upload dos Documentos (Passo 2) ---
@@ -282,7 +303,7 @@ export default function CompleteProfilePage() {
                 name: data.name,
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
                 rg: data.rg,
-                birthDate: data.birthDate,
+                birthDate: data.birthDate || null,
                 cellPhone: unmask(data.cellPhone),
                 phone: unmask(data.phone || ''),
                 profession: data.profession,
@@ -321,31 +342,39 @@ export default function CompleteProfilePage() {
             await mutate('/api/users/me'); // Invalida o cache
             router.push('/dashboard'); // Redireciona
         } catch (error: any) {
-            toaster.create({ title: "Erro ao Salvar.", description: error.response?.data?.error || "Tente novamente.", type: "error" });
+            const errorMessage = (error as any).response?.data?.details?.[0] || (error as any).response?.data?.error || "Tente novamente.";
+            toaster.create({ title: "Erro ao Salvar.", description: errorMessage, type: "error" });
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    if (isLoadingProfile) {
+        return (
+            <Flex w="100%" minH="80vh" justify="center" align="center">
+                <Spinner size="xl" />
+            </Flex>
+        );
+    }
+
     return (
-        <Flex w="100%" p={2} bgColor={'bodyBg'} borderRadius="md" flexDir="column" justify="center" align="center" mx='auto'>
+        <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             <Toaster />
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
                         <Heading as="h1" size="xl">Edite o seu Perfil</Heading>
-                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipe.</Text>
+                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipa.</Text>
                     </VStack>
 
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
-                            <Avatar.Root boxSize={52} my={8}>
+                            <Avatar.Root size={'2xl'} my={8} boxSize={40}>
                                 <Avatar.Fallback name={watch('name')} />
-                                {profilePicturePreview ? <Avatar.Image src={profilePicturePreview} /> : <Avatar.Image src={userProfile?.profilePictureUrl || user?.picture} />}
+                                <Avatar.Image  src={profilePicturePreview || ''} />
                             </Avatar.Root>
-                            {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
                                 <FileUpload.HiddenInput />
                                 <FileUpload.Trigger asChild>
@@ -362,10 +391,10 @@ export default function CompleteProfilePage() {
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>Nome Completo</Field.Label>
-                            <Input defaultValue={userProfile?.name} bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
+                            <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                                    <Field.Root invalid={!!errors.cpfOrCnpj} required>
+                            <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
@@ -373,23 +402,23 @@ export default function CompleteProfilePage() {
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
                                 <Field.Label>RG</Field.Label>
-                                <Input  bgColor={'gray.700'} {...register("rg")}  />
+                                <Input bgColor={'gray.700'} {...register("rg")} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.birthDate}>
                                 <Field.Label>Data de Nascimento</Field.Label>
-                                <Input type="date" defaultValue={userProfile?.birthDate} bgColor={'gray.700'} {...register("birthDate")} />
+                                <Input type="date" bgColor={'gray.700'} {...register("birthDate")} />
                             </Field.Root>
                         </SimpleGrid>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.profession}>
                                 <Field.Label>Profissão</Field.Label>
-                                <Input defaultValue={userProfile?.profession} bgColor={'gray.700'} {...register("profession")} />
+                                <Input bgColor={'gray.700'} {...register("profession")} />
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Nacionalidade</Field.Label>
                                 <Controller name="nationality" control={control} render={({ field }) => (
                                     <Select.Root collection={nacionalidadesCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText defaultValue={userProfile?.nationality} /></Select.Trigger></Select.Control>
+                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText /> <PiCaretDownDuotone /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{nacionalidadesCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
@@ -398,7 +427,7 @@ export default function CompleteProfilePage() {
                                 <Field.Label>Estado Civil</Field.Label>
                                 <Controller name="maritalStatus" control={control} render={({ field }) => (
                                     <Select.Root collection={estadoCivilCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText defaultValue={userProfile?.maritalStatus} placeholder="Selecione..." /></Select.Trigger></Select.Control>
+                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /> <PiCaretDownDuotone /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{estadoCivilCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
@@ -425,28 +454,35 @@ export default function CompleteProfilePage() {
                         </SimpleGrid>
                         <Field.Root>
                             <Field.Label>E-mail para Informações (Opcional)</Field.Label>
-                            <Input defaultValue={userProfile?.infoEmail} type="email" bgColor={'gray.700'} {...register("infoEmail")} />
+                            <Input type="email" bgColor={'gray.700'} {...register("infoEmail")} />
                         </Field.Root>
                         <Fieldset.Root>
-                            <CheckboxGroup
-                                value={contactPreference.field.value}
-                                onValueChange={contactPreference.field.onChange}
-                                name={contactPreference.field.name}
-                                defaultValue={["E-mail"]}
-                            >
-                                <Fieldset.Legend fontSize="sm" mb="2">
-                                    Preferência de Contato
-                                </Fieldset.Legend>
-                                <Fieldset.Content>
-                                    {contactPreferenceItems.map((item) => (
-                                        <Checkbox.Root key={item.value} value={item.value} variant={'subtle'} colorPalette={'white'} >
-                                            <Checkbox.HiddenInput />
-                                            <Checkbox.Control bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                            <Checkbox.Label>{item.label === 'WhatsApp' ? <Icon size={'md'} mb={0.5} color={'whatsapp'} as={PiWhatsappLogoDuotone} /> : <Icon size={'md'} mb={0.5} color='wheat' as={PiEnvelope} />} {item.label}</Checkbox.Label>
-                                        </Checkbox.Root>
-                                    ))}
-                                </Fieldset.Content>
-                            </CheckboxGroup>
+                            <Controller
+                                name="contactPreference"
+                                control={control}
+                                render={({ field }) => (
+                                    <Checkbox.Group
+                                        value={field.value || []}
+                                        onValueChange={(details) => field.onChange(details.values)}
+                                        name={field.name}
+                                    >
+                                        <Fieldset.Legend fontSize="sm" mb="2">
+                                            Preferência de Contato
+                                        </Fieldset.Legend>
+                                        <Fieldset.Content>
+                                            <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
+                                                {contactPreferenceItems.map((item) => (
+                                                    <Checkbox.Root key={item.value} value={item.value} variant={'subtle'} colorPalette={'white'} >
+                                                        <Checkbox.HiddenInput />
+                                                        <Checkbox.Control bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                                        <Checkbox.Label>{item.label === 'WhatsApp' ? <Icon size={'md'} mb={0.5} color={'whatsapp'} as={PiWhatsappLogoDuotone} /> : <Icon size={'md'} mb={0.5} color='wheat' as={PiEnvelope} />} {item.label}</Checkbox.Label>
+                                                    </Checkbox.Root>
+                                                ))}
+                                            </Stack>
+                                        </Fieldset.Content>
+                                    </Checkbox.Group>
+                                )}
+                            />
                         </Fieldset.Root>
                     </VStack>
 
@@ -510,7 +546,7 @@ export default function CompleteProfilePage() {
                                 </Checkbox.Root>
                             )}
                         />
-                        {useCommercialAddress && <AddressBlock type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
+                        {useCommercialAddress && <AddressBlock userProfile={userProfile} type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
                     </VStack>
 
                     {/* ESCOLHA DO ENDEREÇO DE CORRESPONDÊNCIA */}
@@ -543,16 +579,15 @@ export default function CompleteProfilePage() {
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Documentos</Heading>
                         <Text color="gray.400">Faça o upload de uma cópia do seu RG ou CNH (frente e verso).</Text>
                         <Field.Root invalid={!!errors.personalDocuments}>
-                            {/* 6. ATUALIZAÇÃO: Usando o FileUpload.Root para Documentos */}
                             <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
-                                <FileUpload.HiddenInput  {...register("personalDocuments")} />
+                                <FileUpload.HiddenInput {...register("personalDocuments")} />
                                 <FileUpload.Trigger asChild>
-                                    <Flex bg={'gray.100'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2}>
+                                    <Button variant="outline" cursor="pointer" gap={2}>
                                         <Icon as={PiUploadSimple} />
                                         Anexar Documentos
-                                    </Flex>
+                                    </Button>
                                 </FileUpload.Trigger>
-                                <FileUpload.List /> {/* Lista os ficheiros automaticamente */}
+                                <FileUpload.List />
                             </FileUpload.Root>
                         </Field.Root>
                         <Flex gap={2} flexWrap="wrap">
@@ -577,4 +612,3 @@ export default function CompleteProfilePage() {
         </Flex>
     );
 }
-
