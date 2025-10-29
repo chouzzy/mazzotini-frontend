@@ -40,12 +40,12 @@ export interface OperatorAsset {
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 const getStatusColorScheme = (status: string) => {
     switch (status) {
-      case 'Ativo': return 'green';
-      case 'Liquidado': return 'gray';
-      case 'Em Negociação': return 'yellow';
-      case 'PENDING_ENRICHMENT': return 'purple';
-      case 'FAILED_ENRICHMENT': return 'red';
-      default: return 'blue';
+        case 'Ativo': return 'green';
+        case 'Liquidado': return 'gray';
+        case 'Em Negociação': return 'yellow';
+        case 'PENDING_ENRICHMENT': return 'purple';
+        case 'FAILED_ENRICHMENT': return 'red';
+        default: return 'blue';
     }
 };
 
@@ -83,7 +83,7 @@ export default function OperatorAssetsPage() {
     if (error) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center" p={4}>
-                 <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
+                <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os ativos. Verifique se tem permissão de Operador.</Text>
@@ -98,55 +98,57 @@ export default function OperatorAssetsPage() {
             description="Ainda não há nenhum ativo de crédito no sistema. Comece por registar o primeiro."
             buttonLabel="Registar Primeiro Ativo"
             buttonHref="/processos/novo"
-         />;
+        />;
     }
+
+    const tableBgColor = 'gray.900';
 
     return (
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
-                <Flex justify="space-between" align="center" direction={{base: 'column', md: 'row'}} gap={4}>
+                <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                     <Box>
                         <Heading as="h1" size="xl">Gestão de Ativos</Heading>
                         <Text color="gray.400" mt={2}>
                             Visualize, pesquise e gira todos os ativos de crédito da plataforma.
                         </Text>
                     </Box>
-                    <Link as={NextLink} href="/processos/novo" _hover={{textDecoration: 'none'}}>
+                    <Link as={NextLink} href="/processos/novo" _hover={{ textDecoration: 'none' }}>
                         <Button colorPalette="blue" gap={2}>
                             <Icon as={PiPlusCircle} boxSize={5} />
                             Registar Novo Ativo
                         </Button>
                     </Link>
                 </Flex>
-                
+
                 <Box>
                     <AssetsToolbar
-                        assets={assets.map(a => ({...a, status: a.status as any, processNumber: a.processNumber, originalCreditor: a.originalCreditor, investedValue: a.currentValue, currentValue: a.currentValue, acquisitionDate: a.acquisitionDate, investorShare: 0, updateIndexType: '' }))}
+                        assets={assets.map(a => ({ ...a, status: a.status as any, processNumber: a.processNumber, originalCreditor: a.originalCreditor, investedValue: a.currentValue, currentValue: a.currentValue, acquisitionDate: a.acquisitionDate, investorShare: 0, updateIndexType: '' }))}
                         viewMode={'list'}
-                        onViewChange={() => {}} // Não permite mudar a visão para o operador
+                        onViewChange={() => { }} // Não permite mudar a visão para o operador
                         onFilterChange={setFilterStatus}
                         onSearch={setSearchQuery}
                     />
 
                     {filteredAssets.length > 0 ? (
-                        <Table.Root colorPalette={'green'} variant={'outline'}>
-                            <Table.Header>
-                                <Table.Row>
-                                    <Table.ColumnHeader>Nº do Processo</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Investidor Principal</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Credor Original</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Estimativa Atual do Crédito</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Status</Table.ColumnHeader>
+                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'} colorPalette={'green'}>
+                            <Table.Header border={'1px solid transparent'}>
+                                <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Nº do Processo</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Investidor Principal</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor Original</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Crédito</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Status</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
-                            <Table.Body>
+                            <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid'} borderColor={'bodyBg'} bgColor={tableBgColor}>
                                 {filteredAssets.map((asset) => (
-                                    <Table.Row key={asset.id} _hover={{ bg: 'gray.700', cursor: 'pointer' }} onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
-                                        <Table.Cell fontWeight="medium">{asset.processNumber}</Table.Cell>
-                                        <Table.Cell>{asset.mainInvestorName}</Table.Cell>
-                                        <Table.Cell>{asset.originalCreditor}</Table.Cell>
-                                        <Table.Cell>{formatCurrency(asset.currentValue)}</Table.Cell>
-                                        <Table.Cell>
+                                    <Table.Row key={asset.id} cursor={'pointer'} _hover={{color: 'brand.600' }} bgColor={tableBgColor} onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor} fontWeight="medium">{asset.processNumber}</Table.Cell>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.mainInvestorName}</Table.Cell>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.originalCreditor}</Table.Cell>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{formatCurrency(asset.currentValue)}</Table.Cell>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
                                             <Tag.Root variant="subtle" colorScheme={getStatusColorScheme(asset.status)}>
                                                 <Tag.Label>{asset.status}</Tag.Label>
                                             </Tag.Root>
