@@ -108,8 +108,6 @@ const nacionalidadesCollection = createListCollection({
 
 const contactPreferenceItems = [{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'E-mail', value: 'email' }];
 
-// REMOVIDO: Os dados mockados não são mais necessários
-// const mockAssociates = [ ... ]
 
 // ============================================================================
 //  SUB-COMPONENTE REUTILIZÁVEL: Bloco de Endereço

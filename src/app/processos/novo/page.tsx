@@ -1,6 +1,6 @@
+// /src/app/processos/novo/page.tsx
 'use client';
 
-// --- React e Frameworks ---
 import {
     Flex,
     Heading,
@@ -21,11 +21,10 @@ import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { useEffect, useState } from "react";
-
-// --- Ícones ---
-import { PiArrowDownDuotone, PiCaretDownDuotone, PiPlusCircle } from "react-icons/pi";
+import { PiCaretDownDuotone, PiPlusCircle } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
+import { useState, useEffect } from "react";
+import { useApi } from '@/hooks/useApi'; // Importar o useApi
 
 // ============================================================================
 //  INTERFACE PARA OS VALORES DO FORMULÁRIO (ATUALIZADA)
@@ -33,12 +32,19 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 interface FormValues {
     processNumber: string;
     originalCreditor: string;
+    origemProcesso: string; // Adicionado
     acquisitionValue: number;
     originalValue: number;
     acquisitionDate: string;
     investorId: string;
     investorShare: number;
-    associateId?: string; // Campo para o ID do associado (opcional)
+    associateId?: string; // Campo para o ID do associado
+}
+
+// Tipagem para a lista de utilizadores (Investidores e Associados)
+interface UserSelectItem {
+    value: string;
+    label: string;
 }
 
 // ============================================================================
@@ -48,14 +54,15 @@ export default function CreateAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
 
-    // Estados para os selects
-    const [investors, setInvestors] = useState<{ label: string; value: string }[]>([]);
-    const [associates, setAssociates] = useState<{ label: string; value: string }[]>([]); // Inicializado vazio
+    // --- Busca de Dados para os Selects ---
+    // 1. Busca Investidores (usando o endpoint unificado de utilizadores)
+    const { data: investors, isLoading: isLoadingInvestors } = useApi<UserSelectItem[]>('/api/users'); 
+    // 2. Busca Associados (usando o endpoint específico que criámos)
+    const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    // --- Funções para gerar dados aleatórios para testes ---
+    const isLoadingData = isLoadingInvestors || isLoadingAssociates;
+    
+    // --- Funções para gerar dados aleatórios para testes (Mantidas) ---
     const generateRandomProcessNumber = () => Math.floor(Math.random() * 1000000).toString().padStart(7, '0') + '-67.2023.5.02.0001';
     const generateRandomCPF = () => Array.from({ length: 11 }, () => Math.floor(Math.random() * 10)).join('');
     const generateRandomDate = () => {
@@ -65,7 +72,6 @@ export default function CreateAssetPage() {
         return randomDate.toISOString().split('T')[0];
     };
 
-    // Configuração do react-hook-form com valores padrão para testes
     const {
         register,
         handleSubmit,
@@ -76,53 +82,27 @@ export default function CreateAssetPage() {
             processNumber: generateRandomProcessNumber(),
             originalCreditor: generateRandomCPF(),
             acquisitionDate: generateRandomDate(),
+            origemProcesso: "Vara Cível de Teste",
         }
     });
 
-    // Efeito para buscar os usuários (investidores e associados)
-    useEffect(() => {
-        const fetchUsers = async () => {
-            if (!isAuthenticated) return;
-            setIsLoading(true);
-            try {
-                const token = await getAccessTokenSilently();
-                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-                const response = await axios.get(`${apiBaseUrl}/api/users`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                // A mesma lista de usuários irá popular ambos os selects por enquanto
-                setInvestors(response.data);
-                setAssociates(response.data);
-
-            } catch (err: any) {
-                setError(err.message || 'Erro ao buscar usuários');
-                console.error("Erro ao buscar usuários:", err);
-                toaster.create({
-                    title: "Erro ao carregar dados",
-                    description: "Não foi possível buscar a lista de usuários. Verifique suas permissões.",
-                    type: "error",
-                })
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchUsers();
-    }, [isAuthenticated, getAccessTokenSilently]);
-
     // Coleções para os selects
-    const investorsCollection = createListCollection({ items: investors });
-    const associatesCollection = createListCollection({ items: associates });
+    const investorsCollection = createListCollection({ items: investors || [] });
+    const associatesCollection = createListCollection({ items: associates || [] });
 
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
         try {
             const token = await getAccessTokenSilently();
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-            await axios.post(`${apiBaseUrl}/api/assets`, data, {
+            // O payload agora inclui o associateId
+            const payload = {
+                ...data,
+                // Garante que o ID do associado só é enviado se for selecionado
+                associateId: data.associateId || null, 
+            };
+
+            await axios.post(`${apiBaseUrl}/api/assets`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -144,12 +124,12 @@ export default function CreateAssetPage() {
         }
     };
 
-    if (isAuthLoading || isLoading) {
+    if (isAuthLoading || isLoadingData) {
         return <Flex w="100%" flex={1} justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
     if (!isAuthenticated) {
-        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Por favor, faça login para acessar a esta página.</Text></Flex>;
+        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Por favor, faça login para aceder a esta página.</Text></Flex>;
     }
 
     return (
@@ -194,11 +174,22 @@ export default function CreateAssetPage() {
                             />
                         </Field.Root>
 
+                        <Field.Root invalid={!!errors.origemProcesso} required>
+                            <Field.Label>Origem do Processo</Field.Label>
+                            <Input
+                                placeholder="Ex: 1ª Vara Cível de São Paulo"
+                                _placeholder={{ color: 'gray.400' }}
+                                borderColor={'gray.700'}
+                                {...register("origemProcesso", { required: "Este campo é obrigatório" })}
+                            />
+                        </Field.Root>
+
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>
                             2. Dados da Negociação e Envolvidos
                         </Heading>
 
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+                            {/* CAMPO INVESTIDOR */}
                             <Controller
                                 name="investorId"
                                 control={control}
@@ -211,33 +202,21 @@ export default function CreateAssetPage() {
                                             value={field.value ? [field.value] : undefined}
                                             onValueChange={(details) => field.onChange(details.value[0])}
                                         >
-                                            <Select.Control>
-                                                <Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}>
-                                                    <Select.ValueText
-                                                        _placeholder={{ color: 'gray.400' }}
-                                                        borderColor={'gray.700'}
-                                                        placeholder="Selecione um investidor..."
-                                                    />
-                                                    <PiCaretDownDuotone />
-                                                </Select.Trigger>
-                                            </Select.Control>
-                                            <Portal>
-                                                <Select.Positioner>
-                                                    <Select.Content >
-                                                        {investorsCollection.items.map((investor) => (
-                                                            <Select.Item key={investor.value} item={investor} >
-                                                                {investor.label}
-                                                            </Select.Item>
-                                                        ))}
-                                                    </Select.Content>
-                                                </Select.Positioner>
-                                            </Portal>
+                                            <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione um investidor..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
+                                            <Portal><Select.Positioner><Select.Content>
+                                                {investorsCollection.items.map((investor) => (
+                                                    <Select.Item key={investor.value} item={investor} >
+                                                        {investor.label}
+                                                    </Select.Item>
+                                                ))}
+                                            </Select.Content></Select.Positioner></Portal>
                                         </Select.Root>
                                         {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
                                     </Field.Root>
                                 )}
                             />
 
+                            {/* NOVO CAMPO: ASSOCIADO (VENDEDOR) */}
                             <Controller
                                 name="associateId"
                                 control={control}
@@ -249,23 +228,14 @@ export default function CreateAssetPage() {
                                             value={field.value ? [field.value] : undefined}
                                             onValueChange={(details) => field.onChange(details.value[0])}
                                         >
-                                            <Select.Control>
-                                                <Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}>
-                                                    <Select.ValueText placeholder="Selecione um associado..." />
-                                                    <PiCaretDownDuotone />
-                                                </Select.Trigger>
-                                            </Select.Control>
-                                            <Portal>
-                                                <Select.Positioner>
-                                                    <Select.Content>
-                                                        {associatesCollection.items.map((associate) => (
-                                                            <Select.Item key={associate.value} item={associate}>
-                                                                {associate.label}
-                                                            </Select.Item>
-                                                        ))}
-                                                    </Select.Content>
-                                                </Select.Positioner>
-                                            </Portal>
+                                            <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione um associado..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
+                                            <Portal><Select.Positioner><Select.Content>
+                                                {associatesCollection.items.map((associate) => (
+                                                    <Select.Item key={associate.value} item={associate}>
+                                                        {associate.label}
+                                                    </Select.Item>
+                                                ))}
+                                            </Select.Content></Select.Positioner></Portal>
                                         </Select.Root>
                                         {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
                                     </Field.Root>
@@ -327,11 +297,10 @@ export default function CreateAssetPage() {
                             w={{ base: '100%', md: 'auto' }}
                             alignSelf="flex-end"
                             loading={isSubmitting}
+                            gap={2}
                         >
-                            <Flex align="center" justify="center" gap={2}>
-                                <Icon as={PiPlusCircle} />
-                                <Text>Registar e Buscar Dados</Text>
-                            </Flex>
+                            <Icon as={PiPlusCircle} />
+                            <Text>Registar e Buscar Dados</Text>
                         </Button>
                     </Stack>
                 </Flex>
