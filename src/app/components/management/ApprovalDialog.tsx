@@ -14,12 +14,13 @@ import {
     SimpleGrid,
     Icon,
     Link,
+    Avatar,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { UserProfile } from '@/types';
-import { PiCheckCircle, PiXCircle, PiDownloadDuotone } from 'react-icons/pi';
+import { PiCheckCircle, PiXCircle, PiDownloadDuotone, PiX, PiMagnifyingGlassDuotone } from 'react-icons/pi';
 import { maskCEP, maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
 import { Toaster, toaster } from '@/components/ui/toaster';
 
@@ -89,27 +90,35 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
     if (!user) return null;
 
     // Formata os dados para exibição
-        const birthDate = user.birthDate ? new Date(user.birthDate).toLocaleDateString('pt-BR') : 'N/A';
-        const contact = `${maskPhone(user.cellPhone || '')} (${user.contactPreference})`;
+    const birthDate = user.birthDate ? new Date(user.birthDate).toLocaleDateString('pt-BR') : 'N/A';
+    const contact = `${maskPhone(user.cellPhone || '')} (${user.contactPreference})`;
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={(details) => !details.open && onClose()} size="xl">
-            <Toaster/>
+            <Toaster />
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content bg="gray.800">
                     <Dialog.Header>
-                        <Dialog.Title>Revisão de Perfil: {user.name}</Dialog.Title>
                         <Dialog.CloseTrigger asChild>
-                            <Button variant="ghost" size="sm">&times;</Button>
+                            <Button variant="ghost" size="sm"><PiX /></Button>
                         </Dialog.CloseTrigger>
                     </Dialog.Header>
                     <Dialog.Body>
                         <VStack gap={6} align="stretch">
                             {/* Bloco de Dados Pessoais */}
-                            <Box>
-                                <Heading size="sm" mb={4}>Dados Pessoais</Heading>
-                                <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} p={4} bg="gray.900" borderRadius="md">
+                            <Flex gap={8} w='100%' flexDir={'column'} alignItems={'center'} justifyContent={'center'}>
+                                {user.profilePictureUrl && (
+
+                                    <Flex align="center" gap={3} flexDir={'column'}>
+                                        <Avatar.Root size="lg" boxSize={32}>
+                                            <Avatar.Fallback name={user.name} />
+                                            <Avatar.Image src={user.profilePictureUrl} />
+                                        </Avatar.Root>
+                                        <Text>{user.name}</Text>
+                                    </Flex>)
+                                }
+                                <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} p={4} bg="gray.900" borderRadius="md" w='100%'>
                                     <ProfileField label="Nome Completo" value={user.name} />
                                     <ProfileField label="CPF/CNPJ" value={maskCPFOrCNPJ(user.cpfOrCnpj || '')} />
                                     <ProfileField label="RG" value={user.rg} />
@@ -118,8 +127,8 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                     <ProfileField label="Nacionalidade" value={user.nationality} />
                                     <ProfileField label="Estado Civil" value={user.maritalStatus} />
                                 </SimpleGrid>
-                            </Box>
-                            
+                            </Flex>
+
                             {/* Bloco de Contato */}
                             <Box>
                                 <Heading size="sm" mb={4}>Contato</Heading>
@@ -130,7 +139,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                 </SimpleGrid>
                             </Box>
 
-                             {/* Bloco de Endereços */}
+                            {/* Bloco de Endereços */}
                             <Box>
                                 <Heading size="sm" mb={4}>Endereços</Heading>
                                 <Stack direction={{ base: 'column', md: 'row' }} gap={4} p={4} bg="gray.900" borderRadius="md">
@@ -142,7 +151,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                         <ProfileField label="CEP" value={maskCEP(user.residentialCep || '')} />
                                     </VStack>
                                     {user.commercialCep && (
-                                         <VStack align="stretch" flex={1}>
+                                        <VStack align="stretch" flex={1}>
                                             <Text fontWeight="bold">Comercial</Text>
                                             <ProfileField label="Endereço" value={`${user.commercialStreet}, ${user.commercialNumber}`} />
                                             <ProfileField label="Bairro" value={user.commercialNeighborhood} />
@@ -170,7 +179,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                         </VStack>
                     </Dialog.Body>
                     <Dialog.Footer>
-                        <Button colorPalette="red" variant="outline" onClick={handleReject} loading={isLoading}>
+                        <Button colorPalette="red" onClick={handleReject} loading={isLoading}>
                             <Icon as={PiXCircle} /> Rejeitar Perfil
                         </Button>
                         <Button colorPalette="green" ml={3} onClick={handleApprove} loading={isLoading}>

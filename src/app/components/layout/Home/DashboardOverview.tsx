@@ -60,7 +60,7 @@ function RecentAssetItem({ asset }: { asset: InvestorCreditAsset }) {
                     Data da Contratação: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
                 </Text>
             </VStack>
-            <Link as={NextLink} href={`/ativos/${asset.processNumber}`} _hover={{ textDecoration: 'none' }}>
+            <Link as={NextLink} href={`/processos/${asset.processNumber}`} _hover={{ textDecoration: 'none' }}>
                 <Button size="sm" _hover={{ bg: 'brand.600' }} >
                     Ver Detalhes <Icon as={PiArrowRight} ml={2} />
                 </Button>
