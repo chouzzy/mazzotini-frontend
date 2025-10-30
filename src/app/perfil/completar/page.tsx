@@ -41,6 +41,7 @@ interface OnboardingFormData {
     cpfOrCnpj: string;
     rg: string;
     birthDate: string;
+    gender: "Male" | "Female";
     cellPhone: string;
     phone?: string;
     infoEmail?: string;
@@ -234,11 +235,12 @@ export default function CompleteProfilePage() {
     });
 
     const onSubmit: SubmitHandler<OnboardingFormData> = async (data) => {
+
         setIsSubmitting(true);
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
-            console.log("Dados do Formulário:", data);
+
             // --- Lógica de Upload da Foto de Perfil (Passo 1) ---
             let profilePictureUrl = user?.picture; // Mantém a foto do Auth0 se não for alterada
 
@@ -278,6 +280,7 @@ export default function CompleteProfilePage() {
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
                 rg: data.rg,
                 birthDate: data.birthDate,
+                gender: data.gender,
                 cellPhone: unmask(data.cellPhone),
                 phone: unmask(data.phone || ''),
                 profession: data.profession,
@@ -379,7 +382,7 @@ export default function CompleteProfilePage() {
                                 <Input type="date" bgColor={'gray.700'} {...register("birthDate")} />
                             </Field.Root>
                         </SimpleGrid>
-                        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+                        <SimpleGrid columns={{ base: 1, md: 4 }} gap={4}>
                             <Field.Root invalid={!!errors.profession}>
                                 <Field.Label>Profissão</Field.Label>
                                 <Input bgColor={'gray.700'} {...register("profession")} />
@@ -402,6 +405,35 @@ export default function CompleteProfilePage() {
                                     </Select.Root>
                                 )} />
                             </Field.Root>
+                        <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
+                            <Field.Label>Gênero</Field.Label>
+                            <Controller
+                                name="gender"
+                                control={control}
+                                rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }}
+                                render={({ field }) => (
+                                    <RadioGroup.Root
+                                        value={field.value}
+                                        onValueChange={(details) => field.onChange(details.value as "Male" | "Female")}
+                                        disabled={isCnpj}
+                                    >
+                                        <Stack direction={{ base: 'column', md: 'row' }} gap={4} mt={2}>
+                                            <RadioGroup.Item value="Male">
+                                                <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
+                                                <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                                <RadioGroup.ItemText>Masculino</RadioGroup.ItemText>
+                                            </RadioGroup.Item>
+                                            <RadioGroup.Item value="Female">
+                                                <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
+                                                <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                                <RadioGroup.ItemText>Feminino</RadioGroup.ItemText>
+                                            </RadioGroup.Item>
+                                        </Stack>
+                                    </RadioGroup.Root>
+                                )}
+                            />
+                            {errors.gender && <Field.ErrorText>{errors.gender.message}</Field.ErrorText>}
+                        </Field.Root>
                         </SimpleGrid>
                     </VStack>
 
