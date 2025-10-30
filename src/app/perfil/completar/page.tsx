@@ -322,6 +322,10 @@ export default function CompleteProfilePage() {
         }
     };
 
+    const cpfOrCnpjValue = useWatch({ control, name: "cpfOrCnpj" });
+    const unmaskedCpfOrCnpj = unmask(cpfOrCnpjValue || '');
+    const isCnpj = unmaskedCpfOrCnpj.length > 11;
+
     return (
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             <Toaster />
@@ -342,9 +346,9 @@ export default function CompleteProfilePage() {
                             </Avatar.Root>
                             {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
-                                <FileUpload.HiddenInput  />
+                                <FileUpload.HiddenInput />
                                 <FileUpload.Trigger asChild>
-                                    <Button cursor="pointer" bgColor={'gray.100'} color={'black'} _hover={{bgColor:'brand.600', color:'white'}} size="sm">
+                                    <Button cursor="pointer" bgColor={'gray.100'} color={'black'} _hover={{ bgColor: 'brand.600', color: 'white' }} size="sm">
                                         Subir foto
                                     </Button>
                                 </FileUpload.Trigger>
@@ -370,7 +374,7 @@ export default function CompleteProfilePage() {
                                 <Field.Label>RG</Field.Label>
                                 <Input bgColor={'gray.700'} {...register("rg")} />
                             </Field.Root>
-                            <Field.Root invalid={!!errors.birthDate}>
+                            <Field.Root invalid={!!errors.birthDate} disabled={isCnpj} required={!isCnpj}>
                                 <Field.Label>Data de Nascimento</Field.Label>
                                 <Input type="date" bgColor={'gray.700'} {...register("birthDate")} />
                             </Field.Root>
@@ -536,7 +540,9 @@ export default function CompleteProfilePage() {
                     {/* DOCUMENTOS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Documentos</Heading>
-                        <Text color="gray.400">Faça o upload de uma cópia do seu RG ou CNH (frente e verso).</Text>
+                        <Text color="gray.400">
+                            RG e CPF (ou CNH), Comprovante de residência (opcional), e Última alteração do contrato social (se aplicável).
+                        </Text>
                         <Field.Root invalid={!!errors.personalDocuments}>
                             {/* 6. ATUALIZAÇÃO: Usando o FileUpload.Root para Documentos */}
                             <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
