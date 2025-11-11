@@ -24,7 +24,7 @@ export const RoleGuard = ({ children }: { children: React.ReactNode }) => {
                 <VStack gap={4} bg="red.900" p={8} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Acesso Negado</Heading>
-                    <Text>Apenas administradores podem aceder a esta página.</Text>
+                    <Text>Apenas administradores podem acessar a esta página.</Text>
                 </VStack>
             </Flex>
         );

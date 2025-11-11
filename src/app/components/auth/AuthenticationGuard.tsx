@@ -28,7 +28,7 @@ function LoginScreen() {
         <Flex w="100%" flex={1} justify="center" align="center" color="white">
             <VStack gap={6}>
                 <Heading size="lg">Acesso Restrito</Heading>
-                <Text>Por favor, faça login para aceder a esta área.</Text>
+                <Text>Por favor, faça login para acessar a esta área.</Text>
                 <Button
                     colorScheme="blue" // Prop correta para Button
                     onClick={() => loginWithRedirect()}
