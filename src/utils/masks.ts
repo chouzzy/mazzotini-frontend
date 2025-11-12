@@ -73,3 +73,46 @@ export const maskPhone = (value: string) => {
         .substring(0, 14);
 };
 
+/**
+ * Traduz os nomes das roles internas (ex: 'ADMIN') para Português (ex: 'Administrador').
+ * @param role A string da role (vinda do Auth0).
+ * @returns A string traduzida.
+ */
+export const translateRole = (role: string): string => {
+    const key = role.toUpperCase();
+    switch (key) {
+        case 'ADMIN':
+            return 'ADMINISTRADOR';
+        case 'ASSOCIATE':
+            return 'ASSOCIADO';
+        case 'INVESTOR':
+            return 'INVESTIDOR';
+        case 'OPERATOR':
+            return 'OPERADOR';
+        default:
+            return key; // retorna a role original em maiúsculas
+    }
+};
+
+
+/**
+ * Retorna um esquema de cores (Chakra UI) para cada role.
+ * @param role A string da role (ex: "ADMIN").
+ * @returns O nome do colorScheme (ex: "red").
+ */
+export const getRoleColorScheme = (role: string): string => {
+    // Usamos toUpperCase() para garantir a correspondência
+    switch (role.toUpperCase()) {
+        case 'ADMIN':
+            return 'red'; // Administrador (Perigoso)
+        case 'OPERATOR':
+            return 'orange'; // Operador (Aviso)
+        case 'ASSOCIATE':
+            return 'blue'; // Associado (Equipa)
+        case 'INVESTOR':
+            return 'green'; // Investidor (Cliente)
+        default:
+            return 'gray'; // Padrão
+    }
+};
+
