@@ -50,9 +50,9 @@ function RecentAssetItem({ asset }: { asset: InvestorCreditAsset }) {
             align="center"
             w="100%"
             p={4}
-            bg="gray.700"
+            bg="gray.900"
             borderRadius="md"
-            _hover={{ bg: 'gray.600' }}
+            _hover={{ bg: 'gray.700' }}
         >
             <VStack align="start" gap={0}>
                 <Text fontWeight="bold">{asset.processNumber}</Text>
@@ -61,7 +61,7 @@ function RecentAssetItem({ asset }: { asset: InvestorCreditAsset }) {
                 </Text>
             </VStack>
             <Link as={NextLink} href={`/processos/${asset.processNumber}`} _hover={{ textDecoration: 'none' }}>
-                <Button size="sm" _hover={{ bg: 'brand.600' }} >
+                <Button size="sm" _hover={{ bg: 'brand.600' }} bgColor={'gray.500'} color={'white'}>
                     Ver Detalhes <Icon as={PiArrowRight} ml={2} />
                 </Button>
             </Link>
@@ -101,6 +101,8 @@ export function DashboardOverview() {
 
     // Cálculos das estatísticas
     const totalAssets = assets?.length || 0;
+    const totalActiveAssets = assets?.filter(asset => asset.status === 'ACTIVE').length || 0;
+    const totalInactiveAssets = assets?.filter(asset => asset.status =='Liquidado').length || 0;
     const totalInvested = assets?.reduce((sum, asset) => sum + asset.investedValue, 0) || 0;
     const totalCurrentValue = assets?.reduce((sum, asset) => sum + asset.currentValue, 0) || 0;
     const totalYield = totalCurrentValue - totalInvested;
@@ -131,23 +133,23 @@ export function DashboardOverview() {
                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} w="100%">
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
-                            <Icon as={PiWallet} /> Total de Processos (numeral)
+                            <Icon as={PiWallet} /> Total de Processos
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl">{totalAssets}</Stat.ValueText>
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
-                            <Icon as={PiChartLineUp} /> Processos Ativos (numeral)
+                            <Icon as={PiChartLineUp} /> Processos Ativos
                         </Stat.Label>
                         <Stat.ValueText fontSize="3xl" color="green.400">
-                            {formatCurrency(totalYield)}
+                            {totalActiveAssets}
                         </Stat.ValueText>
                     </Stat.Root>
                     <Stat.Root bg="gray.900" p={5} borderRadius="md">
                         <Stat.Label display="flex" alignItems="center" gap={2} color="gray.400">
                             <Icon as={PiArrowRight} /> Processos Encerrados
                         </Stat.Label>
-                        <Stat.ValueText fontSize="3xl">{yieldPercentage.toFixed(2)}%</Stat.ValueText>
+                        <Stat.ValueText fontSize="3xl">{totalInactiveAssets}</Stat.ValueText>
                     </Stat.Root>
                 </SimpleGrid>
 
@@ -176,19 +178,19 @@ export function DashboardOverview() {
                     <VStack align="start" gap={4} w="100%">
                         <Heading size="lg">Ações Rápidas</Heading>
                         <VStack w="100%" gap={3}>
-                            <Link as={NextLink} href="/ativos" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button w="100%" size="lg" gap={2}>
+                            <Link as={NextLink} href="/processos" w="100%" _hover={{ textDecoration: 'none' }}>
+                                <Button bgColor={'brand.700'} _hover={{bgColor:'brand.800', transition:'300ms'}} color={'white'} w="100%" size="lg" gap={2}>
                                     <PiWallet />
                                     Ver Todos os Processos
                                 </Button>
                             </Link>
-                            <Link as={NextLink} href="/ativos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button w="100%" size="lg" gap={2}>
+                            <Link as={NextLink} href="/processos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
+                                <Button bgColor={'brand.700'} _hover={{bgColor:'brand.800', transition:'300ms'}} color={'white'} w="100%" size="lg" gap={2}>
                                     <PiPlusCircle />
                                     Registrar Novo Processo
                                 </Button>
                             </Link>
-                            <Button as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>
+                            <Button bgColor={'gray.900'} _hover={{bgColor:'gray.950', transition:'300ms'}}  color={'whatsapp'} as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>
                                 <PiWhatsappLogo />
                                 Falar com Suporte
                             </Button>

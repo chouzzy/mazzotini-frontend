@@ -1,4 +1,3 @@
-// /src/app/processos/page.tsx
 'use client';
 
 import {
@@ -25,17 +24,6 @@ import { useApi } from '@/hooks/useApi';
 import { PiWarningCircle, PiPlusCircle } from 'react-icons/pi';
 import { AssetSummary } from '@/types/api';
 
-// Tipagem para os dados que o endpoint GET /api/assets retorna
-export interface OperatorAsset {
-    id: string;
-    processNumber: string;
-    originalCreditor: string;
-    currentValue: number;
-    status: string;
-    acquisitionDate: Date;
-    mainInvestorName: string | null;
-}
-
 // Funções auxiliares
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 const getStatusColorScheme = (status: string) => {
@@ -51,7 +39,6 @@ const getStatusColorScheme = (status: string) => {
 
 export default function OperatorAssetsPage() {
     const { user } = useAuth0();
-    // ATENÇÃO: Chamando o novo endpoint para TODOS os ativos
     const { data: assets, isLoading, error } = useApi<AssetSummary[]>('/api/assets');
 
     // Estados de filtro e busca
@@ -65,9 +52,10 @@ export default function OperatorAssetsPage() {
             .filter(asset =>
                 asset.processNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 asset.originalCreditor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                asset.mainInvestorName?.toLowerCase().includes(searchQuery.toLowerCase())
+                (asset.mainInvestorName && asset.mainInvestorName.toLowerCase().includes(searchQuery.toLowerCase()))
             );
     }, [assets, filterStatus, searchQuery]);
+
 
     if (isLoading) {
         return (
@@ -95,8 +83,8 @@ export default function OperatorAssetsPage() {
     if (!assets || assets.length === 0) {
         return <EmptyState
             title="Nenhum Ativo Registado"
-            description="Ainda não há nenhum ativo de crédito no sistema. Comece por registar o primeiro."
-            buttonLabel="Registar Primeiro Ativo"
+            description="Ainda não há nenhum ativo de crédito no sistema. Comece por registrar o primeiro."
+            buttonLabel="Registrar Primeiro Ativo"
             buttonHref="/processos/novo"
         />;
     }
@@ -116,14 +104,19 @@ export default function OperatorAssetsPage() {
                     <Link as={NextLink} href="/processos/novo" _hover={{ textDecoration: 'none' }}>
                         <Button colorPalette="blue" gap={2}>
                             <Icon as={PiPlusCircle} boxSize={5} />
-                            Registar Novo Ativo
+                            Registrar Novo Ativo
                         </Button>
                     </Link>
                 </Flex>
 
                 <Box>
+                    {/* ============================================================ */}
+                    {/* A CORREÇÃO ESTÁ AQUI                                       */}
+                    {/* Removemos o .map() e passamos 'assets' (a lista completa) */}
+                    {/* diretamente para o Toolbar, assim como a pág. do Dashboard. */}
+                    {/* ============================================================ */}
                     <AssetsToolbar
-                        assets={assets.map(a => ({ ...a, status: a.status as any, processNumber: a.processNumber, originalCreditor: a.originalCreditor, investedValue: a.currentValue, currentValue: a.currentValue, acquisitionDate: a.acquisitionDate, investorShare: 0, updateIndexType: '' }))}
+                        assets={assets}
                         viewMode={'list'}
                         onViewChange={() => { }} // Não permite mudar a visão para o operador
                         onFilterChange={setFilterStatus}
@@ -131,12 +124,14 @@ export default function OperatorAssetsPage() {
                     />
 
                     {filteredAssets.length > 0 ? (
-                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'} colorPalette={'green'}>
+                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'} >
                             <Table.Header border={'1px solid transparent'}>
                                 <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Nº do Processo</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Investidor Principal</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor Original</Table.ColumnHeader>
+                                    {/* ATUALIZADO: Agora mostra o Custo de Aquisição (total), que vem do 'investedValue' do Admin */}
+                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Custo de Aquisição</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Crédito</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Status</Table.ColumnHeader>
                                 </Table.Row>
@@ -147,9 +142,11 @@ export default function OperatorAssetsPage() {
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor} fontWeight="medium">{asset.processNumber}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.mainInvestorName}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.originalCreditor}</Table.Cell>
+                                        {/* ATUALIZADO: Mostra 'investedValue' (que agora é o Custo de Aquisição total vindo da API) */}
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{formatCurrency(asset.investedValue)}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{formatCurrency(asset.currentValue)}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
-                                            <Tag.Root variant="subtle" colorScheme={getStatusColorScheme(asset.status)}>
+                                            <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
                                                 <Tag.Label>{asset.status}</Tag.Label>
                                             </Tag.Root>
                                         </Table.Cell>
@@ -167,4 +164,3 @@ export default function OperatorAssetsPage() {
         </Flex>
     );
 }
-
