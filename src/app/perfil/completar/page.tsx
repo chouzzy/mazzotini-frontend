@@ -343,7 +343,7 @@ export default function CompleteProfilePage() {
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
-                            <Avatar.Root size={'2xl'} my={8}>
+                            <Avatar.Root boxSize={32} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
                                 <Avatar.Image src={profilePicturePreview || ''} />
                             </Avatar.Root>

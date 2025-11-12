@@ -1,3 +1,4 @@
+// src\app\components\assets\tabs\UpdatesTab.tsx
 'use client';
 
 import {
@@ -14,7 +15,6 @@ import {
     Link,
     Tag
 } from '@chakra-ui/react';
-import NextLink from 'next/link';
 import { PiClockClockwise, PiCaretDown } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { extractFreeText } from '@/utils';
