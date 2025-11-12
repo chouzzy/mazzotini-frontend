@@ -24,6 +24,7 @@ import { useState } from 'react';
 import { EditUserModal } from '@/app/components/management/EditUserModal';
 import { InviteUserDialog } from '@/app/components/management/InviteUserDialog';
 import Link from 'next/link';
+import { getRoleColorScheme, translateRole } from '@/utils/masks';
 
 // Tipagem para os dados do usuário (ATUALIZADA)
 interface UserManagementInfo {
@@ -156,8 +157,8 @@ export default function UserManagementPage() {
                                         <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex gap={2}>
                                                 {user.roles.map(role => (
-                                                    <Tag.Root key={role} variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }}>
-                                                        <Tag.Label>{role}</Tag.Label>
+                                                    <Tag.Root key={role} variant="surface" colorPalette={getRoleColorScheme(role)}>
+                                                        <Tag.Label>{translateRole(role)}</Tag.Label>
                                                     </Tag.Root>
                                                 ))}
                                             </Flex>

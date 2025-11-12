@@ -17,6 +17,7 @@ import {
     VStack,
     Image,
     useBreakpointValue,
+    Tag,
 } from '@chakra-ui/react';
 import {
     PiChartPieSlice,
@@ -35,6 +36,7 @@ import { UserAvatar } from './UserAvatar';
 import { headerData } from '@/app/data/header';
 import { SideBarItems } from '@/app/data/sideBar';
 import { on } from 'events';
+import { translateRole } from '@/utils/masks';
 
 // ============================================================================
 //  DEFINIÇÃO DOS ITENS DA SIDEBAR
@@ -146,6 +148,7 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
 // ============================================================================
 export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
     const { isAuthenticated, loginWithRedirect } = useAuth0();
+    const user = useAuth0().user;
     return (
         <Flex
             px={{ base: 4, md: 8 }}
@@ -173,7 +176,8 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             </Text>
 
             {isAuthenticated ? (
-                <UserAvatar />
+
+                    <UserAvatar />
             ) : (
                 <Button onClick={() => loginWithRedirect()} colorScheme="blue">
                     Entrar
