@@ -114,7 +114,7 @@ function VerifyEmailScreen() {
 
     return (
         <Flex w="100%" flex={1} justify="center" align="center" color="white" p={4}>
-            <Toaster />
+            
             <VStack gap={6} p={10} bg="gray.800" borderRadius="lg" boxShadow="lg" textAlign="center">
                 <Icon as={PiEnvelope} boxSize={16} color="brand.500" />
                 <Heading size="lg">Verifique o seu E-mail</Heading>

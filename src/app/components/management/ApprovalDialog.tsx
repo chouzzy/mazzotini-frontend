@@ -95,7 +95,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={(details) => !details.open && onClose()} size="xl">
-            <Toaster />
+            
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content bg="gray.800">

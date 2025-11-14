@@ -8,6 +8,7 @@ import { Flex } from '@chakra-ui/react';
 
 // 2. Importe o novo LayoutController
 import { LayoutController } from './components/layout/LayoutController';
+import { Toaster } from '@/components/ui/toaster';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -43,6 +44,7 @@ export default function RootLayout({
             minH={'100vh'}
             color={'textPrimary'}
           >
+            
             <Flex
               flexDir={'column'}
               mx="auto"
@@ -52,6 +54,7 @@ export default function RootLayout({
               alignItems={'center'}
               justifyContent={'center'}
             >
+              <Toaster />
               <LayoutController>{children}</LayoutController>
             </Flex>
           </Flex>

@@ -96,7 +96,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
 
     return (
         <VStack w="100%" align="stretch" gap={8}>
-            <Toaster />
+            
             <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                 <VStack align="start" gap={0}>
                     <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
