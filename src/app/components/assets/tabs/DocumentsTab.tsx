@@ -65,7 +65,7 @@ export function DocumentsTab({ asset }: TabProps) {
             <Card.Body>
                 <Card.Title>Documentos do Processo</Card.Title>
                 <VStack align="stretch" mt={4} gap={3}>
-                    <Toaster />
+                    
                     {asset.documents.length > 0 ? (
                         asset.documents.map(doc => (
                             <Button

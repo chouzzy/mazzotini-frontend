@@ -2,10 +2,10 @@ import { HeroHomepageData } from "@/types";
 
 const homepageData: HeroHomepageData = {
     hero: {
-        title: "Transforme Ativos Judiciais em Liquidez Imediata",
-        subtitle: "A Mazzotini conecta investidores a oportunidades de crédito judicial, oferecendo rentabilidade superior com a segurança da taxa IPCA, enquanto proporciona liquidez para quem mais precisa.",
+        title: "Bem-vindo ao Portal Mazzotini",
+        subtitle: "Você foi convidado para o portal de gestão e transparência da Mazzotini.\n Acesse à plataforma para acompanhar a evolução dos seus processos e andamentos.",
         ctaButton: "ENTRAR",
-        ctaButtonDemo: "COMECE AGORA",
+        // ctaButtonDemo: "COMECE AGORA",
         dashboardImage: ["/home/Crypto.png", "/home/CRM.png", "/home/Personal.png"]
     },
 };

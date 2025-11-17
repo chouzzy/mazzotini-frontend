@@ -68,7 +68,7 @@ export function UpdatesTab({ asset }: TabProps) {
                                             <VStack align="start" gap={0}>
                                                 {/* TÍTULO COM LIMITE: Usa o texto limpo e a prop `noOfLines` o resume. */}
                                                 <Text fontWeight="bold">
-                                                    <Icon as={PiClockClockwise} mr={2} color={'brand.600'} /> Atualização de crédito: {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}
+                                                    <Icon as={PiClockClockwise} mr={2} color={'brand.600'} /> Atualização do processo: {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}
                                                 </Text>
                                                 <Text fontSize="sm" color="gray.400">{new Date(upd.date).toLocaleDateString('pt-BR')}</Text>
                                             </VStack>

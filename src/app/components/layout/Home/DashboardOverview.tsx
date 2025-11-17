@@ -22,6 +22,7 @@ import {
     PiPlusCircle,
     PiWhatsappLogo,
     PiWarningCircle,
+    PiHandWavingDuotone,
 } from 'react-icons/pi';
 import NextLink from 'next/link';
 import { useApi } from '@/hooks/useApi';
@@ -102,7 +103,7 @@ export function DashboardOverview() {
     // Cálculos das estatísticas
     const totalAssets = assets?.length || 0;
     const totalActiveAssets = assets?.filter(asset => asset.status === 'ACTIVE').length || 0;
-    const totalInactiveAssets = assets?.filter(asset => asset.status =='Liquidado').length || 0;
+    const totalInactiveAssets = assets?.filter(asset => asset.status == 'Liquidado').length || 0;
     const totalInvested = assets?.reduce((sum, asset) => sum + asset.investedValue, 0) || 0;
     const totalCurrentValue = assets?.reduce((sum, asset) => sum + asset.currentValue, 0) || 0;
     const totalYield = totalCurrentValue - totalInvested;
@@ -121,11 +122,14 @@ export function DashboardOverview() {
             <VStack gap={8} align="start">
                 {/* Saudação com o nome vindo do nosso backend */}
                 <Box>
-                    <Heading as="h1" size={{ base: 'lg', md: 'xl' }}>
-                        Olá, {userProfile?.name || 'Investidor'}!
-                    </Heading>
+                    <Flex align="center" gap={2} mb={2}>
+                        <PiHandWavingDuotone size={28} color='#B8A76E' />
+                        <Heading as="h1" size={{ base: 'lg', md: 'xl' }}>
+                            Olá, {userProfile?.name || 'Investidor'}!
+                        </Heading>
+                    </Flex>
                     <Text fontSize={{ base: 'lg', md: 'lg' }} color="gray.400">
-                        Este é o resumo da sua carteira de investimentos.
+                        Este é o resumo da sua carteira de processos.
                     </Text>
                 </Box>
 
@@ -179,18 +183,18 @@ export function DashboardOverview() {
                         <Heading size="lg">Ações Rápidas</Heading>
                         <VStack w="100%" gap={3}>
                             <Link as={NextLink} href="/processos" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button bgColor={'brand.700'} _hover={{bgColor:'brand.800', transition:'300ms'}} color={'white'} w="100%" size="lg" gap={2}>
+                                <Button bgColor={'brand.700'} _hover={{ bgColor: 'brand.800', transition: '300ms' }} color={'white'} w="100%" size="lg" gap={2}>
                                     <PiWallet />
                                     Ver Todos os Processos
                                 </Button>
                             </Link>
                             <Link as={NextLink} href="/processos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button bgColor={'brand.700'} _hover={{bgColor:'brand.800', transition:'300ms'}} color={'white'} w="100%" size="lg" gap={2}>
+                                <Button bgColor={'brand.700'} _hover={{ bgColor: 'brand.800', transition: '300ms' }} color={'white'} w="100%" size="lg" gap={2}>
                                     <PiPlusCircle />
                                     Registrar Novo Processo
                                 </Button>
                             </Link>
-                            <Button bgColor={'gray.900'} _hover={{bgColor:'gray.950', transition:'300ms'}}  color={'whatsapp'} as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>
+                            <Button bgColor={'gray.900'} _hover={{ bgColor: 'gray.950', transition: '300ms' }} color={'whatsapp'} as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>
                                 <PiWhatsappLogo />
                                 Falar com Suporte
                             </Button>

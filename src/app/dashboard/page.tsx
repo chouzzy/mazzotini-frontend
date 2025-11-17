@@ -12,7 +12,7 @@ import { AssetsTable } from '../components/dashboard/AssetsTable';
 import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
-import { PiWarningCircle } from 'react-icons/pi';
+import { PiScalesDuotone, PiWarningCircle } from 'react-icons/pi';
 
 // Esta página agora usa a mesma tipagem de retorno que a página do operador
 import { AssetSummary } from '@/types/api';
@@ -43,7 +43,7 @@ export default function DashboardPage() {
             <Flex w="100%" flex={1} justify="center" align="center">
                 <VStack gap={4}>
                     <Spinner size="xl" color="#9E905A" />
-                    <Text>A carregar os seus investimentos...</Text>
+                    <Text>Carregando seus processos...</Text>
                 </VStack>
             </Flex>
         );
@@ -55,7 +55,7 @@ export default function DashboardPage() {
                 <VStack gap={4} bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
-                    <Text>Não foi possível carregar os seus investimentos.</Text>
+                    <Text>Não foi possível carregar os seus processos.</Text>
                 </VStack>
             </Flex>
         )
@@ -86,7 +86,10 @@ export default function DashboardPage() {
 
                 <Box>
                     <Flex flexDir={'column'} mb={6}>
-                        <Heading as="h1" size="lg">Meus Processos</Heading>
+                        <Flex align="center" gap={2}>
+                            <PiScalesDuotone size={24} color='#B8A76E' />
+                            <Heading as="h1" size="lg"> Meus Processos</Heading>
+                        </Flex>
                         <Text color="gray.400" mt={2}>
                             Acompanhe em tempo real a performance da sua carteira de processos.
                         </Text>

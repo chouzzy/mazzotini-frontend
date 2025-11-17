@@ -53,8 +53,8 @@ export function OverviewTab({ asset }: TabProps) {
             <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Detalhes do Processo</Card.Title>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Parte(s) Contrária(s)/Executado(s):</strong> {asset.lawyerResponsible}</Text>
+                    {/* <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text> */}
+                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Parte(s) Contrária(s)/Executado(s):</strong> {asset.originalCreditor}</Text>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
                 </Card.Body>
@@ -76,7 +76,7 @@ export function OverviewTab({ asset }: TabProps) {
                         <VStack align="stretch" mt={4} gap={2}>
                             <Flex justify="space-between" align="center">
                                 <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} /> {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}</Text>
-                                {!lastUpdate.read && <Badge colorScheme="blue">Novo</Badge>}
+                                {!lastUpdate.read && <Badge colorPalette="blue">Novo</Badge>}
                             </Flex>
                             <Text fontSize="sm" color="gray.400">
                                 Em: {new Date(lastUpdate.date).toLocaleDateString('pt-BR')}

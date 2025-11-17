@@ -331,7 +331,7 @@ export default function CompleteProfilePage() {
 
     return (
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
-            <Toaster />
+            
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">

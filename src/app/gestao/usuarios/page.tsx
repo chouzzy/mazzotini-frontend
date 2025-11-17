@@ -13,11 +13,13 @@ import {
     Tag,
     Avatar,
     Button,
-    useDisclosure
+    useDisclosure,
+    Toast,
+    Badge
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '@/hooks/useApi';
-import { PiWarningCircle, PiPencilSimple, PiUserPlus, PiMagnifyingGlassDuotone, PiUserCircleCheck } from 'react-icons/pi';
+import { PiWarningCircle, PiPencilSimple, PiUserPlus, PiMagnifyingGlassDuotone, PiUserCircleCheck, PiUserCircleDuotone } from 'react-icons/pi';
 import { EmptyState } from '@/app/components/dashboard/EmptyState';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import { useState } from 'react';
@@ -25,6 +27,7 @@ import { EditUserModal } from '@/app/components/management/EditUserModal';
 import { InviteUserDialog } from '@/app/components/management/InviteUserDialog';
 import Link from 'next/link';
 import { getRoleColorScheme, translateRole } from '@/utils/masks';
+import { UserProfile } from '@/types';
 
 // Tipagem para os dados do usuário (ATUALIZADA)
 interface UserManagementInfo {
@@ -35,6 +38,7 @@ interface UserManagementInfo {
     profilePictureUrl?: string | null; // Foto do nosso DB (prioridade)
     lastLogin?: string;
     roles: string[];
+    status: string
 }
 
 // Componente de Verificação de Role
@@ -61,6 +65,7 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
 export default function UserManagementPage() {
     // A API /api/management/users já foi atualizada (no UseCase) para enviar os novos campos
     const { data: users, isLoading, error, mutate } = useApi<UserManagementInfo[]>('/api/management/users');
+    const { data: pendingUsers, isLoading: isLoadingPending, error: errorPending, mutate: mutatePending } = useApi<UserProfile[]>('/api/management/pending-users');
     console.log('UserManagementPage: users = ', users);
 
     // Controles para os dois dialogs
@@ -105,22 +110,25 @@ export default function UserManagementPage() {
                 <VStack gap={8} align="stretch" w="100%">
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box>
-                            <Heading as="h1" size="xl">Gestão de Usuários</Heading>
+                            <Flex align="center" gap={2}>
+                                <PiUserCircleDuotone size={28} color="#B8A76E" />
+                                <Heading as="h1" size="xl">Gestão de Usuários</Heading>
+                            </Flex>
                             <Text color="gray.400" mt={2}>
                                 Convide novos usuários e gira as suas permissões.
                             </Text>
                         </Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
 
-                            <Button colorPalette={'cyan'} gap={2} onClick={onInviteOpen}>
+                            <Button colorPalette={'blue'} gap={2} onClick={onInviteOpen}>
                                 <Icon as={PiUserPlus} boxSize={5} />
                                 Novo usuário
                             </Button>
 
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
-                                <Button colorPalette={'yellow'} gap={2}>
+                                <Button bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.800', color: 'white' }} gap={2}>
                                     <Icon as={PiUserCircleCheck} boxSize={5} />
-                                    Verificar cadastros
+                                    Aprovar cadastros ({isLoadingPending ? <Spinner size="xs" /> : pendingUsers?.length || 0})
                                 </Button>
                             </Link>
                         </Flex>

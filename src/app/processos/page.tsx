@@ -21,11 +21,33 @@ import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
 import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
-import { PiWarningCircle, PiPlusCircle } from 'react-icons/pi';
+import { PiWarningCircle, PiPlusCircle, PiPresentationChartDuotone } from 'react-icons/pi';
 import { AssetSummary } from '@/types/api';
 
 // Funções auxiliares
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const translateStatus = (status: string) => {
+    switch (status) {
+        case 'Ativo':
+            return 'Ativo';
+        case 'Liquidado':
+            return 'Liquidado';
+        case 'Em Negociação':
+            return 'Em Negociação';
+        case 'PENDING_ENRICHMENT':
+            return 'Aguardando Legal One';
+        case 'FAILED_ENRICHMENT':
+            return 'Falha no Legal One';
+        default:
+            // Fallback: tenta humanizar chaves como SOME_STATUS -> "Some Status"
+            return status
+                .toString()
+                .replace(/_/g, ' ')
+                .toLowerCase()
+                .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+};
+
 const getStatusColorScheme = (status: string) => {
     switch (status) {
         case 'Ativo': return 'green';
@@ -94,15 +116,18 @@ export default function OperatorAssetsPage() {
     return (
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
-                <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
-                    <Box>
-                        <Heading as="h1" size="xl">Gestão de Ativos</Heading>
+                <Flex justify="space-between" align="start" direction={{ base: 'column', md: 'row' }} gap={4}>
+                    <Box w='100%'>
+                        <Flex align="center" gap={2} w='100%'>
+                            <PiPresentationChartDuotone color='#B8A76E' size={24} />
+                            <Heading as="h1" size="xl">Gestão de Ativos</Heading>
+                        </Flex>
                         <Text color="gray.400" mt={2}>
                             Visualize, pesquise e gira todos os ativos de crédito da plataforma.
                         </Text>
                     </Box>
                     <Link as={NextLink} href="/processos/novo" _hover={{ textDecoration: 'none' }}>
-                        <Button colorPalette="blue" gap={2}>
+                        <Button bgColor={'brand.600'} color={'white'} _hover={{bgColor:'brand.700', color:'white'}} gap={2}>
                             <Icon as={PiPlusCircle} boxSize={5} />
                             Registrar Novo Ativo
                         </Button>
@@ -127,19 +152,19 @@ export default function OperatorAssetsPage() {
                         <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'} >
                             <Table.Header border={'1px solid transparent'}>
                                 <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Nº do Processo</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Investidor Principal</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor Original</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Nº do Processo</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Investidor Principal</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor Original</Table.ColumnHeader>
                                     {/* ATUALIZADO: Agora mostra o Custo de Aquisição (total), que vem do 'investedValue' do Admin */}
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Custo de Aquisição</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Crédito</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'white'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Status</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Custo de Aquisição</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Crédito</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Status</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid'} borderColor={'bodyBg'} bgColor={tableBgColor}>
                                 {filteredAssets.map((asset) => (
-                                    <Table.Row key={asset.id} cursor={'pointer'} _hover={{color: 'brand.600' }} bgColor={tableBgColor} onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
-                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor} fontWeight="medium">{asset.processNumber}</Table.Cell>
+                                    <Table.Row key={asset.id} cursor={'pointer'} _hover={{ color: 'brand.600' }} bgColor={tableBgColor} onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`} color={'textPrimary'}>
+                                        <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor} fontWeight="semibold">{asset.processNumber}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.mainInvestorName}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{asset.originalCreditor}</Table.Cell>
                                         {/* ATUALIZADO: Mostra 'investedValue' (que agora é o Custo de Aquisição total vindo da API) */}
@@ -147,7 +172,7 @@ export default function OperatorAssetsPage() {
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>{formatCurrency(asset.currentValue)}</Table.Cell>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
                                             <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
-                                                <Tag.Label>{asset.status}</Tag.Label>
+                                                <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
                                             </Tag.Root>
                                         </Table.Cell>
                                     </Table.Row>
