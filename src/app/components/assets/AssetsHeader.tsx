@@ -12,7 +12,7 @@ import {
     Button,
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
-import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple } from 'react-icons/pi';
+import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -73,8 +73,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                     duration: 5000,
                     closable: true,
                 });
-                window.location.reload(); 
-            }, 3000); 
+                window.location.reload();
+            }, 3000);
 
         } catch (error) {
             toaster.create({
@@ -96,16 +96,19 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
 
     return (
         <VStack w="100%" align="stretch" gap={8}>
-            
+
             <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                 <VStack align="start" gap={0}>
-                    <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
+                    <Flex align="center" gap={2}>
+                        <PiGavelDuotone color='#B8A76E' size={24} />
+                        <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
+                    </Flex>
                     <Heading as="h1" size="lg">
                         {asset.processNumber}
                     </Heading>
                 </VStack>
                 <Flex gap={4} align="center">
-                    
+
                     {/* 4. O NOVO BOTÃO DE EDITAR */}
                     <Button
                         onClick={handleEdit}

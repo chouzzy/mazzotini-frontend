@@ -86,7 +86,7 @@ export const translateRole = (role: string): string => {
         case 'ASSOCIATE':
             return 'ASSOCIADO';
         case 'INVESTOR':
-            return 'INVESTIDOR';
+            return 'CLIENTE';
         case 'OPERATOR':
             return 'OPERADOR';
         default:

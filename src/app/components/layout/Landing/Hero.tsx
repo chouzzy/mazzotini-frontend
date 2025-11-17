@@ -65,7 +65,7 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                 variants={containerVariants}
             >
 
-                <VStack gap={8} maxW="3xl">
+                <VStack gap={8} maxW="3xl" mb={40}>
                     <MotionHeading
                         as="h1"
                         fontSize={{ base: '3xl', md: '5xl' }}
@@ -84,7 +84,7 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                     </MotionText>
                     <Flex flexDir={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 16 }} justifyContent={'center'} alignItems={'center'}>
 
-                        <MotionButton
+                        {/* <MotionButton
                             onClick={() => window.open(whatsappLink(), '_blank')}
                             size={{ base: 'md', md: 'xl' }}
                             py={4}
@@ -101,7 +101,7 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                             <HStack gap={2}>
                                 <Text fontWeight={'light'} fontSize={'lg'} letterSpacing={1.2}>{pageData.hero.ctaButtonDemo}</Text>
                             </HStack>
-                        </MotionButton>
+                        </MotionButton> */}
                         <MotionButton
                             onClick={() => loginWithRedirect()}
                             size={{ base: 'md', md: 'xl' }}
@@ -121,11 +121,11 @@ export function Hero({ pageData }: { pageData: HeroHomepageData }) {
                         </MotionButton>
                     </Flex>
                 </VStack>
-                <Flex flexDir={'row'} position={'relative'} w='100%' alignItems={'center'} justifyContent={'center'} gap={16} mt={{base:2, md:10}} overflowX={'hidden'} display={{base:'none', md:'flex'}}>
+                {/* <Flex flexDir={'row'} position={'relative'} w='100%' alignItems={'center'} justifyContent={'center'} gap={16} mt={{base:2, md:10}} overflowX={'hidden'} display={{base:'none', md:'flex'}}>
                     <Image boxSize={'md'} objectFit={'contain'} src={pageData.hero.dashboardImage[0]} alt={pageData.hero.title} />
                     <Image w={{base: 600, md: 600}} position={'absolute'} mx='auto' src={pageData.hero.dashboardImage[1]} alt={pageData.hero.title} />
                     <Image boxSize={'md'} objectFit={'contain'} src={pageData.hero.dashboardImage[2]} alt={pageData.hero.title} />
-                </Flex>
+                </Flex> */}
             </MotionFlex >
         </Flex>
     )

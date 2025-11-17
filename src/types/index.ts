@@ -5,7 +5,7 @@ interface HeroHomepageData {
         title: string;
         subtitle: string;
         ctaButton: string;
-        ctaButtonDemo: string;
+        // ctaButtonDemo: string;
         dashboardImage: string | string[];
     };
 }

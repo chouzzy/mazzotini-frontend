@@ -44,7 +44,7 @@ import { useApi } from '@/hooks/useApi';
 //  INTERFACE PARA OS VALORES DO FORMULÁRIO (ATUALIZADA)
 // ============================================================================
 
-// Interface para um único investidor no array
+// Interface para um único cliente  no array
 interface InvestorFormInput {
     userId: string;
     share?: number; // <-- Share agora é opcional no formulário
@@ -76,7 +76,7 @@ interface LookupResponse {
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
 }
 
-// Tipagem para a lista de utilizadores (Investidores e Associados)
+// Tipagem para a lista de utilizadores (cliente es e Associados)
 interface UserSelectItem {
     value: string;
     label: string;
@@ -111,7 +111,7 @@ function InvestorCombobox(props: {
     // 1. Pega a função de filtro 'contains'
     const { contains } = useFilter({ sensitivity: "base" });
 
-    // 2. Cria a coleção de investidores filtrável (ESTADO LOCAL)
+    // 2. Cria a coleção de cliente es filtrável (ESTADO LOCAL)
     const { collection, filter } = useListCollection({
         initialItems: allInvestors || [], // Usa os dados da nossa API
         filter: contains, // Usa o filtro 'contains'
@@ -121,10 +121,10 @@ function InvestorCombobox(props: {
         <Controller
             name={`investors.${index}.userId`}
             control={control}
-            rules={{ required: "Selecione um investidor" }}
+            rules={{ required: "Selecione um cliente" }}
             render={({ field: controllerField, fieldState: { error } }) => (
                 <Field.Root invalid={!!error} required>
-                    <Field.Label>Investidor {index + 1}</Field.Label>
+                    <Field.Label>Cliente {index + 1}</Field.Label>
 
                     <Combobox.Root
                         width="100%"
@@ -143,7 +143,7 @@ function InvestorCombobox(props: {
                                 <Input
                                     bgColor={'gray.700'}
                                     borderColor={'gray.600'}
-                                    placeholder="Pesquisar investidor..."
+                                    placeholder="Pesquisar cliente..."
                                 />
                             </Combobox.Input>
                             {/* Usando o IndicatorGroup como na documentação */}
@@ -155,7 +155,7 @@ function InvestorCombobox(props: {
                         <Portal>
                             <Combobox.Positioner>
                                 <Combobox.Content>
-                                    <Combobox.Empty>Nenhum investidor encontrado</Combobox.Empty>
+                                    <Combobox.Empty>Nenhum cliente encontrado</Combobox.Empty>
                                     {/* Itera sobre 'collection.items' */}
                                     {collection.items.map((item) => (
                                         <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
@@ -261,8 +261,8 @@ export default function CreateAssetPage() {
 
     // --- FUNÇÃO DE SUBMISSÃO (CADASTRO) ---
     // (Lógica do share: 0 mantida)
-    
-// --- FUNÇÃO DE SUBMISSÃO (CADASTRO) ---
+
+    // --- FUNÇÃO DE SUBMISSÃO (CADASTRO) ---
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
 
         if (!data.legalOneId || !data.legalOneType) {
@@ -271,7 +271,7 @@ export default function CreateAssetPage() {
                 description: "Por favor, clique em 'Buscar Dados' ao lado do número do processo antes de salvar.",
                 type: "error",
             });
-            return; 
+            return;
         }
 
         // Validação de Duplicidade (Frontend)
@@ -280,8 +280,8 @@ export default function CreateAssetPage() {
 
         if (uniqueInvestorIds.size !== investorUserIds.length) {
             toaster.create({
-                title: "Investidor Duplicado",
-                description: "Você não pode adicionar o mesmo investidor duas vezes ao mesmo processo. Por favor, remova o investidor duplicado.",
+                title: "Cliente Duplicado",
+                description: "Você não pode adicionar o mesmo cliente duas vezes ao mesmo processo. Por favor, remova o cliente duplicado.",
                 type: "error",
             });
             return;
@@ -292,12 +292,12 @@ export default function CreateAssetPage() {
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
             console.warn("[Frontend] O backend (CreateCreditAssetUseCase) precisa ser ajustado para aceitar totalShare = 0.");
-            
+
             const payload = {
                 ...data,
                 // Converte a string "YYYY-MM-DD" para um objeto Date (ISO string)
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
-                
+
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
                     share: 0 // <-- Hardcoded 0% como pedido
@@ -324,12 +324,12 @@ export default function CreateAssetPage() {
             //  A SUA CORREÇÃO (Toast Inteligente)
             // =================================================================
             let description = "Ocorreu um erro inesperado. Tente novamente.";
-            
+
             // Tenta pegar os 'details' (erros de validação do Yup, ex: ["O ID é obrigatório"])
             if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
                 description = error.response.data.details.join(', ');
-            } 
-            // Tenta pegar o 'error' (erro específico do UseCase, ex: "Investidor Duplicado")
+            }
+            // Tenta pegar o 'error' (erro específico do UseCase, ex: "Cliente Duplicado")
             else if (error.response?.data?.error) {
                 description = error.response.data.error;
             }
@@ -361,7 +361,10 @@ export default function CreateAssetPage() {
         >
             <VStack w="100%" mx="auto" gap={8} align="stretch">
                 <VStack align="start">
-                    <Heading as="h1" size="xl" >Registrar Novo Ativo de Crédito</Heading>
+                    <Flex align="center" gap={2}>
+                        <PiPlusCircle size={28} color="#B8A76E" />
+                        <Heading as="h1" size="xl" >Registrar Novo Ativo de Crédito</Heading>
+                    </Flex>
                     <Text color="gray.500">Insira o número do processo e clique em "Buscar" para carregar os dados.</Text>
                 </VStack>
 
@@ -426,10 +429,10 @@ export default function CreateAssetPage() {
                         </Heading>
 
                         {/* ================================================================= */}
-                        {/* Repetidor de Investidores (COM O NOVO SUB-COMPONENTE)            */}
+                        {/* Repetidor de Clientes (COM O NOVO SUB-COMPONENTE)            */}
                         {/* ================================================================= */}
                         <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md">
-                            <Heading size="sm">Participação (Investidores)</Heading>
+                            <Heading size="sm">Participação (Clientes)</Heading>
 
                             {fields.map((field, index) => (
                                 <SimpleGrid
@@ -463,7 +466,7 @@ export default function CreateAssetPage() {
                                     <Field.Root>
                                         {fields.length > 1 && (
                                             <IconButton
-                                                aria-label="Remover Investidor"
+                                                aria-label="Remover Cliente"
                                                 colorPalette="red"
                                                 variant="plain"
                                                 onClick={() => remove(index)}
@@ -478,12 +481,12 @@ export default function CreateAssetPage() {
                             {/* BOTÃO ADICIONAR NOVO */}
                             <Button
                                 size="sm"
-                                variant="outline"
+                                variant="solid"
                                 colorPalette="blue"
                                 onClick={() => append({ userId: "", share: 0 })} // Adiciona com share 0
                                 alignSelf="flex-start"
                             >
-                                <Icon as={PiPlusCircle} /> Adicionar Investidor
+                                <Icon as={PiPlusCircle} /> Adicionar Cliente
                             </Button>
                         </VStack>
 
@@ -619,7 +622,7 @@ export default function CreateAssetPage() {
                     </Stack>
                 </Flex>
             </VStack>
-            
+
         </MotionFlex>
     );
 }

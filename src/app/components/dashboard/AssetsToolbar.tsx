@@ -11,7 +11,7 @@ import {
     useListCollection,
     createListCollection
 } from '@chakra-ui/react';
-import { PiFunction, PiSquaresFour } from 'react-icons/pi';
+import { PiArrowDownDuotone, PiCaretDoubleDownDuotone, PiFunction, PiSquaresFour } from 'react-icons/pi';
 import { useMemo } from 'react';
 import { AssetSummary } from '@/types/api';
 
@@ -104,6 +104,7 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     <Select.Control>
                         <Select.Trigger border={'1px solid'} borderColor="gray.600" bgColor={'gray.950'} cursor={'pointer'}>
                             <Select.ValueText color={'gray.200'} placeholder="Filtrar por status" />
+                            <PiCaretDoubleDownDuotone color={'#B8A76E'}/>
                         </Select.Trigger>
                     </Select.Control>
                     <Portal>
@@ -119,7 +120,7 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     </Portal>
                 </Select.Root>
 
-                <ButtonGroup attached>
+                {/* <ButtonGroup attached>
                     <IconButton
                         aria-label="Ver em Grade"
                         onClick={() => onViewChange('grid')}
@@ -135,7 +136,7 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     >
                         <PiFunction />
                     </IconButton>
-                </ButtonGroup>
+                </ButtonGroup> */}
             </Flex>
         </Flex>
     );

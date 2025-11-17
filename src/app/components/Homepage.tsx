@@ -43,9 +43,9 @@ export function Homepage() {
                 ) : (
                     <>
                         <Hero pageData={homepageData} />
-                        <AdvantagesSection />
+                        {/* <AdvantagesSection />
                         <FeedbacksCarousel />
-                        <FaqSection />
+                        <FaqSection /> */}
                     </>
                 )}
             </Flex>
