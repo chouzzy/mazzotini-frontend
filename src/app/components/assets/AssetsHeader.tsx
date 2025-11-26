@@ -138,15 +138,15 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
 
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                 <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiWallet} /> Estimativa Atual do Crédito</Stat.Label>
+                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiWallet} color={'brand.600'} /> Estimativa Atual do Crédito</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
                 </Stat.Root>
                 <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiScales} /> Custo de Aquisição</Stat.Label>
+                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiScales} color={'brand.600'} /> Custo de Aquisição</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.acquisitionValue)}</Stat.ValueText>
                 </Stat.Root>
                 <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} /> Valor Crédito na Data da Cessão</Stat.Label>
+                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} color={'brand.600'} /> Valor Crédito na Data da Cessão</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.originalValue)}</Stat.ValueText>
                 </Stat.Root>
             </SimpleGrid>
