@@ -59,7 +59,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
     };
 
     return (
-        <Link href={`/ativos/${encodeURIComponent(asset.processNumber)}`} _hover={{ textDecoration: 'none' }}>
+        <Link href={`/processos/${encodeURIComponent(asset.processNumber)}`} _hover={{ textDecoration: 'none' }}>
             <Box minW={'xl'} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'blue.400', transform: 'translateY(-4px)', shadow: 'lg' }}>
                 <VStack align="stretch" gap={4}>
                     {/* Cabeçalho */}

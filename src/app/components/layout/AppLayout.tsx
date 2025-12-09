@@ -105,7 +105,7 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
     let isActive = pathname === href; // Começamos com a comparação exata
 
     // Adicionamos uma exceção para o link "pai"
-    // Se o href for '/ativos' E a página atual for uma sub-página de detalhe...
+    // Se o href for '/processos' E a página atual for uma sub-página de detalhe...
     if (href === '/processos' && pathname.startsWith('/processos/')) {
         // ... então ativamos o link "Meus processos".
         isActive = true;
