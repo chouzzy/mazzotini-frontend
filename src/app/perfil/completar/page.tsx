@@ -47,7 +47,14 @@ interface OnboardingFormData {
     infoEmail?: string;
     profession?: string;
     contactPreference: string[];
-    referredById: string; // ID do Associado (vendedor)
+
+
+
+    // --- MUDANÇA: Campos de Indicação ---
+    referredById?: string; // ID do Associado (se existir)
+    manualReferral?: string; // Nome escrito manualmente (se não souber/não existir)
+    unknownAssociate: boolean; // Checkbox de controle
+    // ------------------------------------
 
     residentialCep: string;
     residentialStreet: string;
@@ -215,6 +222,7 @@ export default function CompleteProfilePage() {
 
     // Observa os campos necessários para a lógica da UI
     const useCommercialAddress = watch('useCommercialAddress');
+    const unknownAssociate = watch('unknownAssociate'); // Observa o checkbox
     const profilePictureFile = watch('profilePicture');
     const profilePicturePreview = profilePictureFile && profilePictureFile.length > 0
         ? URL.createObjectURL(profilePictureFile[0])
@@ -286,7 +294,10 @@ export default function CompleteProfilePage() {
                 profession: data.profession,
                 contactPreference: data.contactPreference?.join(','),
                 infoEmail: data.infoEmail,
-                referredById: data.referredById,
+                // Lógica do Associado: Se marcou "Não sei", manda o nome manual no campo 'indication'
+                // Se não marcou, manda o ID no 'referredById'
+                referredById: data.unknownAssociate ? null : data.referredById,
+                indication: data.unknownAssociate ? data.manualReferral : null,
                 profilePictureUrl: profilePictureUrl,
                 personalDocumentUrls: personalDocumentUrls.length > 0 ? personalDocumentUrls : undefined,
 
@@ -331,7 +342,7 @@ export default function CompleteProfilePage() {
 
     return (
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
-            
+
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
@@ -405,35 +416,35 @@ export default function CompleteProfilePage() {
                                     </Select.Root>
                                 )} />
                             </Field.Root>
-                        <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
-                            <Field.Label>Gênero</Field.Label>
-                            <Controller
-                                name="gender"
-                                control={control}
-                                rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }}
-                                render={({ field }) => (
-                                    <RadioGroup.Root
-                                        value={field.value}
-                                        onValueChange={(details) => field.onChange(details.value as "Male" | "Female")}
-                                        disabled={isCnpj}
-                                    >
-                                        <Stack direction={{ base: 'column', md: 'row' }} gap={4} mt={2}>
-                                            <RadioGroup.Item value="Male">
-                                                <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                                <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                                <RadioGroup.ItemText>Masculino</RadioGroup.ItemText>
-                                            </RadioGroup.Item>
-                                            <RadioGroup.Item value="Female">
-                                                <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                                <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                                <RadioGroup.ItemText>Feminino</RadioGroup.ItemText>
-                                            </RadioGroup.Item>
-                                        </Stack>
-                                    </RadioGroup.Root>
-                                )}
-                            />
-                            {errors.gender && <Field.ErrorText>{errors.gender.message}</Field.ErrorText>}
-                        </Field.Root>
+                            <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
+                                <Field.Label>Gênero</Field.Label>
+                                <Controller
+                                    name="gender"
+                                    control={control}
+                                    rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }}
+                                    render={({ field }) => (
+                                        <RadioGroup.Root
+                                            value={field.value}
+                                            onValueChange={(details) => field.onChange(details.value as "Male" | "Female")}
+                                            disabled={isCnpj}
+                                        >
+                                            <Stack direction={{ base: 'column', md: 'row' }} gap={4} mt={2}>
+                                                <RadioGroup.Item value="Male">
+                                                    <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
+                                                    <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                                    <RadioGroup.ItemText>Masculino</RadioGroup.ItemText>
+                                                </RadioGroup.Item>
+                                                <RadioGroup.Item value="Female">
+                                                    <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
+                                                    <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                                    <RadioGroup.ItemText>Feminino</RadioGroup.ItemText>
+                                                </RadioGroup.Item>
+                                            </Stack>
+                                        </RadioGroup.Root>
+                                    )}
+                                />
+                                {errors.gender && <Field.ErrorText>{errors.gender.message}</Field.ErrorText>}
+                            </Field.Root>
                         </SimpleGrid>
                     </VStack>
 
@@ -481,42 +492,76 @@ export default function CompleteProfilePage() {
                         </Fieldset.Root>
                     </VStack>
 
-                    {/* ASSOCIADO (VENDEDOR) */}
+                    {/* ============================================================ */}
+                    {/* SEÇÃO DE INDICAÇÃO (ATUALIZADA)                              */}
+                    {/* ============================================================ */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação</Heading>
+
                         <Controller
-                            name="referredById"
+                            name="unknownAssociate"
                             control={control}
-                            render={({ field, fieldState: { error } }) => (
-                                <Field.Root invalid={!!error}>
-                                    <Field.Label>Associado Responsável</Field.Label>
-                                    <Select.Root
-                                        collection={associatesCollection}
-                                        value={field.value ? [field.value] : undefined}
-                                        onValueChange={(details) => field.onChange(details.value[0])}
-                                    >
-                                        <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione um associado..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
-                                        <Portal>
-                                            <Select.Positioner>
-                                                <Select.Content>
-                                                    {isLoadingAssociates ? (
-                                                        <Flex w='100%' justify={'center'}><Spinner /></Flex>
-                                                    ) : (
-                                                        associatesCollection.items.map((associate) => (
-                                                            <Select.Item key={associate.value} item={associate}>
-                                                                {associate.label}
-                                                            </Select.Item>
-                                                        ))
-                                                    )}
-                                                </Select.Content>
-                                            </Select.Positioner>
-                                        </Portal>
-                                    </Select.Root>
-                                    {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
-                                </Field.Root>
+                            render={({ field }) => (
+                                <Checkbox.Root
+                                    checked={field.value}
+                                    onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
+                                    mb={2}
+                                >
+                                    <Checkbox.HiddenInput />
+                                    <Checkbox.Control bgColor={'gray.100'} color={'black'} />
+                                    <Checkbox.Label>Não sei quem é / Não encontrei meu associado na lista</Checkbox.Label>
+                                </Checkbox.Root>
                             )}
                         />
+
+                        {unknownAssociate ? (
+                            // MODO MANUAL
+                            <Field.Root>
+                                <Field.Label>Nome do Associado (Opcional)</Field.Label>
+                                <Input
+                                    placeholder="Digite o nome de quem lhe indicou"
+                                    bgColor={'gray.700'}
+                                    {...register("manualReferral")}
+                                />
+                                <Field.HelperText>Nós iremos verificar esta informação internamente.</Field.HelperText>
+                            </Field.Root>
+                        ) : (
+                            // MODO SELEÇÃO
+                            <Controller
+                                name="referredById"
+                                control={control}
+                                render={({ field, fieldState: { error } }) => (
+                                    <Field.Root invalid={!!error}>
+                                        <Field.Label>Associado Responsável</Field.Label>
+                                        <Select.Root
+                                            collection={associatesCollection}
+                                            value={field.value ? [field.value] : []}
+                                            onValueChange={(details) => field.onChange(details.value[0])}
+                                        >
+                                            <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione um associado..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
+                                            <Portal>
+                                                <Select.Positioner>
+                                                    <Select.Content>
+                                                        {isLoadingAssociates ? (
+                                                            <Flex w='100%' justify={'center'}><Spinner /></Flex>
+                                                        ) : (
+                                                            associatesCollection.items.map((associate) => (
+                                                                <Select.Item key={associate.value} item={associate}>
+                                                                    {associate.label}
+                                                                </Select.Item>
+                                                            ))
+                                                        )}
+                                                    </Select.Content>
+                                                </Select.Positioner>
+                                            </Portal>
+                                        </Select.Root>
+                                        {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
+                                    </Field.Root>
+                                )}
+                            />
+                        )}
                     </VStack>
+                    {/* ============================================================ */}
 
                     {/* ENDEREÇO RESIDENCIAL */}
                     <VStack gap={4} align="stretch">

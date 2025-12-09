@@ -111,7 +111,7 @@ export function UpdatesTab({ asset }: TabProps) {
                                                 <strong style={{ color: '#B8A76E' }}>Atualização:</strong> {fullContentText}
                                             </Text>
                                             {/* <Link
-                                                href={`/ativos/${asset.processNumber}/atualizacao/${upd.id}`}
+                                                href={`/processos/${asset.processNumber}/atualizacao/${upd.id}`}
                                                 target='_blank'
                                             >
                                                 <Button

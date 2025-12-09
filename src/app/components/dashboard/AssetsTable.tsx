@@ -38,7 +38,7 @@ export function AssetsTable({ assets }: AssetsTableProps) {
             <Table.Body>
                 {assets.map((asset) => (
                     <Table.Row key={asset.processNumber} _hover={{ bg: 'gray.700', cursor: 'pointer' }} asChild>
-                        <Link as={NextLink} href={`/ativos/${encodeURIComponent(asset.processNumber)}`}>
+                        <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`}>
                             <Table.Cell fontWeight="medium">{asset.processNumber}</Table.Cell>
                             <Table.Cell>{asset.originalCreditor}</Table.Cell>
                             <Table.Cell>{formatCurrency(asset.investedValue)}</Table.Cell>
