@@ -22,7 +22,8 @@ import {
     RadioGroup,
     Avatar,
     CheckboxGroup,
-    FileUpload
+    FileUpload,
+    Link
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -81,6 +82,7 @@ interface OnboardingFormData {
     // Campos para os ficheiros
     profilePicture?: FileList;
     personalDocuments?: FileList;
+    termsAccepted: boolean;
 }
 
 // CORREÇÃO: A tipagem agora corresponde ao que a API envia
@@ -215,6 +217,8 @@ export default function CompleteProfilePage() {
             useCommercialAddress: false,
             contactPreference: [],
             correspondenceAddress: 'residential',
+            unknownAssociate: false,
+            termsAccepted: false // Inicializa como não aceito
         }
     });
     const router = useRouter();
@@ -635,6 +639,38 @@ export default function CompleteProfilePage() {
                         </Field.Root>
                         {/* O VStack abaixo não é mais necessário, pois o FileUpload.List faz isso */}
                     </VStack>
+
+
+                    <Box mt={8} p={4} bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700">
+                        <Controller
+                            name="termsAccepted"
+                            control={control}
+                            rules={{ required: "Você deve ler e aceitar os Termos de Uso e Política de Privacidade para continuar." }}
+                            render={({ field }) => (
+                                <Checkbox.Root
+                                    checked={field.value}
+                                    onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
+                                >
+                                    <Checkbox.HiddenInput />
+                                    <Checkbox.Control bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                    <Checkbox.Label fontSize="sm" color="gray.300" lineHeight="1.5">
+                                        Li, compreendi e concordo com os{' '}
+                                        <Link href="/termos-de-uso" color="brand.400" textDecoration="underline" target="_blank" onClick={(e) => e.stopPropagation()}>
+                                            Termos de Uso
+                                        </Link>
+                                        {' '}e com a{' '}
+                                        <Link href="/politica-privacidade" color="brand.400" textDecoration="underline" target="_blank" onClick={(e) => e.stopPropagation()}>
+                                            Política de Privacidade
+                                        </Link>
+                                        {' '}da Mazzotini.
+                                    </Checkbox.Label>
+                                </Checkbox.Root>
+                            )}
+                        />
+                        {errors.termsAccepted && (
+                            <Text color="red.400" fontSize="xs" mt={2}>{errors.termsAccepted.message}</Text>
+                        )}
+                    </Box>
 
                     <Button type="submit" colorPalette="blue" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch">
                         <Icon as={PiFloppyDisk} />
