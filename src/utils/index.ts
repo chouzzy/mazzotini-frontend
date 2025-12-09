@@ -1,7 +1,7 @@
 
-const whatsappNumber = 5516991790291
-const email = `studio.torroja@gmail.com`
-const instagram = `https://www.instagram.com/studio.torroja/`
+const whatsappNumber = 5511971415567
+const email = `contato@awer.co`
+const instagram = `https://www.instagram.com/mazzotiniadvogados/?hl=pt`
 
 
 
@@ -31,7 +31,8 @@ const scrollToSection = (id: string) => {
 
 const whatsappLink = (path?: string) => {
 
-    return `https://wa.me/${whatsappNumber}?text=Ol%C3%A1%2C%20acessei%20o%20site%20do%20Studio%20Torroja%20e%20gostaria%20de%20um%20or%C3%A7amento%21`
+    const text = "Olá, acessei o Sistema Mazzotini e preciso de ajuda."
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`
 }
 
 const instagramLink = (path?: string) => {
