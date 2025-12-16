@@ -212,7 +212,6 @@ export default function CompleteProfilePage() {
     const { getAccessTokenSilently } = useAuth0();
     const { register, handleSubmit, formState: { errors }, control, watch, setValue } = useForm<OnboardingFormData>({
         defaultValues: {
-            name: user?.name,
             nationality: 'Brasileira',
             useCommercialAddress: false,
             contactPreference: [],
