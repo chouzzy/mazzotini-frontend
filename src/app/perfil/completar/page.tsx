@@ -52,7 +52,7 @@ interface OnboardingFormData {
 
     // --- MUDANÇA: Campos de Indicação ---
     referredById?: string; // ID do Associado (se existir)
-    manualReferral?: string; // Nome escrito manualmente (se não souber/não existir)
+    indication?: string; // Nome escrito manualmente (se não souber/não existir)
     unknownAssociate: boolean; // Checkbox de controle
     // ------------------------------------
 
@@ -245,7 +245,11 @@ export default function CompleteProfilePage() {
     const onSubmit: SubmitHandler<OnboardingFormData> = async (data) => {
 
         setIsSubmitting(true);
+        
         try {
+
+            console.log("Dados do formulário:", data);
+            
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
 
@@ -297,7 +301,7 @@ export default function CompleteProfilePage() {
                 // Lógica do Associado: Se marcou "Não sei", manda o nome manual no campo 'indication'
                 // Se não marcou, manda o ID no 'referredById'
                 referredById: data.unknownAssociate ? null : data.referredById,
-                indication: data.unknownAssociate ? data.manualReferral : null,
+                indication: data.unknownAssociate ? data.indication : null,
                 profilePictureUrl: profilePictureUrl,
                 personalDocumentUrls: personalDocumentUrls.length > 0 ? personalDocumentUrls : undefined,
 
@@ -323,7 +327,7 @@ export default function CompleteProfilePage() {
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
             };
-
+            
             await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             toaster.create({ title: "Perfil Atualizado!", description: "Os seus dados foram salvos e enviados para análise.", type: "success" });
@@ -521,7 +525,7 @@ export default function CompleteProfilePage() {
                                 <Input
                                     placeholder="Digite o nome de quem lhe indicou"
                                     bgColor={'gray.700'}
-                                    {...register("manualReferral")}
+                                    {...register("indication")}
                                 />
                                 <Field.HelperText>Nós iremos verificar esta informação internamente.</Field.HelperText>
                             </Field.Root>
