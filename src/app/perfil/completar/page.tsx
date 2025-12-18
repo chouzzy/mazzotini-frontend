@@ -1,4 +1,3 @@
-// /src/app/perfil/completar/page.tsx
 'use client';
 
 import {
@@ -15,27 +14,28 @@ import {
     createListCollection,
     Select,
     Portal,
-    Box,
     Checkbox,
     Stack,
     Fieldset,
     RadioGroup,
     Avatar,
     CheckboxGroup,
-    FileUpload
+    FileUpload,
+    Link,
+    Box
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiEnvelope, PiFloppyDisk, PiLetterCircleHDuotone, PiUploadSimple, PiWhatsappLogoDuotone } from "react-icons/pi";
+import { PiCaretDownDuotone, PiEnvelope, PiFloppyDisk, PiUploadSimple, PiWhatsappLogoDuotone } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask, maskCEP } from "@/utils/masks";
 import { useSWRConfig } from "swr";
 import { useApi } from "@/hooks/useApi";
+import NextLink from 'next/link';
 
-// Tipagem expandida para todos os novos campos
 interface OnboardingFormData {
     name: string;
     cpfOrCnpj: string;
@@ -47,14 +47,10 @@ interface OnboardingFormData {
     infoEmail?: string;
     profession?: string;
     contactPreference: string[];
-
-
-
-    // --- MUDANÇA: Campos de Indicação ---
-    referredById?: string; // ID do Associado (se existir)
-    indication?: string; // Nome escrito manualmente (se não souber/não existir)
-    unknownAssociate: boolean; // Checkbox de controle
-    // ------------------------------------
+    
+    referredById?: string; 
+    manualReferral?: string; 
+    unknownAssociate: boolean; 
 
     residentialCep: string;
     residentialStreet: string;
@@ -78,21 +74,17 @@ interface OnboardingFormData {
     nationality: string;
     maritalStatus: string;
 
-    // Campos para os ficheiros
     profilePicture?: FileList;
     personalDocuments?: FileList;
+
+    termsAccepted: boolean;
 }
 
-// CORREÇÃO: A tipagem agora corresponde ao que a API envia
 interface Associate {
-    value: string; // O ID do utilizador no *nosso* banco
-    label: string; // O Nome do utilizador
+    value: string; 
+    label: string; 
 }
 
-
-// ============================================================================
-//  COLEÇÕES DE DADOS PARA OS SELECTS
-// ============================================================================
 const estadoCivilCollection = createListCollection({
     items: [
         { label: "Solteiro(a)", value: "Solteiro(a)" },
@@ -114,9 +106,7 @@ const nacionalidadesCollection = createListCollection({
 
 const contactPreferenceItems = [{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'E-mail', value: 'email' }];
 
-// ============================================================================
-//  SUB-COMPONENTE REUTILIZÁVEL: Bloco de Endereço
-// ============================================================================
+// --- Sub-componente de Endereço ---
 interface AddressBlockProps {
     type: 'residential' | 'commercial';
     control: Control<OnboardingFormData>;
@@ -201,40 +191,43 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
     );
 }
 
-// ============================================================================
-//  PÁGINA PRINCIPAL
-// ============================================================================
 export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
     const { register, handleSubmit, formState: { errors }, control, watch, setValue } = useForm<OnboardingFormData>({
         defaultValues: {
+            name: '',
             nationality: 'Brasileira',
             useCommercialAddress: false,
             contactPreference: [],
             correspondenceAddress: 'residential',
+            unknownAssociate: false,
+            termsAccepted: false 
         }
     });
     const router = useRouter();
     const { mutate } = useSWRConfig();
 
-    // Observa os campos necessários para a lógica da UI
     const useCommercialAddress = watch('useCommercialAddress');
-    const unknownAssociate = watch('unknownAssociate'); // Observa o checkbox
+    const unknownAssociate = watch('unknownAssociate'); 
     const profilePictureFile = watch('profilePicture');
+
+    // Monitora o CPF/CNPJ para determinar se é Pessoa Jurídica
+    const cpfOrCnpjValue = watch('cpfOrCnpj');
+    const unmaskedCpfOrCnpj = unmask(cpfOrCnpjValue || '');
+    const isCnpj = unmaskedCpfOrCnpj.length > 11;
+
     const profilePicturePreview = profilePictureFile && profilePictureFile.length > 0
         ? URL.createObjectURL(profilePictureFile[0])
         : user?.picture;
 
-    // Busca a lista de associados (vendedores) para o select
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
 
     const associatesCollection = createListCollection({
         items: associates || [],
     });
 
-    // Controlador para o CheckboxGroup de preferência de contato
     const contactPreference = useController({
         control,
         name: "contactPreference",
@@ -242,50 +235,36 @@ export default function CompleteProfilePage() {
     });
 
     const onSubmit: SubmitHandler<OnboardingFormData> = async (data) => {
-
         setIsSubmitting(true);
-        
         try {
-
-            console.log("Dados do formulário:", data);
-            
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
-
-            // --- Lógica de Upload da Foto de Perfil (Passo 1) ---
-            let profilePictureUrl = user?.picture; // Mantém a foto do Auth0 se não for alterada
-
+            // Upload Foto
+            let profilePictureUrl = user?.picture;
             if (data.profilePicture && data.profilePicture.length > 0) {
                 const file = data.profilePicture[0];
                 const formData = new FormData();
                 formData.append('profilePicture', file);
-
                 const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile-picture`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    }
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
-                profilePictureUrl = response.data.url; // Guarda a nova URL
+                profilePictureUrl = response.data.url;
             }
 
-            // --- Lógica de Upload dos Documentos (Passo 2) ---
+            // Upload Docs
             const personalDocumentUrls: string[] = [];
             if (data.personalDocuments && data.personalDocuments.length > 0) {
                 for (const file of Array.from(data.personalDocuments)) {
                     const formData = new FormData();
                     formData.append('document', file);
                     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/personal-document`, formData, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'multipart/form-data'
-                        }
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                     });
                     personalDocumentUrls.push(response.data.url);
                 }
             }
 
-            // --- Payload para o Perfil (Passo 3) ---
+            // Payload
             const payload = {
                 name: data.name,
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
@@ -297,13 +276,12 @@ export default function CompleteProfilePage() {
                 profession: data.profession,
                 contactPreference: data.contactPreference?.join(','),
                 infoEmail: data.infoEmail,
-                // Lógica do Associado: Se marcou "Não sei", manda o nome manual no campo 'indication'
-                // Se não marcou, manda o ID no 'referredById'
+                
                 referredById: data.unknownAssociate ? null : data.referredById,
-                indication: data.unknownAssociate ? data.indication : null,
+                indication: data.unknownAssociate ? data.manualReferral : null,
+
                 profilePictureUrl: profilePictureUrl,
                 personalDocumentUrls: personalDocumentUrls.length > 0 ? personalDocumentUrls : undefined,
-
                 residentialCep: unmask(data.residentialCep),
                 residentialStreet: data.residentialStreet,
                 residentialNumber: data.residentialNumber,
@@ -311,9 +289,7 @@ export default function CompleteProfilePage() {
                 residentialNeighborhood: data.residentialNeighborhood,
                 residentialCity: data.residentialCity,
                 residentialState: data.residentialState,
-
                 correspondenceAddress: data.correspondenceAddress,
-
                 ...(data.useCommercialAddress && {
                     commercialCep: unmask(data.commercialCep || ''),
                     commercialStreet: data.commercialStreet,
@@ -326,12 +302,12 @@ export default function CompleteProfilePage() {
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
             };
-            
+
             await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             toaster.create({ title: "Perfil Atualizado!", description: "Os seus dados foram salvos e enviados para análise.", type: "success" });
-            await mutate('/api/users/me'); // Invalida o cache
-            router.push('/dashboard'); // Redireciona
+            await mutate('/api/users/me');
+            router.push('/dashboard');
         } catch (error: any) {
             toaster.create({ title: "Erro ao Salvar.", description: error.response?.data?.error || "Tente novamente.", type: "error" });
         } finally {
@@ -339,29 +315,24 @@ export default function CompleteProfilePage() {
         }
     };
 
-    const cpfOrCnpjValue = useWatch({ control, name: "cpfOrCnpj" });
-    const unmaskedCpfOrCnpj = unmask(cpfOrCnpjValue || '');
-    const isCnpj = unmaskedCpfOrCnpj.length > 11;
-
     return (
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
-
+            {/* O Toaster está no layout global */}
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
                         <Heading as="h1" size="xl">Complete o seu Perfil</Heading>
-                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipe.</Text>
+                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais.</Text>
                     </VStack>
 
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
-                            <Avatar.Root boxSize={32} my={8}>
+                            <Avatar.Root size={'2xl'} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
                                 <Avatar.Image src={profilePicturePreview || ''} />
                             </Avatar.Root>
-                            {/* 4. ATUALIZAÇÃO: Usando o FileUpload.Root */}
                             <FileUpload.Root accept={["image/png", "image/jpeg"]} {...register("profilePicture")} id="profile-picture-upload" maxFiles={1} alignItems={'center'} justifyContent={'center'}>
                                 <FileUpload.HiddenInput />
                                 <FileUpload.Trigger asChild>
@@ -377,7 +348,8 @@ export default function CompleteProfilePage() {
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
-                            <Field.Label>Nome Completo</Field.Label>
+                            {/* AQUI ESTÁ A LÓGICA DE LABEL */}
+                            <Field.Label>{isCnpj ? "Razão Social" : "Nome Completo"}</Field.Label>
                             <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
@@ -387,68 +359,51 @@ export default function CompleteProfilePage() {
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
                                 )} />
                             </Field.Root>
-                            <Field.Root invalid={!!errors.rg}>
+                            <Field.Root invalid={!!errors.rg} disabled={isCnpj}>
                                 <Field.Label>RG</Field.Label>
-                                <Input bgColor={'gray.700'} {...register("rg")} />
+                                <Input bgColor={'gray.700'} {...register("rg")} disabled={isCnpj} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.birthDate} disabled={isCnpj} required={!isCnpj}>
                                 <Field.Label>Data de Nascimento</Field.Label>
-                                <Input type="date" bgColor={'gray.700'} {...register("birthDate")} />
+                                <Input type="date" bgColor={'gray.700'} {...register("birthDate", { required: !isCnpj ? "A data de nascimento é obrigatória" : false })} disabled={isCnpj} />
                             </Field.Root>
                         </SimpleGrid>
-                        <SimpleGrid columns={{ base: 1, md: 4 }} gap={4}>
-                            <Field.Root invalid={!!errors.profession}>
+                        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+                            <Field.Root invalid={!!errors.profession} disabled={isCnpj}>
                                 <Field.Label>Profissão</Field.Label>
-                                <Input bgColor={'gray.700'} {...register("profession")} />
+                                <Input bgColor={'gray.700'} {...register("profession")} disabled={isCnpj} />
                             </Field.Root>
-                            <Field.Root>
+                            <Field.Root disabled={isCnpj}>
                                 <Field.Label>Nacionalidade</Field.Label>
                                 <Controller name="nationality" control={control} render={({ field }) => (
-                                    <Select.Root collection={nacionalidadesCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText /></Select.Trigger></Select.Control>
+                                    <Select.Root collection={nacionalidadesCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])} disabled={isCnpj}>
+                                        <Select.Control><Select.Trigger cursor={isCnpj ? 'not-allowed' : 'pointer'} bgColor={'gray.700'}><Select.ValueText /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{nacionalidadesCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
                             </Field.Root>
-                            <Field.Root>
+                            <Field.Root disabled={isCnpj}>
                                 <Field.Label>Estado Civil</Field.Label>
                                 <Controller name="maritalStatus" control={control} render={({ field }) => (
-                                    <Select.Root collection={estadoCivilCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
-                                        <Select.Control><Select.Trigger cursor={'pointer'} bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
+                                    <Select.Root collection={estadoCivilCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])} disabled={isCnpj}>
+                                        <Select.Control><Select.Trigger cursor={isCnpj ? 'not-allowed' : 'pointer'} bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{estadoCivilCollection.items.map((item) => (<Select.Item item={item} key={item.value}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                 )} />
                             </Field.Root>
-                            <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
-                                <Field.Label>Gênero</Field.Label>
-                                <Controller
-                                    name="gender"
-                                    control={control}
-                                    rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }}
-                                    render={({ field }) => (
-                                        <RadioGroup.Root
-                                            value={field.value}
-                                            onValueChange={(details) => field.onChange(details.value as "Male" | "Female")}
-                                            disabled={isCnpj}
-                                        >
-                                            <Stack direction={{ base: 'column', md: 'row' }} gap={4} mt={2}>
-                                                <RadioGroup.Item value="Male">
-                                                    <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                                    <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                                    <RadioGroup.ItemText>Masculino</RadioGroup.ItemText>
-                                                </RadioGroup.Item>
-                                                <RadioGroup.Item value="Female">
-                                                    <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                                    <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                                    <RadioGroup.ItemText>Feminino</RadioGroup.ItemText>
-                                                </RadioGroup.Item>
-                                            </Stack>
-                                        </RadioGroup.Root>
-                                    )}
-                                />
-                                {errors.gender && <Field.ErrorText>{errors.gender.message}</Field.ErrorText>}
-                            </Field.Root>
                         </SimpleGrid>
+                        
+                        <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
+                            <Field.Label>Gênero</Field.Label>
+                            <Controller name="gender" control={control} rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }} render={({ field }) => (
+                                <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "Male" | "Female")} disabled={isCnpj}>
+                                    <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
+                                        <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText color={isCnpj? 'gray.600' : 'white'}>Masculino</RadioGroup.ItemText></RadioGroup.Item>
+                                        <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText color={isCnpj? 'gray.600' : 'white'}>Feminino</RadioGroup.ItemText></RadioGroup.Item>
+                                    </Stack>
+                                </RadioGroup.Root>
+                            )} />
+                        </Field.Root>
                     </VStack>
 
                     {/* CONTATO */}
@@ -473,15 +428,8 @@ export default function CompleteProfilePage() {
                             <Input type="email" bgColor={'gray.700'} {...register("infoEmail")} />
                         </Field.Root>
                         <Fieldset.Root>
-                            <CheckboxGroup
-                                value={contactPreference.field.value}
-                                onValueChange={contactPreference.field.onChange}
-                                name={contactPreference.field.name}
-                                defaultValue={["E-mail"]}
-                            >
-                                <Fieldset.Legend fontSize="sm" mb="2">
-                                    Preferência de Contato
-                                </Fieldset.Legend>
+                            <CheckboxGroup value={contactPreference.field.value} onValueChange={contactPreference.field.onChange} name={contactPreference.field.name} defaultValue={["E-mail"]}>
+                                <Fieldset.Legend fontSize="sm" mb="2">Preferência de Contato</Fieldset.Legend>
                                 <Fieldset.Content>
                                     {contactPreferenceItems.map((item) => (
                                         <Checkbox.Root key={item.value} value={item.value} variant={'subtle'} colorPalette={'white'} >
@@ -495,18 +443,16 @@ export default function CompleteProfilePage() {
                         </Fieldset.Root>
                     </VStack>
 
-                    {/* ============================================================ */}
-                    {/* SEÇÃO DE INDICAÇÃO (ATUALIZADA)                              */}
-                    {/* ============================================================ */}
+                    {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação</Heading>
-
+                        
                         <Controller
                             name="unknownAssociate"
                             control={control}
                             render={({ field }) => (
-                                <Checkbox.Root
-                                    checked={field.value}
+                                <Checkbox.Root 
+                                    checked={field.value} 
                                     onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
                                     mb={2}
                                 >
@@ -521,10 +467,10 @@ export default function CompleteProfilePage() {
                             // MODO MANUAL
                             <Field.Root>
                                 <Field.Label>Nome do Associado (Opcional)</Field.Label>
-                                <Input
-                                    placeholder="Digite o nome de quem lhe indicou"
-                                    bgColor={'gray.700'}
-                                    {...register("indication")}
+                                <Input 
+                                    placeholder="Digite o nome de quem lhe indicou" 
+                                    bgColor={'gray.700'} 
+                                    {...register("manualReferral")} 
                                 />
                                 <Field.HelperText>Nós iremos verificar esta informação internamente.</Field.HelperText>
                             </Field.Root>
@@ -564,67 +510,42 @@ export default function CompleteProfilePage() {
                             />
                         )}
                     </VStack>
-                    {/* ============================================================ */}
 
-                    {/* ENDEREÇO RESIDENCIAL */}
+                    {/* ENDEREÇOS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Residencial</Heading>
                         <AddressBlock type="residential" {...{ control, register, errors, watch, setValue }} />
                     </VStack>
 
-                    {/* ENDEREÇO COMERCIAL */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Comercial</Heading>
-                        <Controller
-                            name="useCommercialAddress"
-                            control={control}
-                            render={({ field }) => (
-                                <Checkbox.Root
-                                    checked={field.value}
-                                    onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
-                                >
-                                    <Checkbox.HiddenInput />
-                                    <Checkbox.Control bgColor={'gray.100'} color={'black'} />
-                                    <Checkbox.Label>O endereço comercial é diferente do residencial</Checkbox.Label>
-                                </Checkbox.Root>
-                            )}
-                        />
+                        <Controller name="useCommercialAddress" control={control} render={({ field }) => (
+                            <Checkbox.Root checked={field.value} onCheckedChange={(details) => field.onChange(Boolean(details.checked))}>
+                                <Checkbox.HiddenInput />
+                                <Checkbox.Control bgColor={'gray.100'} color={'black'} />
+                                <Checkbox.Label>O endereço comercial é diferente do residencial</Checkbox.Label>
+                            </Checkbox.Root>
+                        )} />
                         {useCommercialAddress && <AddressBlock type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
                     </VStack>
 
-                    {/* ESCOLHA DO ENDEREÇO DE CORRESPONDÊNCIA */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço de Correspondência</Heading>
-                        <Controller
-                            name="correspondenceAddress"
-                            control={control}
-                            render={({ field }) => (
-                                <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "residential" | "commercial")}>
-                                    <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
-                                        <RadioGroup.Item value="residential">
-                                            <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                            <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                            <RadioGroup.ItemText>Usar Endereço Residencial</RadioGroup.ItemText>
-                                        </RadioGroup.Item>
-                                        <RadioGroup.Item value="commercial" disabled={!useCommercialAddress}>
-                                            <RadioGroup.ItemHiddenInput onBlur={field.onBlur} />
-                                            <RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
-                                            <RadioGroup.ItemText>Usar Endereço Comercial</RadioGroup.ItemText>
-                                        </RadioGroup.Item>
-                                    </Stack>
-                                </RadioGroup.Root>
-                            )}
-                        />
+                        <Controller name="correspondenceAddress" control={control} render={({ field }) => (
+                            <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "residential" | "commercial")}>
+                                <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
+                                    <RadioGroup.Item value="residential"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} /><RadioGroup.ItemText>Usar Endereço Residencial</RadioGroup.ItemText></RadioGroup.Item>
+                                    <RadioGroup.Item value="commercial" disabled={!useCommercialAddress}><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={'gray.100'} color={'black'} cursor={'pointer'} /><RadioGroup.ItemText>Usar Endereço Comercial</RadioGroup.ItemText></RadioGroup.Item>
+                                </Stack>
+                            </RadioGroup.Root>
+                        )} />
                     </VStack>
 
                     {/* DOCUMENTOS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Documentos</Heading>
-                        <Text color="gray.400">
-                            RG e CPF (ou CNH), Comprovante de residência (opcional), e Última alteração do contrato social (se aplicável).
-                        </Text>
+                        <Text color="gray.400">Documentos: RG e CPF (ou CNH), Comprovante de residência (opcional), e Última alteração do contrato social (se aplicável).</Text>
                         <Field.Root invalid={!!errors.personalDocuments}>
-                            {/* 6. ATUALIZAÇÃO: Usando o FileUpload.Root para Documentos */}
                             <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
                                 <FileUpload.HiddenInput  {...register("personalDocuments")} />
                                 <FileUpload.Trigger asChild>
@@ -633,11 +554,42 @@ export default function CompleteProfilePage() {
                                         Anexar Documentos
                                     </Flex>
                                 </FileUpload.Trigger>
-                                <FileUpload.List /> {/* Lista os ficheiros automaticamente */}
+                                <FileUpload.List />
                             </FileUpload.Root>
                         </Field.Root>
-                        {/* O VStack abaixo não é mais necessário, pois o FileUpload.List faz isso */}
                     </VStack>
+
+                    {/* Checkbox de Aceite dos Termos (LGPD) */}
+                    <Box mt={8} p={4} bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700">
+                        <Controller
+                            name="termsAccepted"
+                            control={control}
+                            rules={{ required: "Você deve ler e aceitar os Termos de Uso e Política de Privacidade para continuar." }}
+                            render={({ field }) => (
+                                <Checkbox.Root 
+                                    checked={field.value} 
+                                    onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
+                                >
+                                    <Checkbox.HiddenInput />
+                                    <Checkbox.Control bgColor={'gray.100'} color={'black'} cursor={'pointer'} />
+                                    <Checkbox.Label fontSize="sm" color="gray.300" lineHeight="1.5">
+                                        Li, compreendi e concordo com os{' '}
+                                        <Link as={NextLink} href="/termos-de-uso" color="brand.400" textDecoration="underline" target="_blank" onClick={(e) => e.stopPropagation()}>
+                                            Termos de Uso
+                                        </Link>
+                                        {' '}e com a{' '}
+                                        <Link as={NextLink} href="/politica-privacidade" color="brand.400" textDecoration="underline" target="_blank" onClick={(e) => e.stopPropagation()}>
+                                            Política de Privacidade
+                                        </Link>
+                                        {' '}da Mazzotini.
+                                    </Checkbox.Label>
+                                </Checkbox.Root>
+                            )}
+                        />
+                        {errors.termsAccepted && (
+                            <Text color="red.400" fontSize="xs" mt={2}>{errors.termsAccepted.message}</Text>
+                        )}
+                    </Box>
 
                     <Button type="submit" colorPalette="blue" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch">
                         <Icon as={PiFloppyDisk} />
@@ -648,4 +600,3 @@ export default function CompleteProfilePage() {
         </Flex>
     );
 }
-
