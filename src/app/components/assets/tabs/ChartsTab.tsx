@@ -82,7 +82,7 @@ export function ChartsTab({ asset }: TabProps) {
                             <YAxis stroke="#A0AEC0" tickFormatter={(value) => formatCurrencyCompact(value as number)} />
                             <Tooltip 
                                 contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #4A5568' }}
-                                formatter={(value: number) => formatCurrency(value)}
+                                formatter={(value: any) => formatCurrency(value)}
                             />
                             <Legend />
                             {/* LINHA ÚNICA: PROJEÇÃO (baseada no /estimate) */}
