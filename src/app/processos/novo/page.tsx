@@ -376,9 +376,9 @@ export default function CreateAssetPage() {
                             1. Identificação do Processo
                         </Heading>
 
-                        {/* NOVO CAMPO: APELIDO */}
+                        {/* NOVO CAMPO: Nome */}
                         <Field.Root>
-                            <Field.Label>Apelido do Processo (Opcional)</Field.Label>
+                            <Field.Label>Nome do Processo (Opcional)</Field.Label>
                             <Input
                                 placeholder="Ex: Processo da Fazenda"
                                 _placeholder={{ color: 'gray.400' }}

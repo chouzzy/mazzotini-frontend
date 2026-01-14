@@ -109,10 +109,12 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         <PiScales color='#B8A76E' size={24} />
                         <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
                     </Flex>
-                    <Flex align="center" gap={2}>
-                        <PiIdentificationCardDuotone color='#B8A76E' size={24} />
-                        <Text color="gray.400">{asset.nickname || "Processo sem apelido"}</Text>
-                    </Flex>
+                    {asset.nickname && (
+                        <Flex align="center" gap={2}>
+                            <PiIdentificationCardDuotone color='#B8A76E' size={24} />  
+                            <Text color="gray.400">{asset.nickname}</Text>
+                        </Flex>
+                    )}
                 </VStack>
                 <Flex gap={4} align="center">
 

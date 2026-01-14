@@ -218,7 +218,7 @@ export default function EditAssetPage() {
 
             const formData = {
                 processNumber: assetData.processNumber,
-                nickname: assetData.nickname || "", // Preenche o apelido
+                nickname: assetData.nickname || "", // Preenche o Nome
                 originalCreditor: assetData.originalCreditor,
                 origemProcesso: assetData.origemProcesso,
                 acquisitionValue: assetData.acquisitionValue,
@@ -262,7 +262,7 @@ export default function EditAssetPage() {
 
             const payload = {
                 // Campos editáveis
-                nickname: data.nickname, // Envia o apelido
+                nickname: data.nickname, // Envia o Nome
                 acquisitionValue: data.acquisitionValue,
                 originalValue: data.originalValue,
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
@@ -329,9 +329,9 @@ export default function EditAssetPage() {
                             1. Identificação do Processo
                         </Heading>
 
-                        {/* NOVO CAMPO: Apelido */}
+                        {/* NOVO CAMPO: Nome */}
                         <Field.Root>
-                            <Field.Label>Apelido do Processo (Opcional)</Field.Label>
+                            <Field.Label>Nome do Processo (Opcional)</Field.Label>
                             <Input
                                 placeholder="Ex: Processo da Fazenda"
                                 _placeholder={{ color: 'gray.400' }}
