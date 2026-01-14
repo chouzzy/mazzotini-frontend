@@ -34,6 +34,7 @@ export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-com
   legalOneId?: number;
   legalOneType?: string;
   associateId?: string;
+  nickname?: string;
   investors: { user: { id: string, name: string }; investorShare: number }[];
   updates: { id: string; date: string; updatedValue: number; description?: string, type?: string, read?: boolean, fullDescription?: string }[];
   documents: { id: string; legalOneDocumentId: number; name: string; url: string; category: string }[];

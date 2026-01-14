@@ -23,6 +23,7 @@ import { CustomText } from "../ui/CustomText";
 import { HeaderMobileMenu } from "./HeaderMobileMenu";
 import { UserAvatar } from "./UserAvatar";
 import { headerData } from "@/app/data/header";
+import { NotificationsMenu } from "../notifications/NotificationsMenu";
 
 // ============================================================================
 //   VARIANTES DE ANIMAÇÃO (Framer Motion)
@@ -61,7 +62,7 @@ export function Header() {
             px={{ base: 4, md: 8 }}
             w='100%'
             color={'textPrimary'}
-            maxW={{ base: '100%', md: '1920px' }} 
+            maxW={{ base: '100%', md: '1920px' }}
         >
             {/* Seção Esquerda: Logo */}
             <Flex alignItems={'center'} gap={{ base: 2, md: 8 }}>
@@ -77,6 +78,8 @@ export function Header() {
 
             {/* Seção Direita: Navegação */}
             <Flex alignItems={'center'} gap={{ base: 2, sm: 3, md: 4 }}>
+
+                
 
                 {/* Navegação para Desktop */}
                 <Flex
@@ -100,7 +103,7 @@ export function Header() {
                             />
                         </ChakraLink>
                     ))}
-                    
+
 
                     {/* Lógica para mostrar o Avatar ou o botão de "Entrar" */}
                     {isAuthenticated ? (
@@ -120,8 +123,8 @@ export function Header() {
                 </Flex>
 
                 {/* Menu Mobile (Hamburger) */}
-                <HeaderMobileMenu 
-                    isAuthenticated={isAuthenticated} 
+                <HeaderMobileMenu
+                    isAuthenticated={isAuthenticated}
                 />
 
             </Flex>

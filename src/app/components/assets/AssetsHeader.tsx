@@ -12,7 +12,7 @@ import {
     Button,
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
-import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone } from 'react-icons/pi';
+import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -44,6 +44,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     const [isSyncing, setIsSyncing] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
     const router = useRouter(); // 2. Instanciar o router
+
+    console.log('AssetHeader asset:', asset);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -98,14 +100,19 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
         <VStack w="100%" align="stretch" gap={8}>
 
             <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
-                <VStack align="start" gap={0}>
+                <VStack align="start" gap={2}>
                     <Flex align="center" gap={2}>
                         <PiGavelDuotone color='#B8A76E' size={24} />
+                        <Heading as="h1"  color="white">{asset.processNumber }</Heading>
+                    </Flex>
+                    <Flex align="center" gap={2}>
+                        <PiScales color='#B8A76E' size={24} />
                         <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
                     </Flex>
-                    <Heading as="h1" size="lg">
-                        {asset.processNumber}
-                    </Heading>
+                    <Flex align="center" gap={2}>
+                        <PiIdentificationCardDuotone color='#B8A76E' size={24} />
+                        <Text color="gray.400">{asset.nickname || "Processo sem apelido"}</Text>
+                    </Flex>
                 </VStack>
                 <Flex gap={4} align="center">
 
