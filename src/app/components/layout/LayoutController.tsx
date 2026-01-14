@@ -1,10 +1,9 @@
-// /src/app/components/layout/LayoutController.tsx
 'use client';
 
 import { useAuth0 } from '@auth0/auth0-react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { AppLayout, HeaderNav } from './AppLayout'; // 1. Assegure-se que o HeaderNav é exportado do AppLayout
+import { AppLayout, HeaderNav } from './AppLayout'; 
 import { useApi } from '@/hooks/useApi';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
@@ -16,10 +15,18 @@ interface MazzotiniUser {
     cpfOrCnpj: string | null;
 }
 
+// ============================================================================
+//  A CORREÇÃO: Lista de rotas que podem ser acessadas mesmo sem perfil
+// ============================================================================
+const PUBLIC_ROUTES = ['/politica-privacidade', '/termos-de-uso'];
+
 export function LayoutController({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth0();
     const router = useRouter();
     const pathname = usePathname();
+
+    // Verifica se a página atual é pública
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
 
     // 1. Busca o perfil do nosso DB (incluindo 'status' e 'cpfOrCnpj')
     const { data: userProfile, isLoading: isProfileLoading, error } = useApi<MazzotiniUser>(
@@ -30,8 +37,17 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
 
     // Efeito de redirecionamento, agora centralizado aqui
     useEffect(() => {
+        // Se estiver carregando, não autenticado, ou sem perfil, espera.
         if (isLoading || !isAuthenticated || !userProfile) {
-            return; // Espera tudo carregar
+            return; 
+        }
+
+        // =================================================================
+        //  A CORREÇÃO: Se for uma rota pública (Termos/Privacidade),
+        //  PULA a lógica de redirecionamento. Deixa o usuário ler.
+        // =================================================================
+        if (isPublicRoute) {
+            return;
         }
 
         const status = userProfile.status;
@@ -59,7 +75,6 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                 }
                 break;
             case 'REJECTED':
-                // TODO: Criar uma página /perfil/rejeitado
                 // Por agora, manda para a página de pendente com uma mensagem.
                 if (!isOnPendingPage) router.push('/perfil/pendente');
                 break;
@@ -68,7 +83,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                 router.push('/'); 
         }
 
-    }, [isLoading, isProfileLoading, userProfile, pathname, router, isAuthenticated]);
+    }, [isLoading, isProfileLoading, userProfile, pathname, router, isAuthenticated, isPublicRoute]);
 
 
     // --- SPINNER GLOBAL ---
@@ -102,8 +117,9 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         const isOnOnboardingPage = pathname === '/perfil/completar';
         const isOnPendingPage = pathname === '/perfil/pendente';
 
-        // Se estiver ATIVO, mostra o AppLayout completo.
-        if (status === 'ACTIVE') {
+        // Se estiver ATIVO (e não estiver numa rota pública), mostra o AppLayout completo.
+        // Se estiver numa rota pública, queremos mostrar o layout simples abaixo para focar na leitura.
+        if (status === 'ACTIVE' && !isPublicRoute) {
             return (
                 <AppLayout>
                     {children}
@@ -111,13 +127,13 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
             );
         }
 
-        // Se estiver na página de Onboarding ou Pendente, mostra um layout simples
-        // (apenas o HeaderNav, sem a sidebar)
-        if (isOnOnboardingPage || isOnPendingPage) {
+        // Se estiver na página de Onboarding, Pendente, OU numa Rota Pública (sendo usuário novo)
+        // mostra um layout simples (apenas o HeaderNav, sem a sidebar)
+        if (isOnOnboardingPage || isOnPendingPage || isPublicRoute) {
              return (
                 <Flex direction="column" w="100%" minH="100vh">
                     <HeaderNav onOpen={() => {}} /> {/* Header sem menu mobile */}
-                    <Flex justify="center" align="center" bg="bodyBg" flex={1} p={4}>
+                    <Flex justify="center" align="start" bg="bodyBg" flex={1} p={4}>
                          {children}
                     </Flex>
                 </Flex>
