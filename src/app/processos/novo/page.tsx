@@ -52,6 +52,7 @@ interface InvestorFormInput {
 
 interface FormValues {
     processNumber: string;
+    nickname?: string; // <-- NOVO CAMPO
     originalCreditor: string;
     origemProcesso: string;
     acquisitionValue: number;
@@ -202,6 +203,7 @@ export default function CreateAssetPage() {
     } = useForm<FormValues>({
         defaultValues: {
             processNumber: "",
+            nickname: "", // Default vazio
             originalCreditor: "",
             acquisitionDate: "",
             origemProcesso: "",
@@ -373,6 +375,21 @@ export default function CreateAssetPage() {
                         <Heading as="h2" size="md" borderBottomWidth="1px" color={'brand.500'} borderColor="gray.700" pb={2}>
                             1. Identificação do Processo
                         </Heading>
+
+                        {/* NOVO CAMPO: APELIDO */}
+                        <Field.Root>
+                            <Field.Label>Apelido do Processo (Opcional)</Field.Label>
+                            <Input
+                                placeholder="Ex: Processo da Fazenda"
+                                _placeholder={{ color: 'gray.400' }}
+                                borderColor={'gray.700'}
+                                bgColor={'gray.700'}
+                                {...register("nickname")}
+                            />
+                            <Field.HelperText color="gray.500">
+                                Um nome amigável para identificar este processo facilmente.
+                            </Field.HelperText>
+                        </Field.Root>
 
                         {/* (Campos de Processo... sem mudanças) */}
                         <Field.Root invalid={!!errors.processNumber} required>

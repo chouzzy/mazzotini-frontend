@@ -37,6 +37,7 @@ import { headerData } from '@/app/data/header';
 import { SideBarItems } from '@/app/data/sideBar';
 import { on } from 'events';
 import { translateRole } from '@/utils/masks';
+import { NotificationsMenu } from '../notifications/NotificationsMenu';
 
 // ============================================================================
 //  DEFINIÇÃO DOS ITENS DA SIDEBAR
@@ -176,8 +177,10 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             </Text>
 
             {isAuthenticated ? (
-
+                <>
+                    < NotificationsMenu />
                     <UserAvatar />
+                </>
             ) : (
                 <Button onClick={() => loginWithRedirect()} colorScheme="blue">
                     Entrar
