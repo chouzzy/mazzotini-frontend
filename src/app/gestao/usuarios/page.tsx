@@ -1,4 +1,3 @@
-// /src/app/gestao/usuários/page.tsx
 'use client';
 
 import {
@@ -13,32 +12,30 @@ import {
     Tag,
     Avatar,
     Button,
-    useDisclosure,
-    Toast,
-    Badge
+    useDisclosure
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '@/hooks/useApi';
-import { PiWarningCircle, PiPencilSimple, PiUserPlus, PiMagnifyingGlassDuotone, PiUserCircleCheck, PiUserCircleDuotone } from 'react-icons/pi';
+import { PiWarningCircle, PiPencilSimple, PiUserPlus, PiUserCircleCheck, PiArrowRight } from 'react-icons/pi';
 import { EmptyState } from '@/app/components/dashboard/EmptyState';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import { useState } from 'react';
 import { EditUserModal } from '@/app/components/management/EditUserModal';
 import { InviteUserDialog } from '@/app/components/management/InviteUserDialog';
 import Link from 'next/link';
-import { getRoleColorScheme, translateRole } from '@/utils/masks';
-import { UserProfile } from '@/types';
+import { translateRole, getRoleColorScheme } from '@/utils/masks';
+import { Tooltip } from '@/components/ui/tooltip';
 
-// Tipagem para os dados do usuário (ATUALIZADA)
+// Tipagem para os dados do usuário (ATUALIZADA com 'id')
 interface UserManagementInfo {
+    id: string; // <-- Necessário para o link
     auth0UserId: string;
     email: string;
     name: string;
-    picture: string; // Foto do Auth0 (fallback)
-    profilePictureUrl?: string | null; // Foto do nosso DB (prioridade)
+    picture: string;
+    profilePictureUrl?: string | null;
     lastLogin?: string;
     roles: string[];
-    status: string
 }
 
 // Componente de Verificação de Role
@@ -63,10 +60,7 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
 
 
 export default function UserManagementPage() {
-    // A API /api/management/users já foi atualizada (no UseCase) para enviar os novos campos
     const { data: users, isLoading, error, mutate } = useApi<UserManagementInfo[]>('/api/management/users');
-    const { data: pendingUsers, isLoading: isLoadingPending, error: errorPending, mutate: mutatePending } = useApi<UserProfile[]>('/api/management/pending-users');
-    console.log('UserManagementPage: users = ', users);
 
     // Controles para os dois dialogs
     const { open: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
@@ -110,25 +104,22 @@ export default function UserManagementPage() {
                 <VStack gap={8} align="stretch" w="100%">
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box>
-                            <Flex align="center" gap={2}>
-                                <PiUserCircleDuotone size={28} color="#B8A76E" />
-                                <Heading as="h1" size="xl">Gestão de Usuários</Heading>
-                            </Flex>
+                            <Heading as="h1" size="xl">Gestão de Usuários</Heading>
                             <Text color="gray.400" mt={2}>
                                 Convide novos usuários e gira as suas permissões.
                             </Text>
                         </Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
 
-                            <Button colorPalette={'blue'} gap={2} onClick={onInviteOpen}>
+                            <Button colorPalette={'cyan'} gap={2} onClick={onInviteOpen}>
                                 <Icon as={PiUserPlus} boxSize={5} />
                                 Novo usuário
                             </Button>
 
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
-                                <Button bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.800', color: 'white' }} gap={2}>
+                                <Button colorPalette={'yellow'} gap={2}>
                                     <Icon as={PiUserCircleCheck} boxSize={5} />
-                                    Aprovar cadastros ({isLoadingPending ? <Spinner size="xs" /> : pendingUsers?.length || 0})
+                                    Verificar cadastros
                                 </Button>
                             </Link>
                         </Flex>
@@ -147,17 +138,21 @@ export default function UserManagementPage() {
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body alignItems={'center'} justifyContent={'center'} border={'1px solid'} borderColor={'bodyBg'} bgColor={tableBgColor} >
-                                {users.map((user) => (
-                                    <Table.Row key={user.auth0UserId} bgColor={tableBgColor}>
+                                {users.map((user, item) => (
+                                    <Table.Row key={`user.id+${item}`} bgColor={tableBgColor} _hover={{ bg: 'gray.800' }}>
                                         <Table.Cell px={8} py={4} border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex align="center" gap={3}>
-                                                <Avatar.Root size="sm" key={user.auth0UserId}>
+                                                <Avatar.Root size="sm">
                                                     <Avatar.Fallback name={user.name} />
-                                                    {/* CORREÇÃO AQUI: Dá prioridade à foto do nosso DB */}
                                                     <Avatar.Image src={user.profilePictureUrl || user.picture} />
                                                 </Avatar.Root>
                                                 <VStack align="start" gap={0}>
-                                                    <Text fontWeight="medium">{user.name}</Text>
+                                                    {/* Link no Nome do Usuário */}
+                                                    <Link href={`/gestao/usuarios/${user.id}`} passHref>
+                                                        <Text fontWeight="medium" _hover={{ textDecoration: 'underline', color: 'brand.400', cursor: 'pointer' }}>
+                                                            {user.name}
+                                                        </Text>
+                                                    </Link>
                                                     <Text fontSize="sm" color="gray.400">{user.email}</Text>
                                                 </VStack>
                                             </Flex>
@@ -165,7 +160,8 @@ export default function UserManagementPage() {
                                         <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
                                             <Flex gap={2}>
                                                 {user.roles.map(role => (
-                                                    <Tag.Root key={role} variant="surface" colorPalette={getRoleColorScheme(role)}>
+                                                    // Usando getRoleColorScheme para consistência
+                                                    <Tag.Root key={role} variant="solid" colorPalette={getRoleColorScheme(role)} color='white'>
                                                         <Tag.Label>{translateRole(role)}</Tag.Label>
                                                     </Tag.Root>
                                                 ))}
@@ -175,10 +171,22 @@ export default function UserManagementPage() {
                                             {user.lastLogin ? new Date(user.lastLogin).toLocaleString('pt-BR') : 'Nunca'}
                                         </Table.Cell>
                                         <Table.Cell border={'1px solid'} borderColor={tableBgColor}>
-                                            <Button size="sm" variant="solid" bgColor='brand.700' color='white' _hover={{ bgColor: 'brand.800' }} gap={2} onClick={() => handleEditClick(user)}>
-                                                <Icon as={PiPencilSimple} />
-                                                Editar permissões
-                                            </Button>
+                                            <Flex gap={2}>
+                                                {/* Botão de Ver Detalhes / Editar Perfil */}
+                                                <Link href={`/gestao/usuarios/${user.id}`} passHref>
+                                                    <Tooltip content="Ver Detalhes do Perfil" >
+                                                        <Button size="sm" variant="solid" colorPalette="cyan" title="Ver Detalhes do Perfil">
+                                                            <Icon as={PiArrowRight} />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </Link>
+                                                <Box h={5} w={0.5} bgColor="gray.700" my='auto'/>
+                                                <Tooltip content="Editar Permissões" >
+                                                    <Button size="sm" variant="solid" colorPalette="blue" _hover={{ bgColor: 'gray.700' }} gap={2} onClick={() => handleEditClick(user)} title="Editar Permissões">
+                                                        <Icon as={PiPencilSimple} />
+                                                    </Button>
+                                                </Tooltip>
+                                            </Flex>
                                         </Table.Cell>
                                     </Table.Row>
                                 ))}
@@ -202,4 +210,3 @@ export default function UserManagementPage() {
         </AuthenticationGuard>
     );
 }
-
