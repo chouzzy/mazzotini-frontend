@@ -1,4 +1,3 @@
-// /src/app/perfil/page.tsx
 'use client';
 
 import {
@@ -13,9 +12,10 @@ import {
     Link,
     SimpleGrid,
     Card,
-    CardTitle,
     Avatar,
-    DownloadTrigger
+    HStack,
+    Separator,
+    Badge
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -31,17 +31,28 @@ import {
     PiBriefcase,
     PiEnvelopeSimple,
     PiChats,
-    PiUser,
     PiHouse,
     PiBuilding,
     PiFile,
-    PiDownloadDuotone
+    PiDownloadDuotone,
+    PiFilePdf,
+    PiFolderOpen
 } from 'react-icons/pi';
 import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
 import { maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
 import { UserProfile } from '@/types';
 
-
+// Interface estendida para incluir os investimentos que vêm do backend
+interface ExtendedUserProfile extends UserProfile {
+    investments: {
+        id: string;
+        documents: string[];
+        asset: {
+            processNumber: string;
+            nickname?: string;
+        }
+    }[];
+}
 
 // Componente para exibir um campo de informação
 const ProfileField = ({ label, value, icon }: { label: string, value?: string | null, icon?: React.ElementType }) => {
@@ -56,9 +67,23 @@ const ProfileField = ({ label, value, icon }: { label: string, value?: string | 
     );
 };
 
+// Componente para renderizar um botão de documento
+const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, index: number, prefix?: string }) => {
+    const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `${prefix} ${index + 1}`);
+    return (
+        <Link key={index} href={url} target='_blank' _hover={{ textDecoration: 'none' }}>
+            <Button size="sm" bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.900' }} gap={2}>
+                <Icon as={PiFilePdf} />
+                <Text truncate maxW="200px">{fileName}</Text>
+                <Icon as={PiDownloadDuotone} ml={1} />
+            </Button>
+        </Link>
+    );
+};
+
 export default function ProfilePage() {
     const { user: auth0User } = useAuth0();
-    const { data: userProfile, isLoading, error } = useApi<UserProfile>('/api/users/me');
+    const { data: userProfile, isLoading, error } = useApi<ExtendedUserProfile>('/api/users/me');
 
     if (isLoading) {
         return (
@@ -90,6 +115,9 @@ export default function ProfilePage() {
         : null;
 
     const correspondenceAddress = userProfile.correspondenceAddress === 'commercial' ? 'Endereço Comercial' : 'Endereço Residencial';
+
+    // Filtra investimentos que possuem documentos
+    const investmentsWithDocs = userProfile.investments?.filter(inv => inv.documents && inv.documents.length > 0) || [];
 
     return (
         <AuthenticationGuard>
@@ -142,7 +170,7 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    {/* ENDEREÇO RESIDENCIAL */}
+                    {/* ENDEREÇOS */}
                     <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Endereço Residencial</Card.Title>
@@ -152,7 +180,6 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    {/* ENDEREÇO COMERCIAL (CONDICIONAL) */}
                     {commercialAddress && (
                         <Card.Root variant="subtle" bg="gray.900">
                             <Card.Body>
@@ -170,25 +197,70 @@ export default function ProfilePage() {
                             <Card.Title color={'brand.600'}>Outras Informações</Card.Title>
                             <VStack align="stretch" mt={4} gap={5} color={'white'}>
                                 <ProfileField label="Endereço de Correspondência" value={correspondenceAddress} icon={PiMapPin} />
-                                <ProfileField label="Documentos Anexados" icon={PiFile} value={`${userProfile.personalDocumentUrls?.length || 0} documento(s)`} />
-                                <Flex gap={2} flexWrap="wrap">
-
-                                    {userProfile.personalDocumentUrls?.map((url, index) => (
-
-                                        <Link key={index} href={url} target='_blank' color="brand.600">
-                                            <Button bgColor={'brand.700'} color={'white'} _hover={{bgColor:'brand.900', color:'white'}}> <PiDownloadDuotone /> {decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Documento ${index + 1}`)}</Button>
-                                        </Link>
-
-                                    ))}
-                                </Flex>
-                                {/* TODO: Exibir o nome do Associado/Vendedor que o indicou */}
                             </VStack>
                         </Card.Body>
                     </Card.Root>
-
                 </SimpleGrid>
+
+                <Separator borderColor="gray.700" my={4} />
+
+                {/* ============================================================ */}
+                {/* ÁREA DE DOCUMENTOS SEGMENTADA                                */}
+                {/* ============================================================ */}
+                <VStack align="stretch" gap={6}>
+                    <Heading size="lg" color="white" display="flex" alignItems="center" gap={2}>
+                        <Icon as={PiFolderOpen} color="brand.400" /> Meus Documentos
+                    </Heading>
+
+                    {/* 1. DOCUMENTOS PESSOAIS */}
+                    <Box>
+                        <Heading size="md" color="gray.300" mb={3}>Documentos Pessoais</Heading>
+                        <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
+                            <Card.Body>
+                                {userProfile.personalDocumentUrls && userProfile.personalDocumentUrls.length > 0 ? (
+                                    <Flex gap={3} flexWrap="wrap">
+                                        {userProfile.personalDocumentUrls.map((url, index) => (
+                                            <DocumentButton key={index} url={url} index={index} prefix="Doc Pessoal" />
+                                        ))}
+                                    </Flex>
+                                ) : (
+                                    <Text color="gray.500" fontSize="sm">Nenhum documento pessoal anexado.</Text>
+                                )}
+                            </Card.Body>
+                        </Card.Root>
+                    </Box>
+
+                    {/* 2. DOCUMENTOS POR PROCESSO (Itera sobre os investimentos) */}
+                    {investmentsWithDocs.length > 0 && (
+                        <Box>
+                            <Heading size="md" color="gray.300" mb={3}>Documentos dos Processos</Heading>
+                            <VStack align="stretch" gap={4}>
+                                {investmentsWithDocs.map((inv) => (
+                                    <Card.Root key={inv.id} variant="outline" bg="gray.800" borderColor="gray.700">
+                                        <Card.Body>
+                                            <Flex justify="space-between" align="center" mb={3} wrap="wrap" gap={2}>
+                                                <HStack>
+                                                    <Badge colorPalette="blue" variant="solid">Processo</Badge>
+                                                    <Text fontWeight="bold" color="white">{inv.asset.processNumber}</Text>
+                                                </HStack>
+                                                {inv.asset.nickname && (
+                                                    <Text fontSize="sm" color="gray.400">({inv.asset.nickname})</Text>
+                                                )}
+                                            </Flex>
+                                            <Flex gap={3} flexWrap="wrap">
+                                                {inv.documents.map((url, index) => (
+                                                    <DocumentButton key={index} url={url} index={index} prefix="Doc Processo" />
+                                                ))}
+                                            </Flex>
+                                        </Card.Body>
+                                    </Card.Root>
+                                ))}
+                            </VStack>
+                        </Box>
+                    )}
+                </VStack>
+
             </VStack>
         </AuthenticationGuard>
     );
 }
-

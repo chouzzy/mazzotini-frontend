@@ -49,14 +49,14 @@ const extractFreeText = (description: string | null | undefined): string => {
     if (!description) return "Atualização de Valor";
 
     // Se não for um andamento padronizado, retorna o texto original.
-    if (!description.includes('#SM')) {
+    if (!description.includes('#RelatórioMAA')) {
         return description;
     }
 
     // Encontra a última linha de valor (ex: "Valor Atualizado: R$ ...")
     const lastValueIndex = description.lastIndexOf('R$');
     if (lastValueIndex === -1) {
-        return description.substring(description.indexOf('#SM') + 3).trim();
+        return description.substring(description.indexOf('#RelatórioMAA') + 3).trim();
     }
     
     // Encontra a próxima quebra de linha após o último valor
