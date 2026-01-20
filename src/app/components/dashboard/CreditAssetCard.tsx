@@ -77,7 +77,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                         </Tag.Root>
                     </Flex>
 
-                    {/* Credor Original */}
+                    {/* Credor */}
                     <HStack color="gray.400">
                         <Icon as={PiBank} />
                         <Text color='textPrimary' fontSize="sm">Parte(s) Contrária(s): {asset.originalCreditor}</Text>
@@ -90,7 +90,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.investedValue)}</Stat.ValueText>
                         </Stat.Root>
                         <Stat.Root>
-                            <Stat.Label color="gray.400">Estimativa Atual do Crédito</Stat.Label>
+                            <Stat.Label color="gray.400">Estimativa Atual do Valor Total do Crédito</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.currentValue)}</Stat.ValueText>
                             <StatHelpText display="flex" alignItems="center" color={yieldValue >= 0 ? 'green.600' : 'red.600'}>
                                 <Icon as={PiChartLineUp} color="green.400" mr={1} />

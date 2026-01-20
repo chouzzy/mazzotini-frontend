@@ -111,13 +111,13 @@ export default function UserManagementPage() {
                         </Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
 
-                            <Button colorPalette={'cyan'} gap={2} onClick={onInviteOpen}>
+                            <Button colorPalette={'blue'} gap={2} onClick={onInviteOpen}>
                                 <Icon as={PiUserPlus} boxSize={5} />
                                 Novo usuário
                             </Button>
 
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
-                                <Button colorPalette={'yellow'} gap={2}>
+                                <Button colorPalette={'purple'} gap={2}>
                                     <Icon as={PiUserCircleCheck} boxSize={5} />
                                     Verificar cadastros
                                 </Button>

@@ -415,7 +415,7 @@ export default function CreateAssetPage() {
                             <Field.ErrorText>{errors.processNumber?.message}</Field.ErrorText>
                         </Field.Root>
                         <Field.Root invalid={!!errors.originalCreditor} required>
-                            <Field.Label>Credor Original (Cliente Principal)</Field.Label>
+                            <Field.Label>Cliente Principal</Field.Label>
                             <Input
                                 placeholder="Preenchido pela busca..."
                                 _placeholder={{ color: 'gray.400' }}

@@ -350,7 +350,7 @@ export default function EditAssetPage() {
                             <Input _placeholder={{ color: 'gray.400' }} borderColor={'gray.700'} {...register("processNumber")}  disabled bgColor="gray.700" />
                         </Field.Root>
                         <Field.Root invalid={!!errors.originalCreditor} required>
-                            <Field.Label>Credor Original</Field.Label>
+                            <Field.Label>Credor</Field.Label>
                             <Input _placeholder={{ color: 'gray.400' }} borderColor={'gray.700'} {...register("originalCreditor")}  disabled bgColor="gray.700" />
                         </Field.Root>
                         <Field.Root invalid={!!errors.origemProcesso} required>

@@ -29,7 +29,7 @@ export function AssetsTable({ assets }: AssetsTableProps) {
             <Table.Header>
                 <Table.Row>
                     <Table.ColumnHeader>Nº do Processo</Table.ColumnHeader>
-                    <Table.ColumnHeader>Credor Original</Table.ColumnHeader>
+                    <Table.ColumnHeader>Credor</Table.ColumnHeader>
                     <Table.ColumnHeader>Valor Investido</Table.ColumnHeader>
                     <Table.ColumnHeader>Saldo Atual</Table.ColumnHeader>
                     <Table.ColumnHeader>Status</Table.ColumnHeader>

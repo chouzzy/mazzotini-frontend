@@ -120,7 +120,7 @@ export default function OperatorAssetsPage() {
                     <Box w='100%'>
                         <Flex align="center" gap={2} w='100%'>
                             <PiPresentationChartDuotone color='#B8A76E' size={24} />
-                            <Heading as="h1" size="xl">Gestão de Ativos</Heading>
+                            <Heading as="h1" size="xl">GESTÃO DE PROCESSOS</Heading>
                         </Flex>
                         <Text color="gray.400" mt={2}>
                             Visualize, pesquise e gira todos os ativos de crédito da plataforma.
@@ -153,11 +153,11 @@ export default function OperatorAssetsPage() {
                             <Table.Header border={'1px solid transparent'}>
                                 <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
                                     <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Nº do Processo</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Investidor Principal</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor Original</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Cliente Principal</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Credor</Table.ColumnHeader>
                                     {/* ATUALIZADO: Agora mostra o Custo de Aquisição (total), que vem do 'investedValue' do Admin */}
                                     <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Custo de Aquisição</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Crédito</Table.ColumnHeader>
+                                    <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} >Estimativa Atual do Valor Total do Crédito</Table.ColumnHeader>
                                     <Table.ColumnHeader color={'brand.600'} borderColor={'bodyBg'} bgColor={tableBgColor} p={8} borderTopRightRadius={8}>Status</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>

@@ -19,6 +19,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { useRouter } from 'next/navigation'; // 1. Importar o router
+import { Tooltip } from '@/components/ui/tooltip';
 
 // Funções auxiliares
 const formatCurrency = (value: number) => {
@@ -103,7 +104,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                 <VStack align="start" gap={2}>
                     <Flex align="center" gap={2}>
                         <PiGavelDuotone color='#B8A76E' size={24} />
-                        <Heading as="h1"  color="white">{asset.processNumber }</Heading>
+                        <Heading as="h1" color="white">{asset.processNumber}</Heading>
                     </Flex>
                     <Flex align="center" gap={2}>
                         <PiScales color='#B8A76E' size={24} />
@@ -111,7 +112,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                     </Flex>
                     {asset.nickname && (
                         <Flex align="center" gap={2}>
-                            <PiIdentificationCardDuotone color='#B8A76E' size={24} />  
+                            <PiIdentificationCardDuotone color='#B8A76E' size={24} />
                             <Text color="gray.400">{asset.nickname}</Text>
                         </Flex>
                     )}
@@ -146,10 +147,16 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             </Flex>
 
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
-                <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiWallet} color={'brand.600'} /> Estimativa Atual do Crédito</Stat.Label>
-                    <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
-                </Stat.Root>
+                <Tooltip
+                    showArrow
+                        contentProps={{ css: { "--tooltip-bg": "#B8A76E", padding: "8px", fontSize: "14px", fontStyle: "italic", fontWeight:'normal' } }}
+                    content="Este é o valor total estimado do crédito no processo. Não representa um valor exato de valorização nem a sua participação específica, mas sim o montante total do processo."
+                >
+                    <Stat.Root bg="gray.900" p={5} borderRadius="md" cursor="pointer">
+                        <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiWallet} color={'brand.600'} /> Estimativa Atual do Valor Total do Crédito</Stat.Label>
+                        <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
+                    </Stat.Root>
+                </Tooltip>
                 <Stat.Root bg="gray.900" p={5} borderRadius="md">
                     <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiScales} color={'brand.600'} /> Custo de Aquisição</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.acquisitionValue)}</Stat.ValueText>

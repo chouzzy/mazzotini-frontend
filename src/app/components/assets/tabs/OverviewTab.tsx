@@ -48,25 +48,25 @@ export function OverviewTab({ asset }: TabProps) {
     const titleText = extractFreeText(lastUpdate.description);
 
     return (
-        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={8}>
+        <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8}>
             {/* Card de Detalhes da Aquisição */}
             <Card.Root  bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Detalhes do Processo</Card.Title>
                     {/* <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text> */}
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Parte(s) Contrária(s)/Executado(s):</strong> {asset.originalCreditor}</Text>
+                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Cliente Principal:</strong> {asset.originalCreditor}</Text>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
                     <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
                 </Card.Body>
             </Card.Root>
             
             {/* Card de Envolvidos */}
-            <Card.Root  bg="gray.900">
-                <Card.Body>
-                    <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
-                    {asset.associate && <Text mt={2}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Associado:</strong> {asset.associate.name}</Text>}
-                </Card.Body>
-            </Card.Root>
+                {/* <Card.Root  bg="gray.900">
+                    <Card.Body>
+                        <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
+                        {asset.associate && <Text mt={2}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Associado:</strong> {asset.associate.name}</Text>}
+                    </Card.Body>
+                </Card.Root> */}
 
             {/* Card de Resumo do Histórico */}
             <Card.Root  bg="gray.900">

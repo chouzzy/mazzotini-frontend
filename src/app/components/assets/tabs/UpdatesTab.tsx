@@ -24,7 +24,7 @@ const formatCurrency = (value: number) => {
 };
 
 /**
- * Extrai apenas o texto descritivo do andamento, ignorando a tag #SM e os campos de valor.
+ * Extrai apenas o texto descritivo do andamento, ignorando a tag #RelatórioMAA e os campos de valor.
  * @param description O texto completo do andamento.
  * @returns Apenas a parte descritiva do texto.
  */
@@ -34,11 +34,11 @@ interface TabProps {
 }
 
 export function UpdatesTab({ asset }: TabProps) {
-    // LÓGICA ATUALIZADA: Filtra apenas os andamentos que contêm a tag '#SM'
+    // LÓGICA ATUALIZADA: Filtra apenas os andamentos que contêm a tag '#RelatórioMAA'
     const updatesToDisplay = (asset.updates || [])
-        .filter(upd => (upd.fullDescription || upd.description || '').includes('#SM'));
+        .filter(upd => (upd.fullDescription || upd.description || '').includes('#RelatórioMAA'));
 
-    console.log('Andamentos filtrados com #SM:', updatesToDisplay);
+    console.log('Andamentos filtrados com #RelatórioMAA:', updatesToDisplay);
     return (
         <Card.Root variant="outline" bg="gray.900">
             <Card.Body>
@@ -129,7 +129,7 @@ export function UpdatesTab({ asset }: TabProps) {
                             );
                         })
                     ) : (
-                        <Text color="gray.500" p={4}>Nenhum histórico de atualizações (#SM) para este ativo até o momento.</Text>
+                        <Text color="gray.500" p={4}>Nenhum histórico de atualizações (#RelatórioMAA) para este ativo até o momento.</Text>
                     )}
                 </VStack>
             </Card.Body>
