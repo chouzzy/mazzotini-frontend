@@ -50,28 +50,28 @@ interface InvestorFormInput {
     share?: number; // <-- Share agora é opcional no formulário
 }
 
+// Interface atualizada
 interface FormValues {
     processNumber: string;
-    nickname?: string; // <-- NOVO CAMPO
     originalCreditor: string;
+    otherParty: string; // <--- NOVO
+    nickname?: string;  // Opcional
     origemProcesso: string;
+    // ... outros campos mantidos
     acquisitionValue: number;
     originalValue: number;
     acquisitionDate: string;
     associateId?: string;
-
     updateIndexType: string;
     contractualIndexRate: number;
-
     legalOneId: number;
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
-
     investors: InvestorFormInput[];
 }
 
-// Interface para a resposta da busca (lookup)
 interface LookupResponse {
     originalCreditor: string;
+    otherParty?: string; // <--- NOVO
     origemProcesso: string;
     legalOneId: number;
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
@@ -224,124 +224,54 @@ export default function CreateAssetPage() {
     const associatesCollection = createListCollection({ items: associates || [] });
 
     // (handleFetchProcessData... sem mudanças)
+    // BUSCA DE DADOS (ATUALIZADA)
     const handleFetchProcessData = async () => {
         setIsFetchingData(true);
         const processNumber = getValues("processNumber");
-        if (!processNumber) {
-            toaster.create({ title: "Erro", description: "Por favor, digite um número de processo para buscar.", type: "error" });
-            setIsFetchingData(false);
-            return;
-        }
+        if (!processNumber) { toaster.create({ title: "Erro", type: "error" }); setIsFetchingData(false); return; }
+
         try {
             const token = await getAccessTokenSilently();
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-            const response = await axios.get<LookupResponse>(
-                `${apiBaseUrl}/api/assets/lookup/${processNumber}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const { originalCreditor, origemProcesso, legalOneId, legalOneType } = response.data;
+            const response = await axios.get<LookupResponse>(`${apiBaseUrl}/api/assets/lookup/${processNumber}`, { headers: { Authorization: `Bearer ${token}` } });
+
+            const { originalCreditor, origemProcesso, legalOneId, legalOneType, otherParty } = response.data;
+
             setValue("originalCreditor", originalCreditor);
             setValue("origemProcesso", origemProcesso);
+            if (otherParty) setValue("otherParty", otherParty); // <--- Preenche Parte Contrária
+
             setValue("legalOneId", legalOneId);
             setValue("legalOneType", legalOneType);
-            console.log("Dados do processo encontrados:", response.data);
-            toaster.create({ title: "Dados Encontrados!", description: `Credor "${originalCreditor}" localizado.`, type: "success" });
+
+            toaster.create({ title: "Dados Encontrados!", type: "success" });
         } catch (error: any) {
-            console.error("Erro ao buscar dados do processo:", error);
-            setValue("originalCreditor", "");
-            setValue("origemProcesso", "");
-            toaster.create({
-                title: "Erro ao Buscar Processo",
-                description: error.response?.data?.error || "Processo não encontrado no Legal One.",
-                type: "error",
-                closable: true,
-            });
-        } finally {
-            setIsFetchingData(false);
-        }
+            console.error("Erro busca:", error);
+            toaster.create({ title: "Erro ao Buscar", description: error.response?.data?.error, type: "error" });
+        } finally { setIsFetchingData(false); }
     };
+
 
     // --- FUNÇÃO DE SUBMISSÃO (CADASTRO) ---
     // (Lógica do share: 0 mantida)
 
     // --- FUNÇÃO DE SUBMISSÃO (CADASTRO) ---
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
-
-        if (!data.legalOneId || !data.legalOneType) {
-            toaster.create({
-                title: "Dados Incompletos",
-                description: "Por favor, clique em 'Buscar Dados' ao lado do número do processo antes de salvar.",
-                type: "error",
-            });
-            return;
-        }
-
-        // Validação de Duplicidade (Frontend)
-        const investorUserIds = data.investors.map(inv => inv.userId);
-        const uniqueInvestorIds = new Set(investorUserIds);
-
-        if (uniqueInvestorIds.size !== investorUserIds.length) {
-            toaster.create({
-                title: "Cliente Duplicado",
-                description: "Você não pode adicionar o mesmo cliente duas vezes ao mesmo processo. Por favor, remova o cliente duplicado.",
-                type: "error",
-            });
-            return;
-        }
+        if (!data.legalOneId) { toaster.create({ title: "Dados Incompletos", type: "error" }); return; }
 
         try {
             const token = await getAccessTokenSilently();
-            const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-            console.warn("[Frontend] O backend (CreateCreditAssetUseCase) precisa ser ajustado para aceitar totalShare = 0.");
-
             const payload = {
                 ...data,
-                // Converte a string "YYYY-MM-DD" para um objeto Date (ISO string)
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
-
-                investors: data.investors.map(inv => ({
-                    userId: inv.userId,
-                    share: 0 // <-- Hardcoded 0% como pedido
-                })),
+                investors: data.investors.map(inv => ({ userId: inv.userId, share: 0 })),
                 associateId: data.associateId || null,
             };
-
-            console.log("Enviando payload (com data corrigida):", payload);
-
-            await axios.post(`${apiBaseUrl}/api/assets`, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            toaster.create({
-                title: "Ativo Registado!",
-                description: `O processo ${data.processNumber} foi registrado com sucesso.`,
-                type: "success",
-            });
-            const target = `/processos/${data.processNumber}`;
-            window.location.href = target;
-
+            await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
+            toaster.create({ title: "Ativo Registado!", type: "success" });
+            window.location.href = `/processos/${data.processNumber}`;
         } catch (error: any) {
-            // =================================================================
-            //  A SUA CORREÇÃO (Toast Inteligente)
-            // =================================================================
-            let description = "Ocorreu um erro inesperado. Tente novamente.";
-
-            // Tenta pegar os 'details' (erros de validação do Yup, ex: ["O ID é obrigatório"])
-            if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
-                description = error.response.data.details.join(', ');
-            }
-            // Tenta pegar o 'error' (erro específico do UseCase, ex: "Cliente Duplicado")
-            else if (error.response?.data?.error) {
-                description = error.response.data.error;
-            }
-
-            toaster.create({
-                title: "Erro ao Registrar Ativo.",
-                description: description, // <-- A MENSAGEM INTELIGENTE
-                type: "error",
-            });
-            // =================================================================
+            toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
         }
     };
 
@@ -355,88 +285,44 @@ export default function CreateAssetPage() {
     // --- Fim ---
 
     return (
-        <MotionFlex
-            direction="column"
-            w="100%"
-            flex={1}
-            p={{ base: 4, md: 8 }}
-        >
-            <VStack w="100%" mx="auto" gap={8} align="stretch">
-                <VStack align="start">
-                    <Flex align="center" gap={2}>
-                        <PiPlusCircle size={28} color="#B8A76E" />
-                        <Heading as="h1" size="xl" >Registrar Novo Ativo de Crédito</Heading>
-                    </Flex>
-                    <Text color="gray.500">Insira o número do processo e clique em "Buscar" para carregar os dados.</Text>
-                </VStack>
+        <MotionFlex direction="column" w="100%" flex={1} p={{ base: 4, md: 8 }}>
+            <VStack w="100%" mx="auto" gap={8} align="stretch" >
+                <VStack align="start" > <Heading as="h1" size="xl" > Registrar Novo Ativo </Heading></VStack >
 
-                <Flex as="form" onSubmit={handleSubmit(onSubmit)}>
-                    <Stack gap="6" w="100%">
-                        <Heading as="h2" size="md" borderBottomWidth="1px" color={'brand.500'} borderColor="gray.700" pb={2}>
-                            1. Identificação do Processo
-                        </Heading>
+                <Flex as="form" onSubmit={handleSubmit(onSubmit)} >
+                    <Stack gap="6" w="100%" >
+                        <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" color={'brand.500'} pb={2} > 1. Identificação </Heading>
 
-                        {/* NOVO CAMPO: Nome */}
-                        <Field.Root>
-                            <Field.Label>Nome do Processo (Opcional)</Field.Label>
-                            <Input
-                                placeholder="Ex: Processo da Fazenda"
-                                _placeholder={{ color: 'gray.400' }}
-                                borderColor={'gray.700'}
-                                bgColor={'gray.700'}
-                                {...register("nickname")}
-                            />
-                            <Field.HelperText color="gray.500">
-                                Um nome amigável para identificar este processo facilmente.
-                            </Field.HelperText>
-                        </Field.Root>
-
-                        {/* (Campos de Processo... sem mudanças) */}
-                        <Field.Root invalid={!!errors.processNumber} required>
-                            <Field.Label>Número do Processo</Field.Label>
-                            <Input
-                                placeholder="Ex: 0012345-67.2023.5.02.0001"
-                                _placeholder={{ color: 'gray.400' }}
-                                borderColor={'gray.700'}
-                                bgColor={'gray.700'}
-                                {...register("processNumber", { required: "Este campo é obrigatório" })}
-                            />
-                            <Button
-                                size="sm"
-                                onClick={handleFetchProcessData}
-                                loading={isFetchingData}
-                                disabled={!processNumberValue}
-                                bgColor={'brand.800'}
-                                color={'white'}
-                            >
-                                <Icon as={PiMagnifyingGlass} />
-                                Buscar no Legal One
+                        {/* Processo */}
+                        <Field.Root invalid={!!errors.processNumber} required >
+                            <Field.Label>Número do Processo </Field.Label>
+                            < Input placeholder="Ex: 0012345..." borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true })} />
+                            < Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'} >
+                                <Icon as={PiMagnifyingGlass} /> Buscar
                             </Button>
-                            <Field.ErrorText>{errors.processNumber?.message}</Field.ErrorText>
                         </Field.Root>
-                        <Field.Root invalid={!!errors.originalCreditor} required>
-                            <Field.Label>Cliente Principal</Field.Label>
-                            <Input
-                                placeholder="Preenchido pela busca..."
-                                _placeholder={{ color: 'gray.400' }}
-                                borderColor={'gray.700'}
-                                disabled
-                                bgColor={'gray.700'}
-                                {...register("originalCreditor", { required: "Este campo é obrigatório" })}
-                                readOnly
-                            />
+
+                        {/* Campos de Dados do Processo */}
+                        <Field.Root invalid={!!errors.originalCreditor} required >
+                            <Field.Label>Cliente Principal </Field.Label>
+                            < Input borderColor={'gray.700'} disabled bgColor={'gray.700'} {...register("originalCreditor", { required: true })} readOnly placeholder="Preenchido pela busca..." />
                         </Field.Root>
-                        <Field.Root invalid={!!errors.origemProcesso} required>
-                            <Field.Label>Origem do Processo (Órgão e Vara)</Field.Label>
-                            <Input
-                                placeholder="Preenchido pela busca..."
-                                _placeholder={{ color: 'gray.400' }}
-                                borderColor={'gray.700'}
-                                {...register("origemProcesso", { required: "Este campo é obrigatório" })}
-                                disabled
-                                readOnly
-                                bgColor="gray.700"
-                            />
+
+                        {/* NOVO CAMPO: Parte Contrária (Preenchido auto, mas visível) */}
+                        <Field.Root required >
+                            <Field.Label>Parte Contrária </Field.Label>
+                            < Input borderColor={'gray.700'} disabled bgColor={'gray.700'} {...register("otherParty", { required: "Parte contrária obrigatória" })} readOnly placeholder="Preenchido pela busca..." />
+                        </Field.Root>
+
+                        < Field.Root invalid={!!errors.origemProcesso} required >
+                            <Field.Label>Origem(Vara) </Field.Label>
+                            < Input borderColor={'gray.700'} {...register("origemProcesso", { required: true })} disabled readOnly bgColor="gray.700" placeholder="Preenchido pela busca..." />
+                        </Field.Root>
+
+                        {/* Apelido Interno (Opcional) */}
+                        <Field.Root>
+                            <Field.Label>Apelido Interno(Opcional) </Field.Label>
+                            < Input borderColor={'gray.700'} bgColor={'gray.700'} {...register("nickname")} placeholder="Ex: Caso da Fazenda" />
                         </Field.Root>
                         {/* --- Fim dos Campos de Processo --- */}
 
@@ -643,3 +529,7 @@ export default function CreateAssetPage() {
         </MotionFlex>
     );
 }
+
+
+
+

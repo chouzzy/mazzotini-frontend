@@ -1,14 +1,14 @@
 'use client';
 
 import {
-  SimpleGrid,
-  Card,
-  CardTitle,
-  Text,
-  Icon,
-  VStack,
-  Flex,
-  Badge
+    SimpleGrid,
+    Card,
+    CardTitle,
+    Text,
+    Icon,
+    VStack,
+    Flex,
+    Badge
 } from '@chakra-ui/react';
 import { PiUser, PiClockClockwise, PiFilePdf } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
@@ -17,11 +17,11 @@ import { extractFreeText } from '@/utils';
 // DADOS MOCKADOS (importados ou definidos para fallback)
 const mockUpdates = [
     {
-      id: 'mock1',
-      date: '2025-09-15T10:00:00Z',
-      updatedValue: 55250,
-      description: 'Sentença favorável em segunda instância',
-      read: false,
+        id: 'mock1',
+        date: '2025-09-15T10:00:00Z',
+        updatedValue: 55250,
+        description: 'Sentença favorável em segunda instância',
+        read: false,
     },
 ];
 
@@ -50,18 +50,19 @@ export function OverviewTab({ asset }: TabProps) {
     return (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8}>
             {/* Card de Detalhes da Aquisição */}
-            <Card.Root  bg="gray.900">
+            <Card.Root bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Detalhes do Processo</Card.Title>
                     {/* <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text> */}
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Cliente Principal:</strong> {asset.originalCreditor}</Text>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
-                    <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
+                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Cliente Principal:</strong> {asset.originalCreditor}</Text>
+                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Parte Contrária:</strong> {asset.otherParty}</Text>
+                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
+                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
                 </Card.Body>
             </Card.Root>
-            
+
             {/* Card de Envolvidos */}
-                {/* <Card.Root  bg="gray.900">
+            {/* <Card.Root  bg="gray.900">
                     <Card.Body>
                         <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
                         {asset.associate && <Text mt={2}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Associado:</strong> {asset.associate.name}</Text>}
@@ -69,7 +70,7 @@ export function OverviewTab({ asset }: TabProps) {
                 </Card.Root> */}
 
             {/* Card de Resumo do Histórico */}
-            <Card.Root  bg="gray.900">
+            <Card.Root bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Última Atualização Processual</Card.Title>
                     {lastUpdate ? (
@@ -81,8 +82,8 @@ export function OverviewTab({ asset }: TabProps) {
                             <Text fontSize="sm" color="gray.400">
                                 Em: {new Date(lastUpdate.date).toLocaleDateString('pt-BR')}
                             </Text>
-                             <Text fontSize="sm" color="gray.300" mt={2}>
-                                Acesse a aba <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Histórico Processual</strong> para ver todos os detalhes.
+                            <Text fontSize="sm" color="gray.300" mt={2}>
+                                Acesse a aba <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Histórico Processual</strong> para ver todos os detalhes.
                             </Text>
                         </VStack>
                     ) : (
@@ -90,24 +91,24 @@ export function OverviewTab({ asset }: TabProps) {
                     )}
                 </Card.Body>
             </Card.Root>
-            
+
             {/* Card de Resumo dos Documentos */}
-            <Card.Root  bg="gray.900">
+            <Card.Root bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Documentos Anexados</Card.Title>
-                     {documentCount > 0 ? (
+                    {documentCount > 0 ? (
                         <VStack align="stretch" mt={4} gap={2}>
-                             <Flex align="center">
-                                <Icon as={PiFilePdf} mr={2} boxSize={5}/>
+                            <Flex align="center">
+                                <Icon as={PiFilePdf} mr={2} boxSize={5} />
                                 <Text>
-                                    <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>{documentCount}</strong> documento{documentCount > 1 ? 's' : ''} na plataforma.
+                                    <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>{documentCount}</strong> documento{documentCount > 1 ? 's' : ''} na plataforma.
                                 </Text>
                             </Flex>
-                             <Text fontSize="sm" color="gray.400" maxLines={4}>
+                            <Text fontSize="sm" color="gray.400" maxLines={4}>
                                 O mais recente é "{documents[0].name}".
                             </Text>
                             <Text fontSize="sm" color="gray.300" mt={2}>
-                                Acesse a aba <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Documentos</strong> para visualizá-los.
+                                Acesse a aba <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Documentos</strong> para visualizá-los.
                             </Text>
                         </VStack>
                     ) : (
