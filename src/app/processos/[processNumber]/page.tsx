@@ -35,6 +35,7 @@ export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-com
   legalOneType?: string;
   associateId?: string;
   nickname?: string;
+  otherParty?: string; // NOVO CAMPO para Parte Contrária
   investors: { user: { id: string, name: string }; investorShare: number }[];
   updates: { id: string; date: string; updatedValue: number; description?: string, type?: string, read?: boolean, fullDescription?: string }[];
   documents: { id: string; legalOneDocumentId: number; name: string; url: string; category: string }[];
