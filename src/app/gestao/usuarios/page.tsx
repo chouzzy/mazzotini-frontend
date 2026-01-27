@@ -25,6 +25,7 @@ import { InviteUserDialog } from '@/app/components/management/InviteUserDialog';
 import Link from 'next/link';
 import { translateRole, getRoleColorScheme } from '@/utils/masks';
 import { Tooltip } from '@/components/ui/tooltip';
+import { UserProfile } from '@/types';
 
 // Tipagem para os dados do usuário (ATUALIZADA com 'id')
 interface UserManagementInfo {
@@ -61,6 +62,8 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
 
 export default function UserManagementPage() {
     const { data: users, isLoading, error, mutate } = useApi<UserManagementInfo[]>('/api/management/users');
+        const { data: pendingUsers, isLoading: isLoadingPending, error: errorPending, mutate: mutatePending } = useApi<UserProfile[]>('/api/management/pending-users');
+
 
     // Controles para os dois dialogs
     const { open: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
@@ -111,15 +114,15 @@ export default function UserManagementPage() {
                         </Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
 
-                            <Button colorPalette={'blue'} gap={2} onClick={onInviteOpen}>
+                            <Button colorPalette={'green'} gap={2} onClick={onInviteOpen}>
                                 <Icon as={PiUserPlus} boxSize={5} />
                                 Novo usuário
                             </Button>
 
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
-                                <Button colorPalette={'purple'} gap={2}>
+                                <Button colorPalette={'blue'} gap={2} color={'white'}>
                                     <Icon as={PiUserCircleCheck} boxSize={5} />
-                                    Verificar cadastros
+                                    Aprovar cadastros ({isLoadingPending ? <Spinner size="xs" /> : pendingUsers?.length || 0})
                                 </Button>
                             </Link>
                         </Flex>

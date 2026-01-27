@@ -13,7 +13,7 @@ import {
     Dialog,
     Button
 } from "@chakra-ui/react";
-import { PiBell, PiCheckCircle, PiInfo, PiWarning, PiStar, PiX } from "react-icons/pi";
+import { PiBell, PiCheckCircle, PiInfo, PiWarning, PiStar, PiX, PiBellFill } from "react-icons/pi";
 import { useApi } from "@/hooks/useApi";
 import { useState, useEffect } from "react";
 
@@ -84,7 +84,7 @@ export function NotificationsMenu() {
                             _hover={{ color: "white", bg: "whiteAlpha.200" }}
                             borderRadius="full"
                         >
-                            <PiBell size={20} />
+                            <PiBellFill color={hasUnread ? "#d3b53d" : "gray.400"} size={20} />
                         </IconButton>
                         {hasUnread && (
                             <Box
