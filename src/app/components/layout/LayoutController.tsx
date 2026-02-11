@@ -26,7 +26,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { mutate } = useSWRConfig(); // Função para recarregar dados
 
-    // Verifica se a página atual é pública
+    // Verifica se a página atual é pública teste
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
 
     // 1. Busca o perfil do nosso DB
