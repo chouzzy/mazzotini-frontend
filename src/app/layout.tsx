@@ -10,6 +10,7 @@ import { Flex } from '@chakra-ui/react';
 import { LayoutController } from './components/layout/LayoutController';
 import { Toaster } from '@/components/ui/toaster';
 import WhatsButton from '@/components/ui/WhatsButton';
+import { CookieConsent } from './components/layout/CookieConsent';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -57,6 +58,7 @@ export default function RootLayout({
             >
               <Toaster />
               <WhatsButton />
+              <CookieConsent  />
               <LayoutController>{children}</LayoutController>
             </Flex>
           </Flex>
