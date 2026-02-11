@@ -68,7 +68,7 @@ export function ChartsTab({ asset }: TabProps) {
     return (
         <VStack gap={8} align="stretch">
             <Box p={6} bg="gray.900" borderRadius="lg">
-                <Heading size="md" mb={6}>Projeção de Evolução do Ativo</Heading>
+                <Heading size="md" mb={6}>Projeção de Evolução dos Valores</Heading>
                 <ResponsiveContainer width="100%" height={300}>
                     {/* Exibe um spinner enquanto a projeção carrega */}
                     {isLoadingProjection ? (
