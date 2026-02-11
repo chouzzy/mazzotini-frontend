@@ -8,6 +8,8 @@ import { useApi } from '@/hooks/useApi';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Flex, Spinner, Text, VStack } from '@chakra-ui/react';
+import axios from 'axios'; // Import necessário para o POST
+import { useSWRConfig } from 'swr'; // Para atualizar o cache após o sync
 
 // Tipagem para os dados do nosso próprio utilizador
 interface MazzotiniUser {
@@ -21,9 +23,13 @@ interface MazzotiniUser {
 const PUBLIC_ROUTES = ['/politica-privacidade', '/termos-de-uso'];
 
 export function LayoutController({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, isLoading: isAuthLoading } = useAuth0();
+    const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, user } = useAuth0();
     const router = useRouter();
     const pathname = usePathname();
+    const { mutate } = useSWRConfig(); // Função para recarregar dados
+
+    // Verifica se a página atual é pública
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
 
     // Verifica se a página atual é pública
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
@@ -35,7 +41,41 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
 
     const isLoading = isAuthLoading || (isAuthenticated && isProfileLoading);
 
-    // Efeito de redirecionamento, agora centralizado aqui
+    // =================================================================
+    //  ETAPA 4: SINCRONIZAÇÃO (MERGE) AO LOGAR
+    // =================================================================
+    
+    useEffect(() => {
+        const syncUser = async () => {
+            if (isAuthenticated && user) {
+                try {
+                    const token = await getAccessTokenSilently();
+                    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+                    // CORREÇÃO: Enviando os dados do usuário no corpo da requisição
+                    await axios.post(`${apiBaseUrl}/api/users/sync`, {
+                        email: user.email,
+                        name: user.name,
+                        picture: user.picture
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+
+                    mutate('/api/users/me');
+
+                } catch (error) {
+                    console.error("[LayoutController] Erro na sincronização silenciosa:", error);
+                }
+            }
+        };
+
+        syncUser();
+    }, [isAuthenticated, user, getAccessTokenSilently, mutate]);
+
+    // =================================================================
+
+
+    // Efeito de redirecionamento (Lógica de Proteção de Rotas)
     useEffect(() => {
         // Se estiver carregando, não autenticado, ou sem perfil, espera.
         if (isLoading || !isAuthenticated || !userProfile) {
@@ -51,26 +91,21 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         }
 
         const status = userProfile.status;
-        const profileIsFilled = !!userProfile.cpfOrCnpj; // A nossa "proxy"
-        
+        const profileIsFilled = !!userProfile.cpfOrCnpj;
+
         const isOnOnboardingPage = pathname === '/perfil/completar';
         const isOnPendingPage = pathname === '/perfil/pendente';
 
-        // 2. LÓGICA DE REDIRECIONAMENTO
         switch (status) {
             case 'ACTIVE':
-                // Se está ativo mas "preso" nas páginas de onboarding/pendente, manda para o dashboard.
                 if (isOnOnboardingPage || isOnPendingPage) {
                     router.push('/dashboard');
                 }
                 break;
             case 'PENDING_REVIEW':
-                // Se está pendente de revisão, temos que saber se ele já preencheu o formulário.
                 if (profileIsFilled) {
-                    // Já preencheu -> Fica na página de "pendente"
                     if (!isOnPendingPage) router.push('/perfil/pendente');
                 } else {
-                    // Não preencheu -> Fica na página de "completar"
                     if (!isOnOnboardingPage) router.push('/perfil/completar');
                 }
                 break;
@@ -78,9 +113,11 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                 // Por agora, manda para a página de pendente com uma mensagem.
                 if (!isOnPendingPage) router.push('/perfil/pendente');
                 break;
+            case 'PENDING_ONBOARDING': // Caso o sync tenha acabado de criar o user
+                if (!isOnOnboardingPage) router.push('/perfil/completar');
+                break;
             default:
-                // Estado desconhecido, manda para o login.
-                router.push('/'); 
+                router.push('/');
         }
 
     }, [isLoading, isProfileLoading, userProfile, pathname, router, isAuthenticated, isPublicRoute]);
@@ -92,7 +129,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
             <Flex w="100%" minH="100vh" justify="center" align="center">
                 <VStack>
                     <Spinner size="xl" />
-                    <Text>A verificar o seu perfil...</Text>
+                    <Text>A iniciar a aplicação...</Text>
                 </VStack>
             </Flex>
         );
@@ -100,7 +137,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
 
     // --- DECISÕES DE LAYOUT ---
 
-    // 1. Se NÃO estiver autenticado, mostra o layout da landing page.
+    // 1. Se NÃO estiver autenticado
     if (!isAuthenticated) {
         return (
             <>
@@ -111,7 +148,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // 2. Se ESTIVER autenticado (e os dados carregados)...
+    // 2. Se ESTIVER autenticado
     if (userProfile) {
         const status = userProfile.status;
         const isOnOnboardingPage = pathname === '/perfil/completar';
@@ -141,7 +178,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         }
     }
 
-    // Estado de fallback (enquanto o useEffect redireciona)
+    // Estado de fallback
     return (
         <Flex w="100%" minH="100vh" justify="center" align="center">
             <Spinner size="xl" />
