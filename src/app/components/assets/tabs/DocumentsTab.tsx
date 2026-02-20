@@ -83,7 +83,7 @@ export function DocumentsTab({ asset }: TabProps) {
                             </Button>
                         ))
                     ) : (
-                        <Text color="gray.500">Nenhum documento sincronizado para este ativo.</Text>
+                        <Text color="gray.500">Nenhum documento sincronizado para este processo.</Text>
                     )}
                 </VStack>
             </Card.Body>

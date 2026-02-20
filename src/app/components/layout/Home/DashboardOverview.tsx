@@ -159,7 +159,7 @@ export function DashboardOverview() {
 
                 <Box h="1px" bg="gray.700" w="100%" />
 
-                {/* Seção Principal com Ativos Recentes e Ações Rápidas */}
+                {/* Seção Principal com Processos Recentes e Ações Rápidas */}
                 <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8} w="100%">
                     <VStack
                         gridColumn={{ lg: 'span 2' }}
@@ -175,7 +175,7 @@ export function DashboardOverview() {
                                 ))}
                             </VStack>
                         ) : (
-                            <Text color="gray.500">Nenhum ativo recente para exibir.</Text>
+                            <Text color="gray.500">Nenhum processo recente para exibir.</Text>
                         )}
                     </VStack>
 

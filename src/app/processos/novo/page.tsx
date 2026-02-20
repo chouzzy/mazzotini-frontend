@@ -164,7 +164,7 @@ export default function CreateAssetPage() {
                 associateId: data.associateId || null,
             };
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
-            toaster.create({ title: "Ativo Registado!", type: "success" });
+            toaster.create({ title: "Processo Registado!", type: "success" });
             window.location.href = `/processos/${data.processNumber}`;
         } catch (error: any) {
             toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
@@ -177,7 +177,7 @@ export default function CreateAssetPage() {
     return (
         <MotionFlex direction="column" w="100%" flex={1} p={{ base: 4, md: 8 }}>
             <VStack w="100%" mx="auto" gap={8} align="stretch">
-                <VStack align="start"><Heading as="h1" size="xl">Registrar Novo Ativo</Heading></VStack>
+                <VStack align="start"><Heading as="h1" size="xl">Registrar Novo Processo</Heading></VStack>
 
                 <Flex as="form" onSubmit={handleSubmit(onSubmit)}>
                     <Flex flexDir={'column'} gap="6" w="100%">
@@ -276,7 +276,7 @@ export default function CreateAssetPage() {
                         </SimpleGrid>
 
                         <Button type="submit" color={'white'} bgColor={'brand.700'} size="lg" w={{ base: '100%', md: 'auto' }} alignSelf="flex-end" loading={isSubmitting} gap={2} mt={4}>
-                            <Icon as={PiPlusCircle} /> Registrar Ativo
+                            <Icon as={PiPlusCircle} /> Registrar Processo
                         </Button>
                     </Flex>
                 </Flex>

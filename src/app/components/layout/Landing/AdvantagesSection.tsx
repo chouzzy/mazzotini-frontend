@@ -21,13 +21,13 @@ const advantagesData = [
         icon: PiTrendUp,
         title: 'Rentabilidade Atrativa',
         description:
-            'Invista em ativos com rentabilidade superior, frequentemente atrelada ao IPCA, protegendo seu capital da inflação e garantindo um crescimento real e seguro.',
+            'Invista em processos com rentabilidade superior, frequentemente atrelada ao IPCA, protegendo seu capital da inflação e garantindo um crescimento real e seguro.',
     },
     {
         icon: PiShieldCheck,
         title: 'Transparência e Controle',
         description:
-            'Acesse sua carteira de investimentos a qualquer momento através da nossa plataforma. Acompanhe o status, a valorização e o rendimento de cada ativo em tempo real.',
+            'Acesse sua carteira de investimentos a qualquer momento através da nossa plataforma. Acompanhe o status, a valorização e o rendimento de cada processo em tempo real.',
     },
     {
         icon: PiHandshake,

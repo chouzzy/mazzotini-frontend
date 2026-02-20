@@ -208,7 +208,7 @@ export default function EditAssetPage() {
     // [EFEITO]: Preenche o formulário quando os dados chegam da API
     useEffect(() => {
         if (assetData) {
-            console.log("[EditAsset] Dados do ativo carregados:", assetData);
+            console.log("[EditAsset] Dados do processo carregados:", assetData);
 
             // Mapeia os investidores existentes para o formato do formulário
             const investorsFromApi: InvestorFormInput[] = assetData.investors.map(inv => ({
@@ -281,12 +281,12 @@ export default function EditAssetPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            toaster.create({ title: "Ativo Atualizado!", type: "success" });
+            toaster.create({ title: "Processo Atualizado!", type: "success" });
 
             router.push(`/processos/${processNumber}`);
 
         } catch (error: any) {
-            console.error("Erro ao atualizar ativo:", error);
+            console.error("Erro ao atualizar processo:", error);
 
             let description = "Ocorreu um erro inesperado.";
             if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
@@ -312,14 +312,14 @@ export default function EditAssetPage() {
     }
 
     if (!assetData && !isLoadingData) {
-        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Ativo não encontrado.</Text></Flex>;
+        return <Flex w="100%" flex={1} justify="center" align="center"><Text>Processo não encontrado.</Text></Flex>;
     }
 
     return (
         <MotionFlex direction="column" w="100%" flex={1} p={{ base: 4, md: 8 }}>
             <VStack w="100%" maxW="container.lg" mx="auto" gap={8} align="stretch">
                 <VStack align="start">
-                    <Heading as="h1" size="xl">Editar Ativo de Crédito</Heading>
+                    <Heading as="h1" size="xl">Editar Processo de Crédito</Heading>
                     <Text color="gray.500">Altere os dados cadastrais do processo.</Text>
                 </VStack>
 
@@ -413,7 +413,7 @@ export default function EditAssetPage() {
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.originalValue} required>
-                                <Field.Label>Valor do Ativo (na data)</Field.Label>
+                                <Field.Label>Valor do Processo (na data)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                         </SimpleGrid>

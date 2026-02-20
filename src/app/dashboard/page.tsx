@@ -21,7 +21,7 @@ import { AssetSummary } from '@/types/api';
 export default function DashboardPage() {
     const { user } = useAuth0();
     // CORREÇÃO: A página do investidor agora chama o mesmo endpoint que a do operador.
-    // O backend é responsável por filtrar e devolver apenas os ativos corretos.
+    // O backend é responsável por filtrar e devolver apenas os processos corretos.
     const { data: assets, isLoading, error } = useApi<AssetSummary[]>('/api/assets');
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -63,8 +63,8 @@ export default function DashboardPage() {
 
     if (!assets || assets.length === 0) {
         return <EmptyState
-            title="Nenhum Ativo na Sua Carteira"
-            description="Você ainda não possui nenhum ativo de crédito. Quando um ativo for associado a si, ele aparecerá aqui."
+            title="Nenhum Processo na Sua Carteira"
+            description="Você ainda não possui nenhum processo de crédito. Quando um processo for associado a si, ele aparecerá aqui."
             buttonLabel="Contactar Suporte" // Um call-to-action mais apropriado para o investidor
             buttonHref="#" // Podemos colocar o link do WhatsApp aqui
         />;
@@ -75,7 +75,7 @@ export default function DashboardPage() {
             <VStack gap={8} align="stretch" w="100%">
                 {/* <Box>
                     <Heading as="h1" size="xl">
-                        Meus Ativos
+                        Meus Processos
                     </Heading>
                     <Text color="gray.400" mt={2}>
                         Acompanhe em tempo real a performance da sua carteira de créditos.

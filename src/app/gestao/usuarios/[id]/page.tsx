@@ -185,7 +185,7 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
     const { getAccessTokenSilently } = useAuth0();
     const [isSaving, setIsSaving] = useState(false);
 
-    // Busca todos os ativos disponíveis para o select
+    // Busca todos os processos disponíveis para o select
     const { data: allAssets } = useApi<any[]>('/api/assets');
 
     // Prepara as opções para o Combobox
@@ -276,7 +276,7 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
         const { collection, filter } = useListCollection({ initialItems: assetOptions, filter: contains });
 
         return (
-            <Controller name={`investments.${index}.assetId`} control={control} rules={{ required: "Selecione um ativo" }} render={({ field }) => (
+            <Controller name={`investments.${index}.assetId`} control={control} rules={{ required: "Selecione um processo" }} render={({ field }) => (
                 <Field.Root invalid={!!errors.investments?.[index]?.assetId} required w="100%">
                     <Combobox.Root collection={collection} value={field.value ? [field.value] : []} onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}>
                         <Combobox.Control>
@@ -345,7 +345,7 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
                         <Box key={field.id} p={4} bg="whiteAlpha.50" borderRadius="md" mb={2}>
                             <Stack direction={{ base: 'column', md: 'row' }} gap={4} align="flex-end">
                                 <Box flex={1}>
-                                    <Text fontSize="xs" mb={1} color="gray.400">Processo / Ativo</Text>
+                                    <Text fontSize="xs" mb={1} color="gray.400">Processo</Text>
                                     <AssetCombobox index={index} control={control} />
                                 </Box>
                                 <Box w={{ base: '100%', md: '120px' }}>

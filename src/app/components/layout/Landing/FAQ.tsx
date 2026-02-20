@@ -5,16 +5,16 @@ import { Flex, VStack, Heading, Accordion, Span } from "@chakra-ui/react";
 // ============================================================================
 const faqData = [
     {
-        question: "O que é um ativo de crédito judicial?",
+        question: "O que é um processo de crédito judicial?",
         answer: "É um direito de receber um valor determinado em uma ação judicial, que pode ser vendido a um investidor. A pessoa que tem o direito vende por um valor menor para receber o dinheiro imediatamente (liquidez), e o investidor assume o direito de receber o valor total no futuro, lucrando com a valorização."
     },
     {
         question: "Qual a rentabilidade esperada?",
-        answer: "A maioria dos nossos ativos é corrigida pela taxa do IPCA (Índice Nacional de Preços ao Consumidor Amplo), protegendo seu capital da inflação. Além disso, podem haver juros contratuais que aumentam a rentabilidade. É uma forma de investimento de baixo risco com retornos atrativos."
+        answer: "A maioria dos nossos processos é corrigida pela taxa do IPCA (Índice Nacional de Preços ao Consumidor Amplo), protegendo seu capital da inflação. Além disso, podem haver juros contratuais que aumentam a rentabilidade. É uma forma de investimento de baixo risco com retornos atrativos."
     },
     {
         question: "Como posso acompanhar meus investimentos?",
-        answer: "Nossa plataforma SGI (Sistema de Gestão de Investimentos) permite que você, investidor, acesse sua carteira a qualquer momento, visualize o valor atualizado de cada ativo, o status do processo e a rentabilidade acumulada."
+        answer: "Nossa plataforma SGI (Sistema de Gestão de Investimentos) permite que você, investidor, acesse sua carteira a qualquer momento, visualize o valor atualizado de cada processo, o status do processo e a rentabilidade acumulada."
     }
 ];
 

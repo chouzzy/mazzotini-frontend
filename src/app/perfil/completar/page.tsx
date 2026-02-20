@@ -1,3 +1,5 @@
+// src/app/perfil/completar/page.tsx
+
 'use client';
 
 import {
@@ -39,6 +41,14 @@ import { useSWRConfig } from "swr";
 import { useApi } from "@/hooks/useApi";
 import NextLink from 'next/link';
 
+interface Associate {
+    value: string; // O ID real do banco
+    label: string;
+    associateSequence?: number | null; // O novo campo
+    role: string
+    email: string;
+}
+
 interface OnboardingFormData {
     name: string;
     cpfOrCnpj: string;
@@ -50,10 +60,10 @@ interface OnboardingFormData {
     infoEmail?: string;
     profession?: string;
     contactPreference: string[];
-    
-    referredById?: string; 
-    manualReferral?: string; 
-    unknownAssociate: boolean; 
+
+    referredById?: string;
+    manualReferral?: string;
+    unknownAssociate: boolean;
 
     residentialCep: string;
     residentialStreet: string;
@@ -83,10 +93,6 @@ interface OnboardingFormData {
     termsAccepted: boolean;
 }
 
-interface Associate {
-    value: string; 
-    label: string; 
-}
 
 const estadoCivilCollection = createListCollection({
     items: [
@@ -197,7 +203,7 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
 export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // NOVO: Estado para feedback de progresso
     const [statusMessage, setStatusMessage] = useState("");
 
@@ -210,14 +216,14 @@ export default function CompleteProfilePage() {
             contactPreference: [],
             correspondenceAddress: 'residential',
             unknownAssociate: false,
-            termsAccepted: false 
+            termsAccepted: false
         }
     });
     const router = useRouter();
     const { mutate } = useSWRConfig();
 
     const useCommercialAddress = watch('useCommercialAddress');
-    const unknownAssociate = watch('unknownAssociate'); 
+    const unknownAssociate = watch('unknownAssociate');
     const profilePictureFile = watch('profilePicture');
 
     const cpfOrCnpjValue = watch('cpfOrCnpj');
@@ -230,9 +236,18 @@ export default function CompleteProfilePage() {
 
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
 
+    console.log("Associados carregados:", associates);
     const associatesCollection = createListCollection({
-        items: associates || [],
+        items: (associates || []).map(a => ({
+           
+            value: a.value,
+            label: a.associateSequence
+                ? `${String(a.associateSequence).padStart(3, '0')} - ${a.label}`
+                : a.label
+        })),
     });
+
+    console.log("Associados para seleção:", associatesCollection.items);
 
     const contactPreference = useController({
         control,
@@ -243,7 +258,7 @@ export default function CompleteProfilePage() {
     const onSubmit: SubmitHandler<OnboardingFormData> = async (data) => {
         setIsSubmitting(true);
         setStatusMessage("Iniciando envio..."); // 1. Inicia feedback
-        
+
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
@@ -251,7 +266,7 @@ export default function CompleteProfilePage() {
             let profilePictureUrl = user?.picture;
             if (data.profilePicture && data.profilePicture.length > 0) {
                 setStatusMessage("Fazendo upload da foto de perfil..."); // 2. Feedback Foto
-                
+
                 const file = data.profilePicture[0];
                 const formData = new FormData();
                 formData.append('profilePicture', file);
@@ -271,7 +286,7 @@ export default function CompleteProfilePage() {
                     const file = files[i];
                     // 3. Feedback detalhado por documento
                     setStatusMessage(`Enviando documento ${i + 1} de ${totalDocs} (${file.name})...`);
-                    
+
                     const formData = new FormData();
                     formData.append('document', file);
                     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/personal-document`, formData, {
@@ -283,7 +298,7 @@ export default function CompleteProfilePage() {
 
             // Payload
             setStatusMessage("Salvando dados do perfil..."); // 4. Feedback Final
-            
+
             const payload = {
                 name: data.name,
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
@@ -295,7 +310,7 @@ export default function CompleteProfilePage() {
                 profession: data.profession,
                 contactPreference: data.contactPreference?.join(','),
                 infoEmail: data.infoEmail,
-                
+
                 referredById: data.unknownAssociate ? null : data.referredById,
                 indication: data.unknownAssociate ? data.manualReferral : null,
 
@@ -349,7 +364,7 @@ export default function CompleteProfilePage() {
                     {/* ... (Seções de Foto, Dados, Endereços mantidas iguais - omitidas para brevidade, mas devem estar no arquivo final) ... */}
                     {/* COLE O CONTEÚDO DOS INPUTS AQUI (FOTO, DADOS PESSOAIS, CONTATO, INDICAÇÃO, ENDEREÇOS, DOCUMENTOS) IGUAL AO ANTERIOR */}
                     {/* Estou recolando tudo para garantir que você tenha o arquivo completo */}
-                    
+
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
@@ -416,14 +431,14 @@ export default function CompleteProfilePage() {
                                 )} />
                             </Field.Root>
                         </SimpleGrid>
-                        
+
                         <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
                             <Field.Label>Gênero</Field.Label>
                             <Controller name="gender" control={control} rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }} render={({ field }) => (
                                 <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "Male" | "Female")} disabled={isCnpj}>
                                     <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
-                                        <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Masculino</RadioGroup.ItemText></RadioGroup.Item>
-                                        <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Feminino</RadioGroup.ItemText></RadioGroup.Item>
+                                        <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj ? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Masculino</RadioGroup.ItemText></RadioGroup.Item>
+                                        <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj ? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Feminino</RadioGroup.ItemText></RadioGroup.Item>
                                     </Stack>
                                 </RadioGroup.Root>
                             )} />
@@ -490,6 +505,7 @@ export default function CompleteProfilePage() {
                                     <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
                                         <Select.Control><Select.Trigger bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
+
                                     </Select.Root>
                                 </Field.Root>
                             )} />
@@ -538,8 +554,8 @@ export default function CompleteProfilePage() {
                             control={control}
                             rules={{ required: "Você deve ler e aceitar os Termos de Uso e Política de Privacidade para continuar." }}
                             render={({ field }) => (
-                                <Checkbox.Root 
-                                    checked={field.value} 
+                                <Checkbox.Root
+                                    checked={field.value}
                                     onCheckedChange={(details) => field.onChange(Boolean(details.checked))}
                                 >
                                     <Checkbox.HiddenInput />
@@ -581,7 +597,7 @@ export default function CompleteProfilePage() {
                             Salvar e Enviar para Análise
                         </Button>
                     )}
-                    
+
                 </VStack>
             </form>
         </Flex>

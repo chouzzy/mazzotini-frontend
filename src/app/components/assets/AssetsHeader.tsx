@@ -1,3 +1,5 @@
+// AtivoHeader.tsx
+
 'use client';
 
 import {
@@ -10,6 +12,7 @@ import {
     Stat,
     Icon,
     Button,
+    Badge,
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
 import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone } from 'react-icons/pi';
@@ -71,7 +74,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             setTimeout(() => {
                 toaster.create({
                     title: 'Sincronização Concluída!',
-                    description: "Os dados do ativo foram atualizados.",
+                    description: "Os dados do processo foram atualizados.",
                     type: 'success',
                     duration: 5000,
                     closable: true,
@@ -97,11 +100,25 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
         router.push(`/processos/${asset.processNumber}/editar`);
     };
 
+    const translateLegalOneType = (type: string): string => {
+        const translations: Record<string, string> = {
+            'Appeal': 'Recurso',
+            'Lawsuit': 'Processo Principal',
+            'ProceduralIssue': 'Incidente',
+        };
+        return translations[type] || type;
+    };
+
     return (
         <VStack w="100%" align="stretch" gap={8}>
 
             <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                 <VStack align="start" gap={2}>
+                        <Flex>
+                            {asset.legalOneType == 'Lawsuit' && (<Badge colorPalette="blue" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Processo Principal</Badge>)}
+                            {asset.legalOneType == 'Appeal' && (<Badge colorPalette="orange" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Recurso</Badge>)}
+                            {asset.legalOneType == 'ProceduralIssue' && (<Badge colorPalette="purple" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Incidente</Badge>)}
+                        </Flex>
                     <Flex align="center" gap={2}>
                         <PiGavelDuotone color='#B8A76E' size={24} />
                         <Heading as="h1" color="white">{asset.processNumber}</Heading>
@@ -149,7 +166,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                 <Tooltip
                     showArrow
-                        contentProps={{ css: { "--tooltip-bg": "#B8A76E", padding: "8px", fontSize: "14px", fontStyle: "italic", fontWeight:'normal' } }}
+                    contentProps={{ css: { "--tooltip-bg": "#B8A76E", padding: "8px", fontSize: "14px", fontStyle: "italic", fontWeight: 'normal' } }}
                     content="Este é o valor total estimado do crédito no processo. Não representa um valor exato de valorização nem a sua participação específica, mas sim o montante total do processo."
                 >
                     <Stat.Root bg="gray.900" p={5} borderRadius="md" cursor="pointer">
@@ -157,14 +174,14 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
                     </Stat.Root>
                 </Tooltip>
-                <Stat.Root bg="gray.900" p={5} borderRadius="md">
+                {/* <Stat.Root bg="gray.900" p={5} borderRadius="md">
                     <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiScales} color={'brand.600'} /> Custo de Aquisição</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.acquisitionValue)}</Stat.ValueText>
                 </Stat.Root>
                 <Stat.Root bg="gray.900" p={5} borderRadius="md">
                     <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} color={'brand.600'} /> Valor Crédito na Data da Cessão</Stat.Label>
                     <Stat.ValueText fontSize="2xl">{formatCurrency(asset.originalValue)}</Stat.ValueText>
-                </Stat.Root>
+                </Stat.Root> */}
             </SimpleGrid>
         </VStack>
     );

@@ -15,7 +15,7 @@ import { PiArrowDownDuotone, PiCaretDoubleDownDuotone, PiFunction, PiSquaresFour
 import { useMemo } from 'react';
 import { AssetSummary } from '@/types/api';
 
-// Props atualizadas para receber os ativos para o Combobox
+// Props atualizadas para receber os processos para o Combobox
 interface AssetsToolbarProps {
     assets: AssetSummary[];
     viewMode: 'grid' | 'list';
@@ -83,7 +83,7 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                 <Portal>
                     <Combobox.Positioner>
                         <Combobox.Content>
-                            <Combobox.Empty>Nenhum ativo encontrado</Combobox.Empty>
+                            <Combobox.Empty>Nenhum processo encontrado</Combobox.Empty>
                             {collection.items.map((item) => (
                                 <Combobox.Item item={item} key={item.value}>
                                     {item.label}

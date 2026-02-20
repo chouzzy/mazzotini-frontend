@@ -85,10 +85,10 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
 
                     {/* Grid de Stats */}
                     <SimpleGrid columns={{ base: 1, md: 2}} gap={4} pt={4}>
-                        <Stat.Root>
+                        {/* <Stat.Root>
                             <Stat.Label color="gray.400">Custo de Aquisição</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.investedValue)}</Stat.ValueText>
-                        </Stat.Root>
+                        </Stat.Root> */}
                         <Stat.Root>
                             <Stat.Label color="gray.400">Estimativa Atual do Valor Total do Crédito</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.currentValue)}</Stat.ValueText>

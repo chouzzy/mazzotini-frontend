@@ -20,7 +20,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
   {
     id: '2',
     quote:
-      'O que mais me impressionou foi a clareza das informações. Consigo ver o valor atualizado dos meus ativos, o status de cada processo e a rentabilidade acumulada com apenas alguns cliques. A plataforma da Mazzotini desmistificou o investimento em créditos judiciais para mim. É a combinação perfeita de tecnologia e uma ótima oportunidade de negócio.',
+      'O que mais me impressionou foi a clareza das informações. Consigo ver o valor atualizado dos meus processos, o status de cada processo e a rentabilidade acumulada com apenas alguns cliques. A plataforma da Mazzotini desmistificou o investimento em créditos judiciais para mim. É a combinação perfeita de tecnologia e uma ótima oportunidade de negócio.',
     authorName: 'Juliana Costa Silva',
     authorTitle: 'Consultora Financeira',
     authorImage: 'https://randomuser.me/api/portraits/women/32.jpg',
@@ -38,7 +38,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
   {
     id: '4',
     quote:
-      'A equipe de suporte foi fundamental para me ajudar a entender os detalhes do meu primeiro investimento. Sempre muito atenciosos e dispostos a explicar cada etapa. Essa confiança no atendimento, somada à solidez dos ativos, me fez ter certeza de que fiz a escolha certa.',
+      'A equipe de suporte foi fundamental para me ajudar a entender os detalhes do meu primeiro investimento. Sempre muito atenciosos e dispostos a explicar cada etapa. Essa confiança no atendimento, somada à solidez dos processos, me fez ter certeza de que fiz a escolha certa.',
     authorName: 'Fernanda Lima',
     authorTitle: 'Advogada',
     authorImage: 'https://randomuser.me/api/portraits/women/23.jpg',

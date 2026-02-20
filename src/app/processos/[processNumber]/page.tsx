@@ -1,3 +1,4 @@
+// src/app/processos/[processNumber]/page.tsx
 'use client';
 
 import {
@@ -15,7 +16,7 @@ import { AssetTabs } from '@/app/components/assets/AssetTabs';
 import { AssetHeader } from '@/app/components/assets/AssetsHeader';
 
 
-// Tipagem para os dados detalhados do ativo que a API vai retornar
+// Tipagem para os dados detalhados do processo que a API vai retornar
 export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-componentes
   id: string; // Adicionado para a navegação
   processNumber: string;
@@ -62,14 +63,14 @@ export default function AssetDetailsPage() {
     return (
       <VStack bg="red.900" p={8} borderRadius="md" borderWidth="1px" borderColor="red.400">
         <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
-        <Heading size="md">Ativo Não Encontrado</Heading>
-        <Text>Não foi possível carregar os detalhes para este ativo.</Text>
+        <Heading size="md">Processo Não Encontrado</Heading>
+        <Text>Não foi possível carregar os detalhes para este processo.</Text>
       </VStack>
     );
   }
 
   if (!asset) {
-    return <Text>Nenhum dado de ativo para exibir.</Text>;
+    return <Text>Nenhum dado de processo para exibir.</Text>;
   }
 
   return (
