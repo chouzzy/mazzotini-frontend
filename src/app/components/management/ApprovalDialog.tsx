@@ -20,9 +20,9 @@ import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { UserProfile } from '@/types';
-import { PiCheckCircle, PiXCircle, PiDownloadDuotone, PiX, PiMagnifyingGlassDuotone } from 'react-icons/pi';
+import { PiCheckCircle, PiXCircle, PiDownloadDuotone, PiX, PiScalesDuotone } from 'react-icons/pi';
 import { maskCEP, maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
-import { Toaster, toaster } from '@/components/ui/toaster';
+import { toaster } from '@/components/ui/toaster';
 
 interface ApprovalDialogProps {
     user: UserProfile | null;
@@ -95,7 +95,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={(details) => !details.open && onClose()} size="xl">
-            
+
             <Dialog.Backdrop />
             <Dialog.Positioner>
                 <Dialog.Content bg="gray.800">
@@ -106,18 +106,23 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                     </Dialog.Header>
                     <Dialog.Body>
                         <VStack gap={6} align="stretch">
-                            {/* Bloco de Dados Pessoais */}
-                            <Flex gap={8} w='100%' flexDir={'column'} alignItems={'center'} justifyContent={'center'}>
-                                {user.profilePictureUrl && (
 
-                                    <Flex align="center" gap={3} flexDir={'column'}>
-                                        <Avatar.Root size="lg" boxSize={32}>
-                                            <Avatar.Fallback name={user.name} />
-                                            <Avatar.Image src={user.profilePictureUrl} />
-                                        </Avatar.Root>
-                                        <Text>{user.name}</Text>
-                                    </Flex>)
-                                }
+                            {/* Destaque do Perfil (Foto e Nome) */}
+                            <Flex align="center" gap={3} flexDir="column" w="100%" pb={4} borderBottom="1px solid" borderColor="gray.700">
+                                <Avatar.Root size="2xl" boxSize={28}>
+                                    <Avatar.Fallback name={user.name} />
+                                    {/* Usa a foto de perfil ou gera um avatar profissional */}
+                                    <Avatar.Image src={user.profilePictureUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}&backgroundColor=4f46e5&textColor=ffffff`} />
+                                </Avatar.Root>
+                                <VStack gap={0} align="center">
+                                    <Heading size="md">{user.name}</Heading>
+                                    <Text color="gray.400" fontSize="sm">{user.email}</Text>
+                                </VStack>
+                            </Flex>
+
+                            {/* Bloco de Dados Pessoais */}
+                            <Box>
+                                <Heading size="sm" mb={4} color="brand.500">Dados Pessoais</Heading>
                                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} p={4} bg="gray.900" borderRadius="md" w='100%'>
                                     <ProfileField label="Nome Completo" value={user.name} />
                                     <ProfileField label="CPF/CNPJ" value={maskCPFOrCNPJ(user.cpfOrCnpj || '')} />
@@ -127,24 +132,24 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                     <ProfileField label="Nacionalidade" value={user.nationality} />
                                     <ProfileField label="Estado Civil" value={user.maritalStatus} />
                                 </SimpleGrid>
-                            </Flex>
+                            </Box>
 
                             {/* Bloco de Contato */}
                             <Box>
-                                <Heading size="sm" mb={4}>Contato</Heading>
+                                <Heading size="sm" mb={4} color="brand.500">Contato</Heading>
                                 <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} p={4} bg="gray.900" borderRadius="md">
-                                    <ProfileField label="E-mail" value={user.email} />
                                     <ProfileField label="Celular" value={contact} />
                                     <ProfileField label="Tel. Fixo" value={maskPhone(user.phone || '')} />
+                                    <ProfileField label="E-mail Secundário" value={user.infoEmail} />
                                 </SimpleGrid>
                             </Box>
 
                             {/* Bloco de Endereços */}
                             <Box>
-                                <Heading size="sm" mb={4}>Endereços</Heading>
+                                <Heading size="sm" mb={4} color="brand.500">Endereços</Heading>
                                 <Stack direction={{ base: 'column', md: 'row' }} gap={4} p={4} bg="gray.900" borderRadius="md">
                                     <VStack align="stretch" flex={1}>
-                                        <Text fontWeight="bold">Residencial</Text>
+                                        <Text fontWeight="bold" fontSize="sm" color="gray.300">Residencial</Text>
                                         <ProfileField label="Endereço" value={`${user.residentialStreet}, ${user.residentialNumber}`} />
                                         <ProfileField label="Bairro" value={user.residentialNeighborhood} />
                                         <ProfileField label="Cidade/Estado" value={`${user.residentialCity}/${user.residentialState}`} />
@@ -152,7 +157,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                     </VStack>
                                     {user.commercialCep && (
                                         <VStack align="stretch" flex={1}>
-                                            <Text fontWeight="bold">Comercial</Text>
+                                            <Text fontWeight="bold" fontSize="sm" color="gray.300">Comercial</Text>
                                             <ProfileField label="Endereço" value={`${user.commercialStreet}, ${user.commercialNumber}`} />
                                             <ProfileField label="Bairro" value={user.commercialNeighborhood} />
                                             <ProfileField label="Cidade/Estado" value={`${user.commercialCity}/${user.commercialState}`} />
@@ -162,29 +167,66 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                 </Stack>
                             </Box>
 
+                            {/* NOVO: Processos Pré-Cadastrados */}
+                            {user.investments && user.investments.length > 0 && (
+                                <Box>
+                                    <Heading size="sm" mb={4} color="brand.500">Processos Vinculados (Pré-Cadastrados)</Heading>
+                                    <VStack align="stretch" gap={3}>
+                                        {user.investments.map((inv: any, idx: number) => (
+                                            <Flex key={idx} p={3} bg="gray.900" borderRadius="md" align="center" gap={4} border="1px solid" borderColor="gray.700">
+                                                <Flex boxSize={10} bg="brand.900" borderRadius="md" align="center" justify="center">
+                                                    <Icon as={PiScalesDuotone} color="brand.400" boxSize={6} />
+                                                </Flex>
+                                                <Box>
+                                                    <Text fontWeight="bold" fontSize="sm">{inv.asset?.processNumber}</Text>
+                                                    {inv.asset?.nickname && <Text fontSize="xs" color="gray.400">{inv.asset.nickname}</Text>}
+                                                    {!inv.asset?.nickname && inv.asset?.origemProcesso && <Text fontSize="xs" color="gray.400">{inv.asset.origemProcesso}</Text>}
+                                                </Box>
+                                            </Flex>
+                                        ))}
+                                    </VStack>
+                                </Box>
+                            )}
+
                             {/* Bloco de Documentos */}
                             <Box>
-                                <Heading size="sm" mb={4}>Documentos Anexados</Heading>
-                                <Flex gap={2} flexWrap="wrap" p={4} bg="gray.900" borderRadius="md">
-                                    {user.personalDocumentUrls?.map((url, index) => (
-                                        <Link key={index} href={url} target='_blank' color="brand.600">
-                                            <Button size="sm" bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.900' }} gap={2}>
-                                                <Icon as={PiDownloadDuotone} />
-                                                {decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Documento ${index + 1}`)}
-                                            </Button>
-                                        </Link>
-                                    ))}
-                                </Flex>
+                                <Heading size="sm" mb={4} color="brand.500">Documentos Anexados</Heading>
+                                {(!user.personalDocumentUrls || user.personalDocumentUrls.length === 0) ? (
+                                    <Box p={4} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="gray.600">
+                                        <Text color="gray.500" fontSize="sm" textAlign="center">Nenhum documento anexado. (Usuário isentou-se do envio)</Text>
+                                    </Box>
+                                ) : (
+                                    <Flex gap={2} flexWrap="wrap" p={4} bg="gray.900" borderRadius="md">
+                                        {user.personalDocumentUrls.map((url, index) => (
+                                            <Link key={index} href={url} target='_blank' color="brand.600">
+                                                <Button size="sm" bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.900' }} gap={2}>
+                                                    <Icon as={PiDownloadDuotone} />
+                                                    {decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Documento ${index + 1}`)}
+                                                </Button>
+                                            </Link>
+                                        ))}
+                                    </Flex>
+                                )}
                             </Box>
+
                         </VStack>
                     </Dialog.Body>
-                    <Dialog.Footer>
-                        <Button colorPalette="red" onClick={handleReject} loading={isLoading}>
-                            <Icon as={PiXCircle} /> Rejeitar Perfil
-                        </Button>
-                        <Button colorPalette="green" ml={3} onClick={handleApprove} loading={isLoading}>
-                            <Icon as={PiCheckCircle} /> Aprovar e Ativar
-                        </Button>
+                    <Dialog.Footer mt={4} pt={4} borderTop="1px solid" borderColor="gray.700">
+                        {isLoading ? (
+                            <Flex align="center" gap={2}>
+                                <Spinner size="sm" />
+                                Processando...
+                            </Flex>
+                        ) :
+                            <>
+                                <Button colorPalette="red" onClick={handleReject} variant="solid">
+                                    <Icon as={PiXCircle} /> Rejeitar Perfil
+                                </Button>
+                                <Button colorPalette="green" ml={3} onClick={handleApprove} >
+                                    <Icon as={PiCheckCircle} /> Aprovar e Ativar Acesso
+                                </Button>
+                            </>
+                        }
                     </Dialog.Footer>
                 </Dialog.Content>
             </Dialog.Positioner>

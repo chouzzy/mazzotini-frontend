@@ -91,8 +91,8 @@ interface OnboardingFormData {
     personalDocuments?: FileList;
 
     termsAccepted: boolean;
+    skipDocuments: boolean;
 }
-
 
 const estadoCivilCollection = createListCollection({
     items: [
@@ -203,8 +203,6 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
 export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // NOVO: Estado para feedback de progresso
     const [statusMessage, setStatusMessage] = useState("");
 
     const { getAccessTokenSilently } = useAuth0();
@@ -225,6 +223,9 @@ export default function CompleteProfilePage() {
     const useCommercialAddress = watch('useCommercialAddress');
     const unknownAssociate = watch('unknownAssociate');
     const profilePictureFile = watch('profilePicture');
+    const skipDocuments = watch('skipDocuments');
+    // Adicionado watch para os termos para desabilitar o botão
+    const termsAccepted = watch('termsAccepted');
 
     const cpfOrCnpjValue = watch('cpfOrCnpj');
     const unmaskedCpfOrCnpj = unmask(cpfOrCnpjValue || '');
@@ -236,18 +237,14 @@ export default function CompleteProfilePage() {
 
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
 
-    console.log("Associados carregados:", associates);
     const associatesCollection = createListCollection({
         items: (associates || []).map(a => ({
-           
             value: a.value,
             label: a.associateSequence
                 ? `${String(a.associateSequence).padStart(3, '0')} - ${a.label}`
                 : a.label
         })),
     });
-
-    console.log("Associados para seleção:", associatesCollection.items);
 
     const contactPreference = useController({
         control,
@@ -257,7 +254,7 @@ export default function CompleteProfilePage() {
 
     const onSubmit: SubmitHandler<OnboardingFormData> = async (data) => {
         setIsSubmitting(true);
-        setStatusMessage("Iniciando envio..."); // 1. Inicia feedback
+        setStatusMessage("Iniciando envio..."); 
 
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
@@ -265,7 +262,7 @@ export default function CompleteProfilePage() {
             // Upload Foto
             let profilePictureUrl = user?.picture;
             if (data.profilePicture && data.profilePicture.length > 0) {
-                setStatusMessage("Fazendo upload da foto de perfil..."); // 2. Feedback Foto
+                setStatusMessage("Fazendo upload da foto de perfil..."); 
 
                 const file = data.profilePicture[0];
                 const formData = new FormData();
@@ -284,7 +281,6 @@ export default function CompleteProfilePage() {
 
                 for (let i = 0; i < totalDocs; i++) {
                     const file = files[i];
-                    // 3. Feedback detalhado por documento
                     setStatusMessage(`Enviando documento ${i + 1} de ${totalDocs} (${file.name})...`);
 
                     const formData = new FormData();
@@ -297,7 +293,7 @@ export default function CompleteProfilePage() {
             }
 
             // Payload
-            setStatusMessage("Salvando dados do perfil..."); // 4. Feedback Final
+            setStatusMessage("Salvando dados do perfil..."); 
 
             const payload = {
                 name: data.name,
@@ -344,7 +340,7 @@ export default function CompleteProfilePage() {
             await mutate('/api/users/me');
             router.push('/dashboard');
         } catch (error: any) {
-            setStatusMessage(""); // Limpa mensagem em caso de erro
+            setStatusMessage(""); 
             toaster.create({ title: "Erro ao Salvar.", description: error.response?.data?.error || "Tente novamente.", type: "error" });
         } finally {
             setIsSubmitting(false);
@@ -353,23 +349,18 @@ export default function CompleteProfilePage() {
 
     return (
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
-            {/* O Toaster está no layout global */}
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
-                        <Heading as="h1" size="xl">Complete o seu Perfil</Heading>
+                        <Heading as="h1" size="lg">Complete o seu Perfil</Heading>
                         <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais.</Text>
                     </VStack>
 
-                    {/* ... (Seções de Foto, Dados, Endereços mantidas iguais - omitidas para brevidade, mas devem estar no arquivo final) ... */}
-                    {/* COLE O CONTEÚDO DOS INPUTS AQUI (FOTO, DADOS PESSOAIS, CONTATO, INDICAÇÃO, ENDEREÇOS, DOCUMENTOS) IGUAL AO ANTERIOR */}
-                    {/* Estou recolando tudo para garantir que você tenha o arquivo completo */}
-
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
-                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
+                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500"> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
-                            <Avatar.Root size={'2xl'} my={8}>
+                            <Avatar.Root boxSize={'40'} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
                                 <Avatar.Image src={profilePicturePreview || ''} />
                             </Avatar.Root>
@@ -386,7 +377,7 @@ export default function CompleteProfilePage() {
 
                     {/* DADOS PESSOAIS */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
+                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>{isCnpj ? "Razão Social" : "Nome Completo"}</Field.Label>
                             <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
@@ -447,7 +438,7 @@ export default function CompleteProfilePage() {
 
                     {/* CONTATO */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Contato</Heading>
+                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Contato</Heading>
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                             <Field.Root invalid={!!errors.cellPhone} required>
                                 <Field.Label>Celular</Field.Label>
@@ -484,7 +475,7 @@ export default function CompleteProfilePage() {
 
                     {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação</Heading>
+                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Indicação</Heading>
                         <Controller name="unknownAssociate" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))} mb={2}>
                                 <Checkbox.HiddenInput />
@@ -505,7 +496,6 @@ export default function CompleteProfilePage() {
                                     <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
                                         <Select.Control><Select.Trigger bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-
                                     </Select.Root>
                                 </Field.Root>
                             )} />
@@ -514,11 +504,11 @@ export default function CompleteProfilePage() {
 
                     {/* ENDEREÇOS */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Residencial</Heading>
+                        <Heading as="h2" size="lg" py={4} borderTopWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Endereço Residencial</Heading>
                         <AddressBlock type="residential" {...{ control, register, errors, watch, setValue }} />
                     </VStack>
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Comercial</Heading>
+                        <Heading as="h2" size="lg" py={4} borderTopWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Endereço Comercial</Heading>
                         <Controller name="useCommercialAddress" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))}>
                                 <Checkbox.HiddenInput />
@@ -529,22 +519,41 @@ export default function CompleteProfilePage() {
                         {useCommercialAddress && <AddressBlock type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
                     </VStack>
 
-                    {/* DOCUMENTOS */}
-                    <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Documentos</Heading>
+                    {/* DOCUMENTAÇÃO */}
+                    <VStack gap={4} pt={4} align="stretch" borderTopWidth="1px" borderColor={skipDocuments ? "yellow.600" : "gray.700"}>
+                        <Heading as="h2" size="lg" color="brand.500">Documentação (Opcional)</Heading>
                         <Text color="gray.400">Documentos: RG e CPF (ou CNH), Comprovante de residência (opcional), e Última alteração do contrato social (se aplicável).</Text>
-                        <Field.Root invalid={!!errors.personalDocuments}>
-                            <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
-                                <FileUpload.HiddenInput  {...register("personalDocuments")} />
-                                <FileUpload.Trigger asChild>
-                                    <Flex bg={'gray.100'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2}>
-                                        <Icon as={PiUploadSimple} />
-                                        Anexar Documentos
-                                    </Flex>
-                                </FileUpload.Trigger>
-                                <FileUpload.List />
-                            </FileUpload.Root>
-                        </Field.Root>
+
+                        {!skipDocuments && (
+                            <Field.Root border={'1px solid'} borderColor={'gray.700'} borderStyle={'dashed'} borderRadius="md">
+                                <FileUpload.Root accept={[".pdf", ".jpg", ".png"]} maxFiles={6} >
+                                    <FileUpload.HiddenInput  {...register("personalDocuments")} />
+                                    <FileUpload.Trigger asChild>
+                                        <Button variant="outline" colorPalette="gray" w="full" py={12} borderStyle="dashed" gap={2} flexDir="column">
+                                            <Icon as={PiUploadSimple} fontSize="2xl" />
+                                            <Text>Clique para anexar documentos (RG, CNH, Comprovante)</Text>
+                                        </Button>
+                                    </FileUpload.Trigger>
+                                    <FileUpload.List />
+                                </FileUpload.Root>
+                            </Field.Root>
+                        )}
+
+                        <Controller
+                            name="skipDocuments"
+                            control={control}
+                            render={({ field }) => (
+                                <Box mt={2} p={4} bg={field.value ? "yellow.900" : "blackAlpha.400"} borderRadius="md" transition="all 0.2s" borderLeft="4px solid" borderLeftColor={field.value ? "yellow.500" : "transparent"}>
+                                    <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))} >
+                                        <Checkbox.HiddenInput />
+                                        <Checkbox.Control bgColor="gray.100" color="black" cursor={'pointer'}/>
+                                        <Checkbox.Label fontSize="xsm" color={field.value ? "yellow.100" : "gray.300"} textAlign="justify" lineHeight="1.5" cursor="pointer" letterSpacing={0.1}>
+                                            Declaro estar ciente da facultatividade no envio dos documentos de identificação neste ato, assumindo integral responsabilidade pela veracidade e exatidão das informações cadastrais fornecidas. Por conseguinte, isento a <strong style={{color:'#B8A76E'}}>Mazzotini Advogados Associados</strong> de qualquer responsabilidade decorrente de eventuais inconsistências ou equívocos nos dados informados, os quais são de minha inteira responsabilidade sob as penas da lei.
+                                        </Checkbox.Label>
+                                    </Checkbox.Root>
+                                </Box>
+                            )}
+                        />
                     </VStack>
 
                     {/* Checkbox de Aceite dos Termos (LGPD) */}
@@ -579,9 +588,6 @@ export default function CompleteProfilePage() {
                         )}
                     </Box>
 
-                    {/* NOVO: FEEDBACK VISUAL DE STATUS 
-                        Mostra uma caixa com a mensagem atual do progresso em vez de apenas o spinner.
-                    */}
                     {isSubmitting ? (
                         <VStack mt={8} p={4} bg="brand.900" borderRadius="md" border="1px solid" borderColor="brand.700" w="100%">
                             <HStack gap={3}>
@@ -592,7 +598,16 @@ export default function CompleteProfilePage() {
                             <Badge fontSize="xs" color="white">Por favor, não feche esta janela.</Badge>
                         </VStack>
                     ) : (
-                        <Button type="submit" colorPalette="blue" size="lg" gap={2} alignSelf="stretch" mt={8}>
+                        <Button 
+                            type="submit" 
+                            colorPalette='blue'
+                            variant={termsAccepted? 'solid' : 'subtle'}
+                            size="lg" 
+                            gap={2} 
+                            alignSelf="stretch" 
+                            mt={8} 
+                            disabled={!termsAccepted} // <-- AQUI: Lógica adicionada para desabilitar
+                        >
                             <Icon as={PiFloppyDisk} />
                             Salvar e Enviar para Análise
                         </Button>

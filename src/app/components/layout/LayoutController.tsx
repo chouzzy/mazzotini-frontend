@@ -34,6 +34,8 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         isAuthenticated ? '/api/users/me' : null
     );
 
+    console.log('User Profile:', userProfile);
+
     const isLoading = isAuthLoading || (isAuthenticated && isProfileLoading);
 
     // =================================================================
@@ -86,6 +88,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         const isOnOnboardingPage = pathname === '/perfil/completar';
         const isOnPendingPage = pathname === '/perfil/pendente';
 
+        console.log("Status do usuário:", status);
         switch (status) {
             case 'ACTIVE':
                 if (isOnOnboardingPage || isOnPendingPage) {

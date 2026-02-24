@@ -43,6 +43,20 @@ interface UserProfile {
 
     correspondenceAddress?: string;
 
+    investments?:
+    {
+        id: string;
+        investorShare: number;
+        mazzotiniShare: number;
+        userId: string;
+        creditAssetId: string;
+        asset: {
+            id: string;
+            [key: string]: any;
+        };
+        documents: string[];
+    }[]
+
     nationality?: string;
     maritalStatus?: string;
     personalDocumentUrls?: string[];
@@ -51,4 +65,4 @@ interface UserProfile {
     updatedAt: string;
 }
 
-export type {HeroHomepageData, UserProfile};
+export type { HeroHomepageData, UserProfile };
