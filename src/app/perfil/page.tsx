@@ -46,11 +46,17 @@ import { UserProfile } from '@/types';
 interface ExtendedUserProfile extends UserProfile {
     investments: {
         id: string;
-        documents: string[];
+        investorShare: number;
+        mazzotiniShare: number;
+        userId: string;
+        creditAssetId: string;
         asset: {
+            id: string;
             processNumber: string;
             nickname?: string;
-        }
+            [key: string]: any;
+        };
+        documents: string[];
     }[];
 }
 
