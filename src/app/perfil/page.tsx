@@ -65,7 +65,7 @@ const ProfileField = ({ label, value, icon }: { label: string, value?: string | 
     if (!value) return null;
     return (
         <Flex align="center" gap={3}>
-            {icon && <Icon as={icon} color="gray.400" boxSize={5} />}
+            {icon && <Icon as={icon} color="gray.400" boxSize={6} />}
             <Text>
                 <strong style={{ color: '#a8a8a8' }}>{label}:</strong> {value}
             </Text>
