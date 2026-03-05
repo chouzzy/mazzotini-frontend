@@ -29,7 +29,6 @@ export function useApi<T = any>(endpoint: string | null) {
         },
       });
 
-      console.log(`GET ${url} - Resposta: ${JSON.stringify(response.data)}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {

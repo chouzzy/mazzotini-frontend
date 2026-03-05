@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox,
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack
 } from "@chakra-ui/react";
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control } from "react-hook-form";
@@ -13,9 +13,12 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react"; 
 import { useApi } from '@/hooks/useApi';
 
+// 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
 interface InvestorFormInput {
     userId: string;
     share?: number; 
+    associateId?: string;       // NOVO
+    acquisitionDate?: string;   // NOVO
 }
 
 interface FormValues {
@@ -26,8 +29,7 @@ interface FormValues {
     origemProcesso: string;
     acquisitionValue: number;
     originalValue: number;
-    acquisitionDate: string;
-    associateId?: string; 
+    acquisitionDate: string; // Mantemos a data global como a data em que a MAZZOTINI adquiriu o processo
     updateIndexType: string;  
     contractualIndexRate: number; 
     legalOneId: number;
@@ -44,7 +46,6 @@ interface LookupResponse {
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
     nickname?: string;
     processFolderId?: string;
-    // NOVO: Lista de Clientes sugeridos pelo backend
     suggestedInvestors?: { userId: string; share: number }[]; 
 }
 
@@ -81,13 +82,12 @@ export default function CreateAssetPage() {
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
     const [isFetchingData, setIsFetchingData] = useState(false); 
 
-    // Importante: precisamos refetch na lista de usuários se novos forem criados pelo Lookup
     const { data: investors, isLoading: isLoadingInvestors, mutate: mutateInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
     const isLoadingData = isLoadingInvestors || isLoadingAssociates;
 
     const { register, handleSubmit, control, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormValues>({
-        defaultValues: { processNumber: "", nickname: "", investors: [{ userId: "", share: 0 }], contractualIndexRate: 0 }
+        defaultValues: { processNumber: "", nickname: "", investors: [{ userId: "", share: 0, associateId: "", acquisitionDate: "" }], contractualIndexRate: 0 }
     });
 
     const { fields, append, remove, replace } = useFieldArray({ control, name: "investors" });
@@ -115,32 +115,19 @@ export default function CreateAssetPage() {
             setValue("legalOneId", legalOneId);
             setValue("legalOneType", legalOneType);
 
-            // =================================================================
-            //  A MUDANÇA: Preenchimento Automático de Clientes
-            // =================================================================
             if (suggestedInvestors && suggestedInvestors.length > 0) {
-                console.log("Clientes sugeridos encontrados:", suggestedInvestors);
-                
-                // 1. Atualiza a lista de usuários no cache do frontend 
-                // (pois o backend acabou de criar usuários novos que talvez não estejam na lista atual)
                 await mutateInvestors();
-
-                // 2. Preenche o formulário
                 const investorsForm = suggestedInvestors.map(inv => ({
                     userId: inv.userId,
-                    share: inv.share
+                    share: inv.share,
+                    associateId: "", // Vazio por padrão
+                    acquisitionDate: ""
                 }));
-                
-                // Substitui a lista atual do formulário
                 replace(investorsForm);
-                
                 toaster.create({ title: "Clientes vinculados automaticamente!", type: "info" });
             }
-            // =================================================================
-            
             toaster.create({ title: "Dados Encontrados!", type: "success" });
         } catch (error: any) {
-            console.error("Erro busca:", error);
             toaster.create({ title: "Erro ao Buscar", description: error.response?.data?.error, type: "error" });
         } finally { setIsFetchingData(false); }
     };
@@ -159,12 +146,20 @@ export default function CreateAssetPage() {
             const token = await getAccessTokenSilently();
             const payload = {
                 ...data,
+                // A data do ativo em si
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
-                investors: data.investors.map(inv => ({ userId: inv.userId, share: 0 })),
-                associateId: data.associateId || null,
+                
+                // Mapeando o array de investidores com os novos campos
+                investors: data.investors.map(inv => ({ 
+                    userId: inv.userId, 
+                    share: 0,
+                    associateId: inv.associateId || null,
+                    acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate + 'T00:00:00Z') : null
+                }))
             };
+
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
-            toaster.create({ title: "Processo Registado!", type: "success" });
+            toaster.create({ title: "Processo Registrado!", type: "success" });
             window.location.href = `/processos/${data.processNumber}`;
         } catch (error: any) {
             toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
@@ -187,7 +182,7 @@ export default function CreateAssetPage() {
                         <Field.Root invalid={!!errors.processNumber} required>
                             <Field.Label>Número do Processo</Field.Label>
                             <Input placeholder="Ex: 0012345..." borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true })} />
-                            <Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'}>
+                            <Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'} mt={2}>
                                 <Icon as={PiMagnifyingGlass} /> Buscar
                             </Button>
                         </Field.Root>
@@ -214,46 +209,69 @@ export default function CreateAssetPage() {
 
                          <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>2. Negociação</Heading>
                          
-                         <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md">
-                            <Heading size="sm">Participação (Clientes)</Heading>
+                         {/* 2. O NOVO BLOCO REPETIDOR DE INVESTIDORES */}
+                         <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md" bg="gray.800">
+                            <Heading size="sm" color="brand.400">Participação (Clientes / Investidores)</Heading>
                             {fields.map((field, index) => (
-                                <SimpleGrid key={field.id} columns={{ base: 1, md: 3 }} gap={4} alignItems="flex-end">
-                                    {/* IMPORTANTE: Passamos 'investors' (que vem do useApi) para o combobox.
-                                        Como chamamos 'mutateInvestors()' no handleFetchProcessData, 
-                                        esta lista já deve conter o novo usuário criado.
-                                    */}
-                                    <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
-                                    <Field.Root>
-                                        {fields.length > 1 && (
-                                            <IconButton aria-label="Remover"  colorScheme="red" variant="outline" onClick={() => remove(index)} > <Icon as={PiTrash} /> </IconButton>
-                                        )}
-                                    </Field.Root>
-                                </SimpleGrid>
-                            ))}
-                            <Button size="sm" variant="outline" colorScheme="blue"  onClick={() => append({ userId: "", share: 0 })} alignSelf="flex-start"> <Icon as={PiPlusCircle} /> Adicionar Cliente</Button>
-                        </VStack>
+                                <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
+                                    <Stack direction={{ base: 'column', lg: 'row' }} gap={4} alignItems="flex-end">
+                                        
+                                        {/* A. CLIENTE */}
+                                        <Box flex={2} w="100%">
+                                            <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
+                                        </Box>
+                                        
+                                        {/* B. ASSOCIADO (INDIVIDUAL) */}
+                                        <Box flex={2} w="100%">
+                                            <Controller name={`investors.${index}.associateId`} control={control} render={({ field }) => (
+                                                <Field.Root>
+                                                    <Field.Label>Associado (Corretor)</Field.Label>
+                                                    <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
+                                                        <Select.Control><Select.Trigger bgColor={'gray.700'} borderColor="gray.600"><Select.ValueText placeholder="Nenhum" /></Select.Trigger></Select.Control>
+                                                        <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
+                                                    </Select.Root>
+                                                </Field.Root>
+                                            )} />
+                                        </Box>
 
-                        <Controller name="associateId" control={control} render={({ field }) => (
-                            <Field.Root>
-                                <Field.Label>Associado (Opcional)</Field.Label>
-                                <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
-                                    <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} bgColor={'gray.700'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
-                                    <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-                                </Select.Root>
-                            </Field.Root>
-                        )} />
+                                        {/* C. DATA DE AQUISIÇÃO (INDIVIDUAL) */}
+                                        <Box flex={1} w="100%">
+                                            <Field.Root>
+                                                <Field.Label>Data da Aquisição</Field.Label>
+                                                <Input type="date" bgColor={'gray.700'} borderColor="gray.600" {...register(`investors.${index}.acquisitionDate`)} />
+                                            </Field.Root>
+                                        </Box>
+
+                                        {/* D. BOTÃO REMOVER */}
+                                        <Field.Root w={{ base: '100%', lg: 'auto' }}>
+                                            {fields.length > 1 && (
+                                                <IconButton aria-label="Remover" colorScheme="red" variant="outline" w={{ base: '100%', lg: 'auto' }} onClick={() => remove(index)} > <Icon as={PiTrash} /> </IconButton>
+                                            )}
+                                        </Field.Root>
+
+                                    </Stack>
+                                </Box>
+                            ))}
+                            <Button size="sm" variant="outline" colorScheme="blue" onClick={() => append({ userId: "", share: 0 })} alignSelf="flex-start"> 
+                                <Icon as={PiPlusCircle} /> Adicionar Cliente
+                            </Button>
+                        </VStack>
+                        {/* FIM DO BLOCO REPETIDOR */}
+
+                        {/* Associado Global Removido Daqui! */}
 
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                             <Field.Root invalid={!!errors.acquisitionValue} required>
-                                <Field.Label>Custo Aquisição (R$)</Field.Label>
+                                <Field.Label>Custo Aquisição Total (R$)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.originalValue} required>
-                                <Field.Label>Valor Original (R$)</Field.Label>
+                                <Field.Label>Valor Original do Processo (R$)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
+                            {/* Mantemos esta data como a "Data Matriz" do Processo (Obrigatória no schema) */}
                             <Field.Root invalid={!!errors.acquisitionDate} required>
-                                <Field.Label>Data Aquisição</Field.Label>
+                                <Field.Label>Data Cessão (Mazzotini)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="date" {...register("acquisitionDate", { required: true })} />
                             </Field.Root>
                         </SimpleGrid>

@@ -1,4 +1,3 @@
-// src/app/processos/[processNumber]/page.tsx
 'use client';
 
 import {
@@ -17,14 +16,15 @@ import { AssetHeader } from '@/app/components/assets/AssetsHeader';
 
 
 // Tipagem para os dados detalhados do processo que a API vai retornar
-export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-componentes
-  id: string; // Adicionado para a navegação
+export interface DetailedCreditAsset { 
+  id: string; 
   processNumber: string;
   originalCreditor: string;
   status: string;
-  origemProcesso: string; // Campo que será preenchido pelo enrich
-  lawsuitType?: string; // NOVO CAMPO (opcional)
-  lawyerResponsible?: string; // NOVO CAMPO (opcional)
+  origemProcesso: string; 
+  lawsuitType?: string; 
+  lawyerResponsible?: string; 
+  strategyText?: string; // <--- NOVO CAMPO ADICIONADO AQUI
   acquisitionDate: string;
   currentValue: number;
   acquisitionValue: number;
@@ -36,7 +36,7 @@ export interface DetailedCreditAsset { // Exportado para ser usado pelos sub-com
   legalOneType?: string;
   associateId?: string;
   nickname?: string;
-  otherParty?: string; // NOVO CAMPO para Parte Contrária
+  otherParty?: string; 
   investors: { user: { id: string, name: string }; investorShare: number }[];
   updates: { id: string; date: string; updatedValue: number; description?: string, type?: string, read?: boolean, fullDescription?: string }[];
   documents: { id: string; legalOneDocumentId: number; name: string; url: string; category: string }[];
@@ -75,10 +75,7 @@ export default function AssetDetailsPage() {
 
   return (
     <VStack w="100%" align="stretch" gap={8}>
-      {/* O Header e as Métricas agora vivem em seu próprio componente */}
       <AssetHeader asset={asset} />
-
-      {/* O conteúdo em abas agora vive em seu próprio componente */}
       <AssetTabs asset={asset} />
     </VStack>
   );
