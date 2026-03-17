@@ -12,14 +12,14 @@ import { PiCaretDownDuotone, PiFloppyDisk, PiPlusCircle, PiTrash } from "react-i
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { useApi } from '@/hooks/useApi';
-import { DetailedCreditAsset } from "../page";
 
 interface InvestorFormInput {
     userId: string;
     share?: number;
-    associateId?: string;       // NOVO
-    acquisitionDate?: string;   // NOVO
+    associateId?: string;
+    acquisitionDate?: string;
 }
 
 interface FormValues {
@@ -29,7 +29,7 @@ interface FormValues {
     origemProcesso: string;
     acquisitionValue: number;
     originalValue: number;
-    acquisitionDate: string; // Global
+    acquisitionDate: string;
     updateIndexType: string;
     contractualIndexRate: number;
     legalOneId: number;
@@ -63,11 +63,6 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
 
     const { contains } = useFilter({ sensitivity: "base" });
     const { collection, filter } = useListCollection({ initialItems: allInvestors || [], filter: contains });
-
-    const handleInputValueChange = (details: { value: string }) => {
-        setInputValue(details.value);
-        filter(details.value);
-    }
 
     return (
         <Controller name={`investors.${index}.userId`} control={control} rules={{ required: "Selecione um investidor" }} render={({ field: controllerField, fieldState: { error } }) => (
@@ -110,16 +105,31 @@ export default function EditAssetPage() {
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
     const router = useRouter();
     const params = useParams();
+    const { mutate } = useSWRConfig();
 
     const processNumber = params.processNumber as string;
 
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me');
     const { data: investors, isLoading: isLoadingInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
         processNumber ? `/api/assets/${processNumber}` : null
     );
 
-    const isLoadingData = isLoadingInvestors || isLoadingAssociates || isLoadingAsset;
+    const isLoadingData = isLoadingInvestors || isLoadingAssociates || isLoadingAsset || isLoadingProfile;
+
+    // ============================================================================
+    // TRAVA DE SEGURANÇA (BLOQUEIO DE ROTA)
+    // ============================================================================
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+
+    useEffect(() => {
+        if (!isLoadingProfile && myProfile && !isAdminOrOperator) {
+            toaster.create({ title: "Acesso Negado", description: "Você não tem permissão para editar processos.", type: "error" });
+            router.push('/dashboard');
+        }
+    }, [myProfile, isLoadingProfile, router, isAdminOrOperator]);
+    // ============================================================================
 
     const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>();
 
@@ -129,13 +139,11 @@ export default function EditAssetPage() {
 
     useEffect(() => {
         if (assetData) {
-            
-            // 3. RECUPERA OS NOVOS CAMPOS DO BANCO
             const investorsFromApi: InvestorFormInput[] = assetData.investors.map((inv: any) => ({
                 userId: inv.user.id,
                 share: inv.investorShare,
                 associateId: inv.associateId || "",
-                acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate).toISOString().split('T')[0] : ""
+                acquisitionDate: inv.acquisitionDate ? String(inv.acquisitionDate).substring(0, 10) : ""
             }));
 
             const formData = {
@@ -145,7 +153,7 @@ export default function EditAssetPage() {
                 origemProcesso: assetData.origemProcesso,
                 acquisitionValue: assetData.acquisitionValue,
                 originalValue: assetData.originalValue,
-                acquisitionDate: new Date(assetData.acquisitionDate).toISOString().split('T')[0],
+                acquisitionDate: assetData.acquisitionDate ? String(assetData.acquisitionDate).substring(0, 10) : "",
 
                 investors: investorsFromApi.length > 0 ? investorsFromApi : [{ userId: "", share: 0, associateId: "", acquisitionDate: "" }],
 
@@ -180,7 +188,6 @@ export default function EditAssetPage() {
                 updateIndexType: data.updateIndexType,
                 contractualIndexRate: data.contractualIndexRate,
 
-                // 4. ENVIA OS NOVOS CAMPOS PARA O BACKEND
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
                     share: 0,
@@ -190,6 +197,10 @@ export default function EditAssetPage() {
             };
 
             await axios.patch(`${apiBaseUrl}/api/assets/${processNumber}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+            
+            await mutate(`/api/assets/${processNumber}`);
+            await mutate(`/api/assets`);
+            
             toaster.create({ title: "Processo Atualizado!", type: "success" });
             router.push(`/processos/${processNumber}`);
 
@@ -201,6 +212,13 @@ export default function EditAssetPage() {
     if (isLoadingData) return <Flex w="100%" flex={1} justify="center" align="center"><Spinner size="xl" /></Flex>;
     if (!isAuthenticated) return <Flex w="100%" flex={1} justify="center" align="center"><Text>Por favor, faça login.</Text></Flex>;
     if (!assetData && !isLoadingData) return <Flex w="100%" flex={1} justify="center" align="center"><Text>Processo não encontrado.</Text></Flex>;
+
+    // ============================================================================
+    // A PAREDE VISUAL (O "Pulo do Gato"):
+    // Se o usuário não for Admin ou Operador, a gente retorna null e não renderiza nada!
+    // Ele vai ser expulso pelo useEffect sem ver nem piscar o formulário.
+    // ============================================================================
+    if (!isAdminOrOperator) return null;
 
     return (
         <MotionFlex direction="column" w="100%" flex={1} p={{ base: 4, md: 8 }}>

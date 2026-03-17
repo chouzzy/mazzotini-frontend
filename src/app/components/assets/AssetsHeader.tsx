@@ -1,5 +1,3 @@
-// AtivoHeader.tsx
-
 'use client';
 
 import {
@@ -21,8 +19,9 @@ import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';
-import { useRouter } from 'next/navigation'; // 1. Importar o router
+import { useRouter } from 'next/navigation'; 
 import { Tooltip } from '@/components/ui/tooltip';
+import { useApi } from '@/hooks/useApi'; // <-- Importar o hook da API
 
 // Funções auxiliares
 const formatCurrency = (value: number) => {
@@ -47,7 +46,11 @@ interface AssetHeaderProps {
 export function AssetHeader({ asset }: AssetHeaderProps) {
     const [isSyncing, setIsSyncing] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
-    const router = useRouter(); // 2. Instanciar o router
+    const router = useRouter(); 
+
+    // Busca o perfil para saber se é Admin ou Operador
+    const { data: myProfile } = useApi<any>('/api/users/me');
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
 
     console.log('AssetHeader asset:', asset);
 
@@ -95,18 +98,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
         }
     };
 
-    // 3. Nova função para navegar para a página de edição
     const handleEdit = () => {
         router.push(`/processos/${asset.processNumber}/editar`);
-    };
-
-    const translateLegalOneType = (type: string): string => {
-        const translations: Record<string, string> = {
-            'Appeal': 'Recurso',
-            'Lawsuit': 'Processo Principal',
-            'ProceduralIssue': 'Incidente',
-        };
-        return translations[type] || type;
     };
 
     return (
@@ -134,29 +127,33 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         </Flex>
                     )}
                 </VStack>
-                <Flex gap={4} align="center">
+                <Flex gap={4} align="center" wrap="wrap">
 
-                    {/* 4. O NOVO BOTÃO DE EDITAR */}
-                    <Button
-                        onClick={handleEdit}
-                        colorScheme="black" // Cor neutra
-                        gap={2}
-                    >
-                        <Icon as={PiPencilSimple} />
-                        Editar
-                    </Button>
+                    {/* TRAVA VISUAL: Só mostra Editar e Sincronizar se for Admin/Operador */}
+                    {isAdminOrOperator && (
+                        <>
+                            <Button
+                                onClick={handleEdit}
+                                colorScheme="black" 
+                                gap={2}
+                            >
+                                <Icon as={PiPencilSimple} />
+                                Editar
+                            </Button>
 
-                    {/* Botão de Sincronizar (com ícone adicionado para padronização) */}
-                    <Button
-                        onClick={handleSync}
-                        loading={isSyncing}
-                        loadingText="A Sincronizar"
-                        bgColor="brand.500"
-                        gap={2} // Adicionado gap
-                    >
-                        <Icon as={PiArrowsClockwise} /> {/* Adicionado Ícone */}
-                        Sincronizar Andamentos
-                    </Button>
+                            <Button
+                                onClick={handleSync}
+                                loading={isSyncing}
+                                loadingText="A Sincronizar"
+                                bgColor="brand.500"
+                                gap={2} 
+                            >
+                                <Icon as={PiArrowsClockwise} /> 
+                                Sincronizar Andamentos
+                            </Button>
+                        </>
+                    )}
+                    
                     <Tag.Root size="lg" variant="solid" colorScheme={getStatusColorScheme(asset.status)}>
                         <Tag.Label>{asset.status}</Tag.Label>
                     </Tag.Root>
@@ -174,14 +171,6 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         <Stat.ValueText fontSize="2xl">{formatCurrency(asset.currentValue)}</Stat.ValueText>
                     </Stat.Root>
                 </Tooltip>
-                {/* <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiScales} color={'brand.600'} /> Custo de Aquisição</Stat.Label>
-                    <Stat.ValueText fontSize="2xl">{formatCurrency(asset.acquisitionValue)}</Stat.ValueText>
-                </Stat.Root>
-                <Stat.Root bg="gray.900" p={5} borderRadius="md">
-                    <Stat.Label color={'gray.200'} display="flex" alignItems="center" gap={2}><Icon as={PiChartLineUp} color={'brand.600'} /> Valor Crédito na Data da Cessão</Stat.Label>
-                    <Stat.ValueText fontSize="2xl">{formatCurrency(asset.originalValue)}</Stat.ValueText>
-                </Stat.Root> */}
             </SimpleGrid>
         </VStack>
     );

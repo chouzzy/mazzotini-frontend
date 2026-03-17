@@ -12,13 +12,14 @@ import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash } from "re
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react"; 
 import { useApi } from '@/hooks/useApi';
+import { useRouter } from "next/navigation"; // <-- IMPORTANTE: Adicionado router
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
 interface InvestorFormInput {
     userId: string;
     share?: number; 
-    associateId?: string;       // NOVO
-    acquisitionDate?: string;   // NOVO
+    associateId?: string;       
+    acquisitionDate?: string;   
 }
 
 interface FormValues {
@@ -29,7 +30,7 @@ interface FormValues {
     origemProcesso: string;
     acquisitionValue: number;
     originalValue: number;
-    acquisitionDate: string; // Mantemos a data global como a data em que a MAZZOTINI adquiriu o processo
+    acquisitionDate: string; 
     updateIndexType: string;  
     contractualIndexRate: number; 
     legalOneId: number;
@@ -80,11 +81,29 @@ function InvestorCombobox(props: any) {
 export default function CreateAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
+    const router = useRouter(); // <-- Router instanciado
     const [isFetchingData, setIsFetchingData] = useState(false); 
 
+    // --- Buscas de Dados ---
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me'); // <-- Busca quem está logado
     const { data: investors, isLoading: isLoadingInvestors, mutate: mutateInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
-    const isLoadingData = isLoadingInvestors || isLoadingAssociates;
+    
+    const isLoadingData = isLoadingInvestors || isLoadingAssociates || isLoadingProfile;
+
+    // ============================================================================
+    //  TRAVA DE SEGURANÇA (BLOQUEIO DE ROTA PARA INVESTIDORES)
+    // ============================================================================
+    useEffect(() => {
+        if (myProfile && !isLoadingProfile) {
+            const isAdminOrOperator = myProfile.role === 'ADMIN' || myProfile.role === 'OPERATOR';
+            if (!isAdminOrOperator) {
+                toaster.create({ title: "Acesso Negado", description: "Você não tem permissão para registrar processos.", type: "error" });
+                router.push('/dashboard');
+            }
+        }
+    }, [myProfile, isLoadingProfile, router]);
+    // ============================================================================
 
     const { register, handleSubmit, control, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormValues>({
         defaultValues: { processNumber: "", nickname: "", investors: [{ userId: "", share: 0, associateId: "", acquisitionDate: "" }], contractualIndexRate: 0 }
@@ -146,10 +165,7 @@ export default function CreateAssetPage() {
             const token = await getAccessTokenSilently();
             const payload = {
                 ...data,
-                // A data do ativo em si
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
-                
-                // Mapeando o array de investidores com os novos campos
                 investors: data.investors.map(inv => ({ 
                     userId: inv.userId, 
                     share: 0,
@@ -181,7 +197,7 @@ export default function CreateAssetPage() {
 
                         <Field.Root invalid={!!errors.processNumber} required>
                             <Field.Label>Número do Processo</Field.Label>
-                            <Input placeholder="Ex: 0012345..." borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true })} />
+                            <Input placeholder="Ex: 0012345..." borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true, setValueAs: (value) => value?.trim() })} />
                             <Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'} mt={2}>
                                 <Icon as={PiMagnifyingGlass} /> Buscar
                             </Button>
@@ -209,19 +225,16 @@ export default function CreateAssetPage() {
 
                          <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>2. Negociação</Heading>
                          
-                         {/* 2. O NOVO BLOCO REPETIDOR DE INVESTIDORES */}
                          <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md" bg="gray.800">
                             <Heading size="sm" color="brand.400">Participação (Clientes / Investidores)</Heading>
                             {fields.map((field, index) => (
                                 <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
                                     <Stack direction={{ base: 'column', lg: 'row' }} gap={4} alignItems="flex-end">
                                         
-                                        {/* A. CLIENTE */}
                                         <Box flex={2} w="100%">
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
                                         </Box>
                                         
-                                        {/* B. ASSOCIADO (INDIVIDUAL) */}
                                         <Box flex={2} w="100%">
                                             <Controller name={`investors.${index}.associateId`} control={control} render={({ field }) => (
                                                 <Field.Root>
@@ -234,7 +247,6 @@ export default function CreateAssetPage() {
                                             )} />
                                         </Box>
 
-                                        {/* C. DATA DE AQUISIÇÃO (INDIVIDUAL) */}
                                         <Box flex={1} w="100%">
                                             <Field.Root>
                                                 <Field.Label>Data da Aquisição</Field.Label>
@@ -242,7 +254,6 @@ export default function CreateAssetPage() {
                                             </Field.Root>
                                         </Box>
 
-                                        {/* D. BOTÃO REMOVER */}
                                         <Field.Root w={{ base: '100%', lg: 'auto' }}>
                                             {fields.length > 1 && (
                                                 <IconButton aria-label="Remover" colorScheme="red" variant="outline" w={{ base: '100%', lg: 'auto' }} onClick={() => remove(index)} > <Icon as={PiTrash} /> </IconButton>
@@ -256,9 +267,6 @@ export default function CreateAssetPage() {
                                 <Icon as={PiPlusCircle} /> Adicionar Cliente
                             </Button>
                         </VStack>
-                        {/* FIM DO BLOCO REPETIDOR */}
-
-                        {/* Associado Global Removido Daqui! */}
 
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                             <Field.Root invalid={!!errors.acquisitionValue} required>
@@ -269,7 +277,6 @@ export default function CreateAssetPage() {
                                 <Field.Label>Valor Original do Processo (R$)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
-                            {/* Mantemos esta data como a "Data Matriz" do Processo (Obrigatória no schema) */}
                             <Field.Root invalid={!!errors.acquisitionDate} required>
                                 <Field.Label>Data Cessão (Mazzotini)</Field.Label>
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="date" {...register("acquisitionDate", { required: true })} />

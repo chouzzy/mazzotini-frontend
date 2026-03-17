@@ -1,114 +1,135 @@
 'use client';
 
 import {
-    SimpleGrid,
-    Card,
-    CardTitle,
-    Text,
-    Icon,
-    VStack,
-    Flex,
-    Badge
+  SimpleGrid,
+  Card,
+  Text,
+  Icon,
+  VStack,
+  Flex,
+  Badge,
+  HStack,
+  Box
 } from '@chakra-ui/react';
-import { PiUser, PiClockClockwise, PiFilePdf } from 'react-icons/pi';
+// IMPORTAMOS NOVOS ÍCONES AQUI:
+import { PiClockClockwise, PiFilePdf, PiFileText, PiImage, PiFile } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { extractFreeText } from '@/utils';
 
-// DADOS MOCKADOS (importados ou definidos para fallback)
-const mockUpdates = [
-    {
-        id: 'mock1',
-        date: '2025-09-15T10:00:00Z',
-        updatedValue: 55250,
-        description: 'Sentença favorável em segunda instância',
-        read: false,
-    },
-];
-
-const mockDocuments = [
-    {
-        name: 'Contrato de Cessão de Crédito.pdf',
-        url: '#',
-        category: 'Contrato'
-    },
-];
+// FUNÇÃO PARA ÍCONE DINÂMICO
+const getFileIcon = (filename: string) => {
+    const ext = filename?.split('.').pop()?.toLowerCase() || '';
+    if (ext === 'pdf') return { icon: PiFilePdf, color: 'red.400' };
+    if (['doc', 'docx'].includes(ext)) return { icon: PiFileText, color: 'blue.400' };
+    if (['jpg', 'jpeg', 'png'].includes(ext)) return { icon: PiImage, color: 'purple.400' };
+    return { icon: PiFile, color: 'gray.400' };
+};
 
 interface TabProps {
     asset: DetailedCreditAsset;
 }
 
 export function OverviewTab({ asset }: TabProps) {
-    // Lógica inteligente: usa os dados reais se existirem, senão, usa os mocks.
-    const updates = asset.updates && asset.updates.length > 0 ? asset.updates : mockUpdates;
-    const documents = asset.documents && asset.documents.length > 0 ? asset.documents : mockDocuments;
+    // Usa dados reais se existirem
+    const updates = asset.updates && asset.updates.length > 0 ? asset.updates : [];
+    const documents = asset.documents && asset.documents.length > 0 ? asset.documents : [];
 
-    const lastUpdate = updates[0];
+    const lastUpdate = updates.length > 0 ? updates[0] : null;
     const documentCount = documents.length;
+    
+    // Pega o último documento para exibição e define seu ícone dinâmico
+    const mostRecentDoc = documentCount > 0 ? documents[0] : null;
+    const { icon: DocIcon, color: docColor } = mostRecentDoc ? getFileIcon(mostRecentDoc.name) : { icon: PiFilePdf, color: 'red.400' };
 
-    const titleText = extractFreeText(lastUpdate.description);
+    const titleText = lastUpdate ? extractFreeText(lastUpdate.description) : "";
 
     return (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8}>
+            
             {/* Card de Detalhes da Aquisição */}
             <Card.Root bg="gray.900">
                 <Card.Body>
-                    <Card.Title color={'brand.600'}>Detalhes do Processo</Card.Title>
-                    {/* <Text><strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Credor Originário/Cedente:</strong> {asset.originalCreditor}</Text> */}
-                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Cliente Principal:</strong> {asset.originalCreditor}</Text>
-                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Parte Contrária:</strong> {asset.otherParty}</Text>
-                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Data de Cessão:</strong> {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
-                    <Text><strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Índice de Correção:</strong> {asset.updateIndexType || 'N/A'}</Text>
+                    <Card.Title color={'brand.600'} mb={4}>Detalhes do Processo</Card.Title>
+                    <VStack align="stretch" gap={3}>
+                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Text color="gray.400" fontSize="sm">Cliente Principal</Text>
+                            <Text fontWeight="medium" textAlign="right">{asset.originalCreditor}</Text>
+                        </Flex>
+                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Text color="gray.400" fontSize="sm">Parte Contrária / Apelido</Text>
+                            <Text fontWeight="medium" textAlign="right">{asset.nickname || 'N/A'}</Text>
+                        </Flex>
+                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Text color="gray.400" fontSize="sm">Data da Cessão</Text>
+                            <Text fontWeight="medium" textAlign="right">
+                                {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
+                            </Text>
+                        </Flex>
+                        <Flex justify="space-between" pb={2}>
+                            <Text color="gray.400" fontSize="sm">Índice de Correção</Text>
+                            <Text fontWeight="medium" textAlign="right">
+                                {asset.updateIndexType} 
+                                {asset.contractualIndexRate ? ` + ${asset.contractualIndexRate}%` : ''}
+                            </Text>
+                        </Flex>
+                    </VStack>
                 </Card.Body>
             </Card.Root>
-
-            {/* Card de Envolvidos */}
-            {/* <Card.Root  bg="gray.900">
-                    <Card.Body>
-                        <Card.Title color={'brand.600'}>Envolvidos</Card.Title>
-                        {asset.associate && <Text mt={2}><Icon as={PiUser} mr={2} /> <strong style={{color:'#a8a8a8', fontStyle:'italic'}}>Associado:</strong> {asset.associate.name}</Text>}
-                    </Card.Body>
-                </Card.Root> */}
-
+            
             {/* Card de Resumo do Histórico */}
             <Card.Root bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Última Atualização Processual</Card.Title>
                     {lastUpdate ? (
                         <VStack align="stretch" mt={4} gap={2}>
-                            <Flex justify="space-between" align="center">
-                                <Text maxLines={1}><Icon as={PiClockClockwise} mr={2} /> {titleText.length > 80 ? titleText.substring(0, 80).trim() + "..." : titleText}</Text>
-                                {!lastUpdate.read && <Badge colorPalette="blue">Novo</Badge>}
+                            <Flex justify="space-between" align="start" gap={2}>
+                                <Flex align="start" gap={2}>
+                                    <Icon as={PiClockClockwise} mt={1} color="brand.400" />
+                                    <Text lineClamp={2} fontWeight="medium" fontSize="sm">
+                                        {titleText}
+                                    </Text>
+                                </Flex>
+                                {!lastUpdate.read && <Badge colorPalette="blue" size="sm">Novo</Badge>}
                             </Flex>
-                            <Text fontSize="sm" color="gray.400">
+                            <Text fontSize="xs" color="gray.500" ml={6}>
                                 Em: {new Date(lastUpdate.date).toLocaleDateString('pt-BR')}
                             </Text>
-                            <Text fontSize="sm" color="gray.300" mt={2}>
-                                Acesse a aba <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Histórico Processual</strong> para ver todos os detalhes.
+                             <Text fontSize="xs" color="gray.400" mt={4}>
+                                Acesse a aba <strong style={{color:'#d2be82'}}>Histórico Processual</strong> para ver todos os detalhes.
                             </Text>
                         </VStack>
                     ) : (
-                        <Text color="gray.500" mt={4}>Nenhuma atualização encontrada.</Text>
+                        <Text color="gray.500" mt={4}>Nenhuma atualização encontrada ainda.</Text>
                     )}
                 </Card.Body>
             </Card.Root>
-
+            
             {/* Card de Resumo dos Documentos */}
             <Card.Root bg="gray.900">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Documentos Anexados</Card.Title>
-                    {documentCount > 0 ? (
-                        <VStack align="stretch" mt={4} gap={2}>
-                            <Flex align="center">
-                                <Icon as={PiFilePdf} mr={2} boxSize={5} />
-                                <Text>
-                                    <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>{documentCount}</strong> documento{documentCount > 1 ? 's' : ''} na plataforma.
-                                </Text>
+                    
+                     {documentCount > 0 && mostRecentDoc ? (
+                        <VStack align="stretch" mt={4} gap={4}>
+                             <Flex align="center" justify="space-between">
+                                <HStack>
+                                    <Icon as={DocIcon} color={docColor} boxSize={6}/>
+                                    <VStack align="start" gap={0}>
+                                        <Text fontWeight="bold" fontSize="lg">{documentCount}</Text>
+                                        <Text fontSize="xs" color="gray.400">Documento(s) Disponível(is)</Text>
+                                    </VStack>
+                                </HStack>
                             </Flex>
-                            <Text fontSize="sm" color="gray.400" maxLines={4}>
-                                O mais recente é "{documents[0].name}".
-                            </Text>
-                            <Text fontSize="sm" color="gray.300" mt={2}>
-                                Acesse a aba <strong style={{ color: '#a8a8a8', fontStyle: 'italic' }}>Documentos</strong> para visualizá-los.
+
+                             <Box p={3} bg="whiteAlpha.50" borderRadius="md">
+                                <Text fontSize="xs" color="gray.400" mb={1}>Arquivo mais recente:</Text>
+                                <Text fontSize="sm" fontWeight="medium" truncate>
+                                    {mostRecentDoc.name}
+                                </Text>
+                             </Box>
+
+                            <Text fontSize="xs" color="gray.400">
+                                Acesse a aba <strong style={{color:'#d2be82'}}>Documentos</strong> para visualizar e baixar.
                             </Text>
                         </VStack>
                     ) : (
@@ -116,7 +137,7 @@ export function OverviewTab({ asset }: TabProps) {
                     )}
                 </Card.Body>
             </Card.Root>
+
         </SimpleGrid>
     );
 }
-

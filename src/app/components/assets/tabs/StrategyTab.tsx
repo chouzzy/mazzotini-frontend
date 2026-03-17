@@ -10,7 +10,7 @@ import {
   Button, 
   Textarea, 
   Flex,
-  Icon,
+  Icon
 } from '@chakra-ui/react';
 import { PiTargetDuotone, PiPencilSimple, PiX, PiCheck } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
@@ -18,6 +18,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { useSWRConfig } from 'swr';
 import { toaster } from '@/components/ui/toaster';
+import { useApi } from '@/hooks/useApi'; // 1. Adicione o import do useApi
 
 interface StrategyTabProps {
   asset: DetailedCreditAsset;
@@ -30,6 +31,10 @@ export function StrategyTab({ asset }: StrategyTabProps) {
   
   const { getAccessTokenSilently } = useAuth0();
   const { mutate } = useSWRConfig();
+
+  // 2. Busca o perfil do utilizador atual
+  const { data: myProfile } = useApi<any>('/api/users/me');
+  const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
 
   const handleEdit = () => {
     setStrategyInput(asset.strategyText || '');
@@ -65,12 +70,10 @@ export function StrategyTab({ asset }: StrategyTabProps) {
       
       setIsEditing(false);
       
-      // Toast de sucesso (Ajuste conforme a versão do seu Chakra UI)
       toaster.create({
         title: "Estratégia atualizada",
         type: "success",
-        duration: 3000,
-        closable: true,
+        duration: 3000
       });
     } catch (error) {
       console.error("Erro ao salvar estratégia", error);
@@ -78,8 +81,7 @@ export function StrategyTab({ asset }: StrategyTabProps) {
         title: "Erro ao salvar",
         description: "Não foi possível atualizar a estratégia. Tente novamente.",
         type: "error",
-        duration: 3000,
-        closable: true,
+        duration: 3000
       });
     } finally {
       setIsSaving(false);
@@ -94,8 +96,8 @@ export function StrategyTab({ asset }: StrategyTabProps) {
           <Heading size="md" color="white">Estratégia de Atuação</Heading>
         </HStack>
         
-        {!isEditing && (
-          // DICA: Adicione aqui uma validação de Role se quiser que só ADMIN/OPERATOR vejam este botão
+        {/* 3. Adicione isAdminOrOperator na condicional do botão */}
+        {!isEditing && isAdminOrOperator && (
           <Button size="sm" colorPalette="blue" variant="surface" onClick={handleEdit}>
             <Icon as={PiPencilSimple} mr={2} />
             {asset.strategyText ? 'Editar' : 'Definir Estratégia'}
