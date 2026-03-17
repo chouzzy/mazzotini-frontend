@@ -12,6 +12,7 @@ export interface AssetSummary {
     mainInvestorName: string | null;
     investorId: string | null;
     associateId: string | null;
+    legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue'; // NOVO CAMPO PARA IDENTIFICAR O TIPO DE PROCESSO
     // Campos necessários para os componentes de UI
     investorShare: number;
     investedValue: number;

@@ -31,7 +31,6 @@ import {
 } from 'react-icons/pi';
 import { AssetSummary } from '@/types/api';
 
-// Tipagem para a resposta paginada
 interface PaginatedResponse {
     items: AssetSummary[];
     meta: {
@@ -73,29 +72,29 @@ export default function OperatorAssetsPage() {
     // Estados de paginação e filtros
     const [page, setPage] = useState(1);
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterType, setFilterType] = useState('ALL'); // <-- ESTADO DO TIPO DE PROCESSO
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState(''); // <-- ESTADO DO DEBOUNCE
     const limit = 10;
 
-    // A URL agora envia os parâmetros para o servidor processar a busca e paginação
-    const { data, isLoading, error, mutate } = useApi<PaginatedResponse>(
-        `/api/assets?page=${page}&limit=${limit}&status=${filterStatus}&search=${searchQuery}`
-    );
+    // EFEITO DE DEBOUNCE: Aguarda 300ms após parar de digitar
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setPage(1);
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
 
-    // Resetar para a página 1 quando mudar o filtro ou busca
+    // Resetar para a página 1 quando mudar filtros estáticos
     useEffect(() => {
         setPage(1);
-    }, [filterStatus, searchQuery]);
+    }, [filterStatus, filterType]);
 
-    if (isLoading && !data) {
-        return (
-            <Flex w="100%" flex={1} justify="center" align="center">
-                <VStack gap={4}>
-                    <Spinner size="xl" color="#9E905A" />
-                    <Text>Carregando processos...</Text>
-                </VStack>
-            </Flex>
-        );
-    }
+    // A URL consome debouncedSearch e filterType
+    const { data, isLoading, error, mutate } = useApi<PaginatedResponse>(
+        `/api/assets?page=${page}&limit=${limit}&status=${filterStatus}&search=${debouncedSearch}&type=${filterType}`
+    );
 
     if (error) {
         return (
@@ -112,21 +111,13 @@ export default function OperatorAssetsPage() {
 
     const assets = data?.items || [];
     const meta = data?.meta;
-
-    if (!isLoading && assets.length === 0 && !searchQuery && !filterStatus) {
-        return <EmptyState
-            title="Nenhum processo Registado"
-            description="Ainda não há nenhum processo de crédito no sistema. Comece por registrar o primeiro."
-            buttonLabel="Registrar Primeiro processo"
-            buttonHref="/processos/novo"
-        />;
-    }
-
     const tableBgColor = 'gray.900';
 
     return (
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
+                
+                {/* CABEÇALHO */}
                 <Flex justify="space-between" align="start" direction={{ base: 'column', md: 'row' }} gap={4}>
                     <Box w='100%'>
                         <Flex align="center" gap={2} w='100%'>
@@ -146,106 +137,132 @@ export default function OperatorAssetsPage() {
                 </Flex>
 
                 <Box>
+                    {/* BARRA DE FERRAMENTAS COM OS FILTROS */}
                     <AssetsToolbar
-                        assets={[]} // Toolbar agora apenas emite eventos, não precisa da lista completa
+                        assets={assets} // <-- CORREÇÃO: Enviando os assets para a combobox funcionar
                         viewMode={'list'}
                         onViewChange={() => { }}
                         onFilterChange={setFilterStatus}
                         onSearch={setSearchQuery}
+                        onTypeChange={setFilterType} // <-- NOVO: Passando a função para o filtro de tipo
                     />
 
-                    <Box overflowX="auto" borderRadius="md" mt={4}>
-                        <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
-                            <Table.Header>
-                                <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
-                                    <Table.ColumnHeader color={'brand.600'} p={8}>Nº do Processo</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} p={8}>Cliente Principal</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} p={8}>Credor</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} p={8}>Estimativa Atual</Table.ColumnHeader>
-                                    <Table.ColumnHeader color={'brand.600'} p={8}>Status</Table.ColumnHeader>
-                                </Table.Row>
-                            </Table.Header>
-                            <Table.Body>
-                                {assets.length > 0 ? (
-                                    assets.map((asset) => (
-                                        <Table.Row 
-                                            key={asset.id} 
-                                            cursor={'pointer'} 
-                                            _hover={{ bg: 'whiteAlpha.50', color: 'brand.600' }} 
-                                            bgColor={tableBgColor} 
-                                            onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`}
-                                        >
-                                            <Table.Cell px={8} py={4} fontWeight="semibold">{asset.processNumber}</Table.Cell>
-                                            <Table.Cell px={8} py={4}>{asset.mainInvestorName}</Table.Cell>
-                                            <Table.Cell px={8} py={4}>{asset.originalCreditor}</Table.Cell>
-                                            <Table.Cell px={8} py={4}>{formatCurrency(asset.currentValue)}</Table.Cell>
-                                            <Table.Cell px={8} py={4}>
-                                                <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
-                                                    <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
-                                                </Tag.Root>
-                                            </Table.Cell>
+                    {/* ÁREA DA TABELA (COM LOADING ISOLADO E SEM PERDA DE FOCO) */}
+                    <Box position="relative" overflowX="auto" borderRadius="md" mt={4} minH="200px">
+                        
+                        {/* Overlay de Loading Transparente */}
+                        {isLoading && (
+                            <Flex position="absolute" top={0} left={0} right={0} bottom={0} bg="blackAlpha.600" zIndex={2} justify="center" align="center" borderRadius="md">
+                                <Spinner size="xl" color="brand.500" />
+                            </Flex>
+                        )}
+
+                        {/* Exibição Condicional de Resultados Vázios */}
+                        {assets.length === 0 && !isLoading && !debouncedSearch && !filterStatus && filterType === 'ALL' ? (
+                            <EmptyState
+                                title="Nenhum processo Registado"
+                                description="Ainda não há nenhum processo de crédito no sistema. Comece por registrar o primeiro."
+                                buttonLabel="Registrar Primeiro processo"
+                                buttonHref="/processos/novo"
+                            />
+                        ) : assets.length === 0 && !isLoading ? (
+                            <Flex justify="center" p={10} bg="gray.900" borderRadius="md">
+                                <Text color="gray.500">Nenhum processo encontrado com os filtros aplicados.</Text>
+                            </Flex>
+                        ) : (
+                            <Box opacity={isLoading ? 0.5 : 1} transition="opacity 0.2s">
+                                <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
+                                    <Table.Header>
+                                        <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Nº do Processo</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Cliente Principal</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Credor</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Estimativa Atual</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Status</Table.ColumnHeader>
                                         </Table.Row>
-                                    ))
-                                ) : (
-                                    <Table.Row>
-                                        <Table.Cell colSpan={5} textAlign="center" py={10}>
-                                            <Text color="gray.500">Nenhum processo encontrado.</Text>
-                                        </Table.Cell>
-                                    </Table.Row>
+                                    </Table.Header>
+                                    <Table.Body>
+                                        {assets.map((asset) => (
+                                            <Table.Row 
+                                                key={asset.id} 
+                                                cursor={'pointer'} 
+                                                _hover={{ bg: 'whiteAlpha.50', color: 'brand.600' }} 
+                                                bgColor={tableBgColor} 
+                                                onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`}
+                                            >
+                                                <Table.Cell px={8} py={4} fontWeight="semibold">
+                                                    <VStack align="start" gap={0}>
+                                                        <Text>{asset.processNumber}</Text>
+                                                        {/* Pequena indicação se for um recurso/incidente na tabela também */}
+                                                        {asset.legalOneType === 'Lawsuit' && <Text fontSize="xs" color="blue.400">Processo Principal</Text>}
+                                                        {asset.legalOneType === 'Appeal' && <Text fontSize="xs" color="orange.400">Recurso</Text>}
+                                                        {asset.legalOneType === 'ProceduralIssue' && <Text fontSize="xs" color="purple.400">Incidente</Text>}
+                                                    </VStack>
+                                                </Table.Cell>
+                                                <Table.Cell px={8} py={4}>{asset.mainInvestorName}</Table.Cell>
+                                                <Table.Cell px={8} py={4}>{asset.originalCreditor}</Table.Cell>
+                                                <Table.Cell px={8} py={4}>{formatCurrency(asset.currentValue)}</Table.Cell>
+                                                <Table.Cell px={8} py={4}>
+                                                    <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
+                                                        <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
+                                                    </Tag.Root>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Body>
+                                </Table.Root>
+
+                                {/* CONTROLES DE PAGINAÇÃO */}
+                                {meta && meta.totalPages > 1 && (
+                                    <Flex justify="space-between" align="center" mt={6} px={4} pb={4}>
+                                        <Text fontSize="sm" color="gray.400">
+                                            Mostrando <b>{assets.length}</b> de <b>{meta.total}</b> processos
+                                        </Text>
+                                        <HStack gap={2}>
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                                disabled={page === 1}
+                                            >
+                                                <Icon as={PiCaretLeftBold} mr={1} /> Anterior
+                                            </Button>
+                                            
+                                            <HStack gap={1} display={{ base: 'none', sm: 'flex' }}>
+                                                {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
+                                                    .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
+                                                    .map((p, i, arr) => (
+                                                        <Box key={p}>
+                                                            {i > 0 && arr[i-1] !== p - 1 && <Text color="gray.600">...</Text>}
+                                                            <Button
+                                                                size="sm"
+                                                                variant={page === p ? "solid" : "ghost"}
+                                                                colorScheme={page === p ? "brand" : "gray"}
+                                                                bg={page === p ? "brand.600" : "transparent"}
+                                                                color={page === p ? "white" : "gray.300"}
+                                                                onClick={() => setPage(p)}
+                                                            >
+                                                                {p}
+                                                            </Button>
+                                                        </Box>
+                                                    ))
+                                                }
+                                            </HStack>
+
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
+                                                disabled={page === meta.totalPages}
+                                            >
+                                                Próximo <Icon as={PiCaretRightBold} ml={1} />
+                                            </Button>
+                                        </HStack>
+                                    </Flex>
                                 )}
-                            </Table.Body>
-                        </Table.Root>
+                            </Box>
+                        )}
                     </Box>
-
-                    {/* CONTROLES DE PAGINAÇÃO */}
-                    {meta && meta.totalPages > 1 && (
-                        <Flex justify="space-between" align="center" mt={6} px={4}>
-                            <Text fontSize="sm" color="gray.400">
-                                Mostrando <b>{assets.length}</b> de <b>{meta.total}</b> processos
-                            </Text>
-                            <HStack gap={2}>
-                                <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                >
-                                    <Icon as={PiCaretLeftBold} />   
-                                    Anterior
-                                </Button>
-                                
-                                <HStack gap={1}>
-                                    {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
-                                        .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
-                                        .map((p, i, arr) => (
-                                            <Flex key={p}>
-                                                {i > 0 && arr[i-1] !== p - 1 && <Text color="gray.600">...</Text>}
-                                                <Button
-                                                    size="sm"
-                                                    variant={page === p ? "solid" : "ghost"}
-                                                    colorScheme={page === p ? "brand" : "gray"}
-                                                    bg={page === p ? "brand.600" : "transparent"}
-                                                    onClick={() => setPage(p)}
-                                                >
-                                                    {p}
-                                                </Button>
-                                            </Flex>
-                                        ))
-                                    }
-                                </HStack>
-
-                                <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                                    disabled={page === meta.totalPages}
-                                >
-                                    Próximo
-                                    <Icon as={PiCaretRightBold} />
-                                </Button>
-                            </HStack>
-                        </Flex>
-                    )}
                 </Box>
             </VStack>
         </Flex>

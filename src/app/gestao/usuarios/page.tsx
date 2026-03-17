@@ -7,7 +7,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '@/hooks/useApi';
 import { 
     PiWarningCircle, PiPencilSimple, PiUserPlus, PiUserCircleCheck, PiArrowRight, 
-    PiCaretLeftBold, PiCaretRightBold 
+    PiCaretLeftBold, PiCaretRightBold, PiUserCircleMinus, PiDownloadSimple
 } from 'react-icons/pi';
 import { EmptyState } from '@/app/components/dashboard/EmptyState';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
@@ -75,24 +75,26 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
 }
 
 export default function UserManagementPage() {
+    const { getAccessTokenSilently } = useAuth0();
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [filterRole, setFilterRole] = useState("ALL");
     const [filterStatus, setFilterStatus] = useState("ALL");
+    const [filterOnlyShadow, setFilterOnlyShadow] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const limit = 10;
 
-    // EFEITO DE DEBOUNCE: Atualiza a busca real apenas 300ms após o utilizador parar de digitar
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1); // Volta para a pág 1 ao pesquisar
+            setPage(1);
         }, 300);
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
     const { data, isLoading, error, mutate } = useApi<PaginatedUsersResponse>(
-        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}`
+        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`
     );
     const { data: pendingUsers, isLoading: isLoadingPending } = useApi<UserProfile[]>('/api/management/pending-users');
 
@@ -105,6 +107,56 @@ export default function UserManagementPage() {
         onEditOpen();
     };
 
+    const handleExportExcel = async () => {
+        setIsExporting(true);
+        try {
+            // Obter token de autorização
+            const token = await getAccessTokenSilently({
+                authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
+            });
+
+            // Pedimos à API TODOS os utilizadores filtrados (limit=9999) para a exportação
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=9999&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            const result = await response.json();
+            const usersToExport = result.items || [];
+
+            if (usersToExport.length === 0) return;
+
+            // Preparamos os cabeçalhos e as linhas. Separador = ';' para o Excel Brasileiro/Português
+            const headers = ['Nome', 'E-mail', 'Permissões', 'Status', 'Último Login'];
+            const rows = usersToExport.map((u: UserManagementInfo) => [
+                `"${u.name}"`,
+                `"${u.email}"`,
+                `"${u.roles.map(r => translateRole(r)).join(', ')}"`,
+                `"${u.status === 'ACTIVE' ? 'Ativo' : u.status === 'PENDING_REVIEW' ? 'Pendente Revisão' : 'Pendente Cadastro'}"`,
+                `"${u.email.includes('placeholder') ? 'Importado' : (u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca')}"`
+            ]);
+
+            // \uFEFF é o BOM (Byte Order Mark) que garante que o Excel reconheça acentos (UTF-8)
+            const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map((r: any[]) => r.join(';'))].join('\n');
+            
+            // Criar o Blob e forçar o download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Usuarios_Mazzotini_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (err) {
+            console.error("Erro ao exportar:", err);
+            alert("Ocorreu um erro ao tentar exportar a lista.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const users = data?.items || [];
     const meta = data?.meta;
     const tableBgColor = 'gray.900';
@@ -113,7 +165,6 @@ export default function UserManagementPage() {
         <AuthenticationGuard>
             <RoleGuard>
                 <VStack gap={8} align="stretch" w="100%">
-                    {/* Header sempre visível */}
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box><Heading as="h1" size="xl">Gestão de Usuários</Heading><Text color="gray.400" mt={2}>Convide novos usuários e gira permissões.</Text></Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
@@ -126,8 +177,7 @@ export default function UserManagementPage() {
                         </Flex>
                     </Flex>
 
-                    {/* Filtros sempre visíveis */}
-                    <Flex gap={4} p={4} bg={tableBgColor} borderRadius="md" border="1px solid" borderColor="gray.700" wrap="wrap">
+                    <Flex gap={4} p={4} bg={tableBgColor} borderRadius="md" border="1px solid" borderColor="gray.700" wrap="wrap" align="flex-end">
                         <Box flex={1} minW="200px">
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">Busca por Nome ou E-mail</Field.Label>
@@ -140,7 +190,7 @@ export default function UserManagementPage() {
                                 />
                             </Field.Root>
                         </Box>
-                        <Box w={{ base: "100%", md: "200px" }}>
+                        <Box w={{ base: "100%", md: "180px" }}>
                             <Field.Root><Field.Label fontSize="sm" color="gray.400">Cargo</Field.Label>
                                 <Select.Root collection={roleOptions} value={[filterRole]} onValueChange={(d) => { setFilterRole(d.value[0]); setPage(1); }}>
                                     <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
@@ -148,7 +198,7 @@ export default function UserManagementPage() {
                                 </Select.Root>
                             </Field.Root>
                         </Box>
-                        <Box w={{ base: "100%", md: "200px" }}>
+                        <Box w={{ base: "100%", md: "180px" }}>
                             <Field.Root><Field.Label fontSize="sm" color="gray.400">Status</Field.Label>
                                 <Select.Root collection={statusOptions} value={[filterStatus]} onValueChange={(d) => { setFilterStatus(d.value[0]); setPage(1); }}>
                                     <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
@@ -156,9 +206,38 @@ export default function UserManagementPage() {
                                 </Select.Root>
                             </Field.Root>
                         </Box>
+                        
+                        {/* Wrapper para agrupar botões à direita num layout responsivo */}
+                        <Flex gap={2} ml="auto" wrap="wrap">
+                            <Button 
+                                variant={filterOnlyShadow ? "solid" : "outline"} 
+                                colorPalette={filterOnlyShadow ? "yellow" : "gray"}
+                                onClick={() => { setFilterOnlyShadow(!filterOnlyShadow); setPage(1); }}
+                                gap={2}
+                                h="40px"
+                                _hover={{ bg: filterOnlyShadow ? "yellow.600" : "gray.700" }}
+                            >
+                                <Icon as={PiUserCircleMinus} />
+                                {filterOnlyShadow ? "Ver Todos" : "Filtrar @mazzotini.placeholder"}
+                            </Button>
+
+                            <Button 
+                                variant="solid"
+                                colorPalette="green"
+                                onClick={handleExportExcel}
+                                loading={isExporting}
+                                loadingText="A Exportar..."
+                                gap={2}
+                                h="40px"
+                                _hover={{ bg: "green.700", color: "white" }}
+                                title="Baixar listagem atual em formato Excel (CSV)"
+                            >
+                                <Icon as={PiDownloadSimple} />
+                                Exportar Excel
+                            </Button>
+                        </Flex>
                     </Flex>
 
-                    {/* Área de Dados com Loading isolado */}
                     <Box position="relative">
                         {isLoading && (
                             <Flex position="absolute" top={0} left={0} right={0} bottom={0} bg="blackAlpha.600" zIndex={2} justify="center" align="center" borderRadius="md">
@@ -188,13 +267,21 @@ export default function UserManagementPage() {
                                                         <Avatar.Root size="sm"><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
                                                         <VStack align="start" gap={0}>
                                                             <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" _hover={{ color: 'brand.400' }}>{u.name}</Text></Link>
-                                                            <Text fontSize="sm" color="gray.400">{u.email}</Text>
+                                                            <Text fontSize="sm" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"}>
+                                                                {u.email}
+                                                            </Text>
                                                         </VStack>
                                                     </Flex>
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}><Flex gap={2}>{u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}</Flex></Table.Cell>
                                                 <Table.Cell px={8} py={4}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
-                                                <Table.Cell px={8} py={4}>{u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca'}</Table.Cell>
+                                                <Table.Cell px={8} py={4}>
+                                                    {u.email.includes('placeholder') ? (
+                                                        <Badge variant="outline" colorPalette="orange">Importado</Badge>
+                                                    ) : (
+                                                        u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca'
+                                                    )}
+                                                </Table.Cell>
                                                 <Table.Cell px={8} py={4}><HStack gap={2}><Link href={`/gestao/usuarios/${u.id}`}><Button size="sm" bgColor="brand.700" color="white"><Icon as={PiArrowRight} /></Button></Link><Button size="sm" colorPalette="blue" onClick={() => handleEditClick(u)}><Icon as={PiPencilSimple} /></Button></HStack></Table.Cell>
                                             </Table.Row>
                                         ))}
@@ -210,10 +297,10 @@ export default function UserManagementPage() {
                                                 {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
                                                     .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
                                                     .map((p, i, arr) => (
-                                                        <Box key={p}>
+                                                        <Flex key={p}>
                                                             {i > 0 && arr[i-1] !== p - 1 && <Text color="gray.600">...</Text>}
                                                             <Button size="sm" variant={page === p ? "solid" : "ghost"} bg={page === p ? "brand.600" : "transparent"} color={page === p ? "white" : "gray.300"} onClick={() => setPage(p)}>{p}</Button>
-                                                        </Box>
+                                                        </Flex>
                                                     ))
                                                 }
                                             </HStack>

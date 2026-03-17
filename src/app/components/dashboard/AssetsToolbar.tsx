@@ -15,27 +15,36 @@ import { PiArrowDownDuotone, PiCaretDoubleDownDuotone, PiFunction, PiSquaresFour
 import { useMemo } from 'react';
 import { AssetSummary } from '@/types/api';
 
-// Props atualizadas para receber os processos para o Combobox
+// Props atualizadas com o onTypeChange
 interface AssetsToolbarProps {
     assets: AssetSummary[];
     viewMode: 'grid' | 'list';
     onViewChange: (mode: 'grid' | 'list') => void;
     onFilterChange: (status: string) => void;
     onSearch: (query: string) => void;
+    onTypeChange?: (type: string) => void; // NOVO FILTRO DE TIPO
 }
 
-// Opções para o filtro de status
 const statusOptions = createListCollection({
     items: [
+        { label: "Todos os Status", value: "" }, // Adicionado para permitir limpar o filtro
         { label: "Ativo", value: "Ativo" },
         { label: "Em Negociação", value: "Em Negociação" },
         { label: "Liquidado", value: "Liquidado" },
     ]
 });
 
+// NOVA COLEÇÃO PARA O TIPO DE PROCESSO
+const typeOptions = createListCollection({
+    items: [
+        { label: "Todos os Tipos", value: "ALL" },
+        { label: "Processo Principal", value: "LAWSUIT" },
+        { label: "Recurso", value: "APPEAL" },
+        { label: "Incidente", value: "INCIDENT" },
+    ]
+});
 
-export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, onSearch }: AssetsToolbarProps) {
-    // Lógica para o Combobox de pesquisa
+export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, onSearch, onTypeChange }: AssetsToolbarProps) {
     const { contains } = useFilter({ sensitivity: "base" });
 
     const searchItems = useMemo(() => assets.map(asset => ({
@@ -63,7 +72,6 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     onSearch(e.inputValue); // Atualiza a busca em tempo real
                 }}
                 onValueChange={(e) => {
-                    // Quando um item é selecionado, busca por ele
                     if (e.value.length > 0) {
                         const selectedItem = collection.items.find(item => item.value === e.value[0]);
                         onSearch(selectedItem?.value || '');
@@ -94,8 +102,37 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                 </Portal>
             </Combobox.Root>
 
-            <Flex gap={4}>
-                {/* Select com a sintaxe V3 */}
+            <Flex gap={4} wrap="wrap">
+                
+                {/* NOVO SELECT: Tipo de Processo */}
+                {onTypeChange && (
+                    <Select.Root
+                        collection={typeOptions}
+                        onValueChange={(details) => onTypeChange(details.value[0] || 'ALL')}
+                        width={{ base: '100%', md: '200px' }}
+                        defaultValue={["ALL"]}
+                    >
+                        <Select.Control>
+                            <Select.Trigger border={'1px solid'} borderColor="gray.600" bgColor={'gray.950'} cursor={'pointer'}>
+                                <Select.ValueText color={'gray.200'} placeholder="Tipo de Processo" />
+                                <PiCaretDoubleDownDuotone color={'#B8A76E'}/>
+                            </Select.Trigger>
+                        </Select.Control>
+                        <Portal>
+                            <Select.Positioner>
+                                <Select.Content>
+                                    {typeOptions.items.map((option) => (
+                                        <Select.Item item={option} key={option.value} >
+                                            {option.label}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Positioner>
+                        </Portal>
+                    </Select.Root>
+                )}
+
+                {/* Select com a sintaxe V3 (Status) */}
                 <Select.Root
                     collection={statusOptions}
                     onValueChange={(details) => onFilterChange(details.value[0] || '')}
@@ -119,26 +156,7 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                         </Select.Positioner>
                     </Portal>
                 </Select.Root>
-
-                {/* <ButtonGroup attached>
-                    <IconButton
-                        aria-label="Ver em Grade"
-                        onClick={() => onViewChange('grid')}
-                        _hover={{ bg: 'brand.600' }}
-                    >
-                        <PiSquaresFour/>
-                    </IconButton>
-                    <IconButton
-                        aria-label="Ver em Lista"
-                        onClick={() => onViewChange('list')}
-                        bgColor={'gray.600'}
-                        _hover={{ bg: 'brand.600' }}
-                    >
-                        <PiFunction />
-                    </IconButton>
-                </ButtonGroup> */}
             </Flex>
         </Flex>
     );
 }
-

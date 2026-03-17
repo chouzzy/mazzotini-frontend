@@ -1,4 +1,3 @@
-// src/components/dashboard/CreditAssetCard.tsx
 'use client';
 
 import { Tooltip } from '@/components/ui/tooltip';
@@ -12,28 +11,33 @@ import {
     Tag,
     SimpleGrid,
     Stat,
-    StatLabel,
     StatHelpText,
     Icon,
     Flex,
     Link,
+    Badge
 } from '@chakra-ui/react';
-import { PiBank, PiCalendarBlank, PiChartLineUp, PiPercent, PiScales } from 'react-icons/pi';
+import { 
+    PiBank, 
+    PiCalendarBlank, 
+    PiChartLineUp, 
+    PiScales, 
+    PiFilesDuotone, 
+    PiGavelDuotone 
+} from 'react-icons/pi';
+import NextLink from 'next/link';
 
-// Tipagem baseada no nosso futuro retorno da API
 export type InvestorCreditAsset = {
     processNumber: string;
     originalCreditor: string;
     status: 'ACTIVE' | 'Liquidado' | 'Em Negociação';
     acquisitionDate: Date;
-    // Valores calculados especificamente para a visão do investidor
     investedValue: number;
     currentValue: number;
     investorShare: number;
     updateIndexType: string;
 };
 
-// Função para formatar valores monetários
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -41,13 +45,15 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
+// TIPAGEM ATUALIZADA
+export function CreditAssetCard({ asset }: { asset: AssetSummary & { legalOneType?: string, nickname?: string, parentProcessNumber?: string } }) {
     const yieldValue = asset.currentValue - asset.investedValue;
-    const yieldPercentage = (yieldValue / asset.investedValue) * 100;
+    const yieldPercentage = asset.investedValue > 0 ? (yieldValue / asset.investedValue) * 100 : 0;
 
     const getStatusColorScheme = (status: string) => {
         switch (status) {
             case 'ACTIVE':
+            case 'Ativo':
                 return 'green';
             case 'Liquidado':
                 return 'gray';
@@ -58,24 +64,68 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
         }
     };
 
+    // Identificadores de Paternidade
+    const isAppeal = asset.legalOneType?.toLowerCase() === 'appeal';
+    const isIncident = asset.legalOneType?.toLowerCase() === 'proceduralissue';
+    const isMain = !isAppeal && !isIncident; // Processo Principal
+
     return (
-        <Link href={`/processos/${encodeURIComponent(asset.processNumber)}`} _hover={{ textDecoration: 'none' }}>
-            <Box minW={'xl'} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'blue.400', transform: 'translateY(-4px)', shadow: 'lg' }}>
+        <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`} _hover={{ textDecoration: 'none' }}>
+            <Box w={'100%'} minW={{ base: '100%', md: 'xl' }} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'brand.500', transform: 'translateY(-4px)', shadow: 'lg' }}>
                 <VStack align="stretch" gap={4}>
-                    {/* Cabeçalho */}
-                    <Flex justify="space-between" align="center">
+                    
+                    {/* LINHA 1: TAGS E STATUS */}
+                    <Flex justify="space-between" align="start">
+                        <HStack wrap="wrap" gap={2}>
+                            {/* TAG PROCESSO PRINCIPAL */}
+                            {isMain && (
+                                <Badge colorPalette="blue" variant="solid" size="sm" borderRadius="sm">
+                                    PROCESSO PRINCIPAL
+                                </Badge>
+                            )}
+                            {/* TAG RECURSO */}
+                            {isAppeal && (
+                                <Badge colorPalette="orange" variant="solid" size="sm" borderRadius="sm" gap={1}>
+                                    <Icon as={PiFilesDuotone} /> RECURSO
+                                </Badge>
+                            )}
+                            {/* TAG INCIDENTE */}
+                            {isIncident && (
+                                <Badge colorPalette="purple" variant="solid" size="sm" borderRadius="sm" gap={1}>
+                                    <Icon as={PiGavelDuotone} /> INCIDENTE
+                                </Badge>
+                            )}
+                        </HStack>
+                        
+                        <Tag.Root colorPalette={getStatusColorScheme(asset.status)} variant={'subtle'} size="sm">
+                            <Tag.Label>{asset.status}</Tag.Label>
+                        </Tag.Root>
+                    </Flex>
+
+                    {/* LINHA 2: NÚMERO DO PROCESSO E VÍNCULO */}
+                    <VStack align="start" gap={1}>
                         <HStack>
-                            <Icon as={PiScales} color="blue.400" />
+                            <Icon as={PiScales} color="brand.400" />
                             <Tooltip content={`Processo Nº ${asset.processNumber}`}>
-                                <Heading size="md" maxLines={1} maxW="250px" color={'textPrimary'}>
+                                <Heading size="md" maxLines={1} color={'textPrimary'}>
                                     {asset.processNumber}
                                 </Heading>
                             </Tooltip>
                         </HStack>
-                        <Tag.Root colorPalette={getStatusColorScheme(asset.status)} variant={'solid'}>
-                            <Tag.Label>{asset.status}</Tag.Label>
-                        </Tag.Root>
-                    </Flex>
+                        
+                        {/* MOSTRADOR DE VÍNCULO (NOVO) */}
+                        {(isAppeal || isIncident) && asset.parentProcessNumber && (
+                            <Text fontSize="xs" color="gray.400" fontWeight="medium">
+                                Vínculo: <span style={{ color: '#D2C594' }}>{asset.parentProcessNumber}</span>
+                            </Text>
+                        )}
+                        {/* Se não houver parentProcessNumber mas houver nickname, mostramos por precaução */}
+                        {(isAppeal || isIncident) && !asset.parentProcessNumber && asset.nickname && (
+                            <Text fontSize="xs" color="gray.400" fontWeight="medium">
+                                Vínculo: {asset.nickname}
+                            </Text>
+                        )}
+                    </VStack>
 
                     {/* Credor */}
                     <HStack color="gray.400">
@@ -85,15 +135,11 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
 
                     {/* Grid de Stats */}
                     <SimpleGrid columns={{ base: 1, md: 2}} gap={4} pt={4}>
-                        {/* <Stat.Root>
-                            <Stat.Label color="gray.400">Custo de Aquisição</Stat.Label>
-                            <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.investedValue)}</Stat.ValueText>
-                        </Stat.Root> */}
                         <Stat.Root>
                             <Stat.Label color="gray.400">Estimativa Atual do Valor Total do Crédito</Stat.Label>
                             <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.currentValue)}</Stat.ValueText>
                             <StatHelpText display="flex" alignItems="center" color={yieldValue >= 0 ? 'green.600' : 'red.600'}>
-                                <Icon as={PiChartLineUp} color="green.400" mr={1} />
+                                <Icon as={PiChartLineUp} color={yieldValue >= 0 ? "green.400" : "red.400"} mr={1} />
                                 {formatCurrency(yieldValue)} ({yieldPercentage.toFixed(2)}%)
                             </StatHelpText>
                         </Stat.Root>
