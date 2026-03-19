@@ -188,12 +188,6 @@ export function DashboardOverview() {
                                     Ver Todos os Processos
                                 </Button>
                             </Link>
-                            <Link as={NextLink} href="/processos/novo" w="100%" _hover={{ textDecoration: 'none' }}>
-                                <Button bgColor={'brand.700'} _hover={{ bgColor: 'brand.800', transition: '300ms' }} color={'white'} w="100%" size="lg" gap={2}>
-                                    <PiPlusCircle />
-                                    Registrar Novo Processo
-                                </Button>
-                            </Link>
                             <Button bgColor={'gray.900'} _hover={{ bgColor: 'gray.950', transition: '300ms' }} color={'whatsapp'} as="a" onClick={() => window.open(whatsappLink())} w="100%" size="lg" variant="ghost" gap={2}>
                                 <PiWhatsappLogo />
                                 Falar com Suporte
