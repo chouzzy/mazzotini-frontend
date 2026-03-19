@@ -128,12 +128,6 @@ export default function OperatorAssetsPage() {
                             Visualize, pesquise e gira todos os processos de crédito da plataforma.
                         </Text>
                     </Box>
-                    <Link as={NextLink} href="/processos/novo" _hover={{ textDecoration: 'none' }}>
-                        <Button bgColor={'brand.600'} color={'white'} _hover={{bgColor:'brand.700'}} gap={2}>
-                            <Icon as={PiPlusCircle} boxSize={5} />
-                            Registrar Novo Processo
-                        </Button>
-                    </Link>
                 </Flex>
 
                 <Box>
