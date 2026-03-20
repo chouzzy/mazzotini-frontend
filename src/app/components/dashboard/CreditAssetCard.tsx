@@ -46,7 +46,7 @@ const formatCurrency = (value: number) => {
 };
 
 // TIPAGEM ATUALIZADA
-export function CreditAssetCard({ asset }: { asset: AssetSummary & { legalOneType?: string, nickname?: string, parentProcessNumber?: string } }) {
+export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
     const yieldValue = asset.currentValue - asset.investedValue;
     const yieldPercentage = asset.investedValue > 0 ? (yieldValue / asset.investedValue) * 100 : 0;
 
