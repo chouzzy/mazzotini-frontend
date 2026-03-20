@@ -1,10 +1,8 @@
-// /src/types/api.ts
-
-// Este é o "contrato" que o nosso frontend espera receber da API /api/assets.
-// Ele espelha a tipagem AssetSummary do backend.
+// Atualize o AssetSummary existente para incluir os campos novos
 export interface AssetSummary {
     id: string;
     processNumber: string;
+    nickname?: string | null; // <-- ADICIONADO
     originalCreditor: string;
     currentValue: number;
     status: string;
@@ -12,9 +10,20 @@ export interface AssetSummary {
     mainInvestorName: string | null;
     investorId: string | null;
     associateId: string | null;
-    legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue'; // NOVO CAMPO PARA IDENTIFICAR O TIPO DE PROCESSO
-    // Campos necessários para os componentes de UI
+    legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue' | string; 
+    parentProcessNumber?: string | null; // <-- ADICIONADO
     investorShare: number;
     investedValue: number;
     updateIndexType: string | null;
+}
+
+// Já crie e exporte a interface paginada para usar no sistema todo!
+export interface PaginatedAssetsResponse {
+    items: AssetSummary[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }

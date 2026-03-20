@@ -20,6 +20,7 @@ import { useSWRConfig } from "swr";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
 import { useListCollection, useFilter } from "@chakra-ui/react";
+import { PaginatedAssetsResponse } from "@/types/api";
 
 // ============================================================================
 //  INTERFACES
@@ -186,16 +187,19 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
     const [isSaving, setIsSaving] = useState(false);
 
     // Busca todos os processos disponíveis para o select
-    const { data: allAssets } = useApi<any[]>('/api/assets');
+    const { data: allAssetsResponse } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
 
-    // Prepara as opções para o Combobox
     const assetOptions = useMemo(() => {
-        if (!allAssets) return [];
-        return allAssets.map(asset => ({
+        const items = allAssetsResponse?.items || [];
+
+        if (items.length === 0) return [];
+
+        // 2. O TypeScript já sabe que 'asset' é do tipo AssetSummary global!
+        return items.map((asset) => ({
             label: `${asset.processNumber} ${asset.nickname ? `(${asset.nickname})` : ''}`,
             value: asset.id
         }));
-    }, [allAssets]);
+    }, [allAssetsResponse]);
 
     const { control, register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<InvestmentForm>({
         defaultValues: {
@@ -267,7 +271,7 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
     // Sub-componente interno para o Combobox de cada linha
     const AssetCombobox = ({ index, control }: { index: number, control: any }) => {
         const currentAssetId = useWatch({ control, name: `investments.${index}.assetId` });
-        const defaultLabel = useMemo(() => assetOptions.find(a => a.value === currentAssetId)?.label || "", [currentAssetId]);
+        const defaultLabel = useMemo(() => assetOptions.find((a: { value: any; }) => a.value === currentAssetId)?.label || "", [currentAssetId]);
         const [inputValue, setInputValue] = useState(defaultLabel);
 
         useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
@@ -348,12 +352,12 @@ function UserInvestmentsSection({ userId, initialInvestments }: { userId: string
                                     <Text fontSize="xs" mb={1} color="gray.400">Processo</Text>
                                     <AssetCombobox index={index} control={control} />
                                 </Box>
-                                <Box w={{ base: '100%', md: '120px' }}>
+                                {/* <Box w={{ base: '100%', md: '120px' }}>
                                     <Field.Root>
                                         <Field.Label fontSize="xs">Share (%)</Field.Label>
                                         <Input type="number" step="0.1" bgColor={'gray.700'} borderColor={'gray.600'} {...register(`investments.${index}.share`, { valueAsNumber: true })} />
                                     </Field.Root>
-                                </Box>
+                                </Box> */}
                                 <IconButton aria-label="Remover" colorPalette="red" variant="ghost" onClick={() => remove(index)} type="button">
                                     <Icon as={PiTrash} />
                                 </IconButton>
