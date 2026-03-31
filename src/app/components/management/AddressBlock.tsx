@@ -1,30 +1,19 @@
 'use client';
 
 import { VStack, SimpleGrid, Field, Input, Spinner } from '@chakra-ui/react';
-import { Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form';
+import { Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, FieldValues } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { maskCEP, unmask } from '@/utils/masks';
 import { toaster } from '@/components/ui/toaster';
 
-// Apenas os campos que AddressBlock precisa — subset de UserFormData
-type AddressFormData = {
-    residentialCep: string; residentialStreet: string; residentialNumber: string;
-    residentialComplement?: string; residentialNeighborhood: string;
-    residentialCity: string; residentialState: string;
-    commercialCep?: string; commercialStreet?: string; commercialNumber?: string;
-    commercialComplement?: string; commercialNeighborhood?: string;
-    commercialCity?: string; commercialState?: string;
-    [key: string]: any;
-};
-
 export interface AddressBlockProps {
     type: 'residential' | 'commercial';
-    control: Control<any>;
-    register: UseFormRegister<any>;
-    errors: FieldErrors<any>;
+    control: Control<FieldValues>;
+    register: UseFormRegister<FieldValues>;
+    errors: FieldErrors<FieldValues>;
     watch: (name: any) => any;
-    setValue: UseFormSetValue<any>;
+    setValue: UseFormSetValue<FieldValues>;
     isDisabled?: boolean;
 }
 

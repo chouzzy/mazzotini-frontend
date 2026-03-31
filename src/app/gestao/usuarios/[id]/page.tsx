@@ -404,7 +404,7 @@ export default function EditUserPage() {
                     {/* ENDEREÇOS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Residencial</Heading>
-                        <AddressBlock type="residential" {...{ control, register, errors, watch, setValue }} />
+                        <AddressBlock type="residential" control={control as any} register={register as any} errors={errors} watch={watch} setValue={setValue as any} />
                     </VStack>
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Comercial</Heading>
@@ -415,7 +415,7 @@ export default function EditUserPage() {
                                 <Checkbox.Label>O endereço comercial é diferente</Checkbox.Label>
                             </Checkbox.Root>
                         )} />
-                        {useCommercialAddress && <AddressBlock type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
+                        {useCommercialAddress && <AddressBlock type="commercial" control={control as any} register={register as any} errors={errors} watch={watch} setValue={setValue as any} isDisabled={!useCommercialAddress} />}
                     </VStack>
 
                     {/* ================================================================= */}
