@@ -15,6 +15,8 @@ import {
 import { PiClockClockwise, PiFilePdf, PiFileText, PiImage, PiFile } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
 import { extractFreeText } from '@/utils';
+import { Tooltip } from '@/components/ui/tooltip';
+import { useApi } from '@/hooks/useApi';
 
 // FUNÇÃO PARA ÍCONE DINÂMICO
 const getFileIcon = (filename: string) => {
@@ -30,6 +32,14 @@ interface TabProps {
 }
 
 export function OverviewTab({ asset }: TabProps) {
+    const { data: myProfile } = useApi<any>('/api/users/me');
+
+    // Investimento do usuário logado neste processo (se existir)
+    const myInvestment = asset.investors?.find(inv => inv.user?.id === myProfile?.id);
+    const myAcquisitionDate = myInvestment?.acquisitionDate
+        ? new Date(myInvestment.acquisitionDate).toLocaleDateString('pt-BR')
+        : null;
+
     // Usa dados reais se existirem
     const updates = asset.updates && asset.updates.length > 0 ? asset.updates : [];
     const documents = asset.documents && asset.documents.length > 0 ? asset.documents : [];
@@ -60,11 +70,27 @@ export function OverviewTab({ asset }: TabProps) {
                             <Text fontWeight="medium" textAlign="right">{asset.nickname || 'N/A'}</Text>
                         </Flex>
                         <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
-                            <Text color="gray.400" fontSize="sm">Data da Cessão</Text>
+                            <Tooltip
+                                content="Data em que a Mazzotini adquiriu este crédito judicial. Pode ser diferente da data em que você individualmente entrou na operação."
+                                showArrow
+                            >
+                                <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted">Data da Cessão</Text>
+                            </Tooltip>
                             <Text fontWeight="medium" textAlign="right">
                                 {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
                             </Text>
                         </Flex>
+                        {myAcquisitionDate && (
+                            <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                                <Tooltip
+                                    content="Data em que você adquiriu sua participação neste processo. Pode ser diferente da data de cessão geral do crédito."
+                                    showArrow
+                                >
+                                    <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted">Data da sua Aquisição</Text>
+                                </Tooltip>
+                                <Text fontWeight="medium" textAlign="right">{myAcquisitionDate}</Text>
+                            </Flex>
+                        )}
                         <Flex justify="space-between" pb={2}>
                             <Text color="gray.400" fontSize="sm">Índice de Correção</Text>
                             <Text fontWeight="medium" textAlign="right">

@@ -131,6 +131,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                     <ProfileField label="Profissão" value={user.profession} />
                                     <ProfileField label="Nacionalidade" value={user.nationality} />
                                     <ProfileField label="Estado Civil" value={user.maritalStatus} />
+                                    <ProfileField label="Indicação (Associado)" value={user.referredBy?.name || user.indication} />
                                 </SimpleGrid>
                             </Box>
 

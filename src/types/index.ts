@@ -61,6 +61,8 @@ interface UserProfile {
     maritalStatus?: string;
     personalDocumentUrls?: string[];
     referredById?: string | null;
+    referredBy?: { name: string } | null;
+    indication?: string | null;
     createdAt: string;
     updatedAt: string;
 }

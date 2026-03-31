@@ -12,7 +12,7 @@ import {
     createListCollection
 } from '@chakra-ui/react';
 import { PiArrowDownDuotone, PiCaretDoubleDownDuotone, PiFunction, PiSquaresFour } from 'react-icons/pi';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AssetSummary } from '@/types/api';
 
 // Props atualizadas com o onTypeChange
@@ -46,6 +46,7 @@ const typeOptions = createListCollection({
 
 export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, onSearch, onTypeChange }: AssetsToolbarProps) {
     const { contains } = useFilter({ sensitivity: "base" });
+    const [inputValue, setInputValue] = useState('');
 
     const searchItems = useMemo(() => assets.map(asset => ({
         label: `${asset.processNumber}`,
@@ -56,6 +57,11 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
         initialItems: searchItems,
         filter: contains,
     });
+
+    // Re-aplica o filtro quando os dados da API chegam (ex: após paste + busca assíncrona)
+    useEffect(() => {
+        if (inputValue) filter(inputValue);
+    }, [searchItems]); // eslint-disable-line react-hooks/exhaustive-deps
     
     return (
         <Flex
@@ -68,8 +74,9 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
             <Combobox.Root
                 collection={collection}
                 onInputValueChange={(e) => {
+                    setInputValue(e.inputValue);
                     filter(e.inputValue);
-                    onSearch(e.inputValue); // Atualiza a busca em tempo real
+                    onSearch(e.inputValue);
                 }}
                 onValueChange={(e) => {
                     if (e.value.length > 0) {
@@ -82,7 +89,21 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                 width={{ base: '100%', md: '320px' }}
             >
                 <Combobox.Control>
-                    <Combobox.Input placeholder="Buscar por nº do processo"  border={'1px solid'} borderColor="gray.600" bgColor={'gray.950'} cursor={'pointer'}/>
+                    <Combobox.Input
+                        placeholder="Buscar por nº do processo"
+                        border={'1px solid'}
+                        borderColor="gray.600"
+                        bgColor={'gray.950'}
+                        cursor={'pointer'}
+                        onPaste={(e) => {
+                            const text = e.clipboardData.getData('text/plain').trim();
+                            setTimeout(() => {
+                                setInputValue(text);
+                                filter(text);
+                                onSearch(text);
+                            }, 0);
+                        }}
+                    />
                     <Combobox.IndicatorGroup>
                         <Combobox.ClearTrigger />
                         <Combobox.Trigger />

@@ -34,12 +34,7 @@ interface TabProps {
 }
 
 export function UpdatesTab({ asset }: TabProps) {
-    // LÓGICA ATUALIZADA: Filtra apenas os andamentos que contêm a tag '#RelatórioMAA'
-    console.log('Andamentos totais do processo:', asset.updates);
-    const updatesToDisplay = (asset.updates || [])
-        .filter(upd => (upd.fullDescription || upd.description || '').includes('#RelatórioMAA'));
-
-    console.log('Andamentos filtrados com #RelatórioMAA:', updatesToDisplay);
+    const updatesToDisplay = asset.updates || [];
     return (
         <Card.Root variant="outline" bg="gray.900">
             <Card.Body>
@@ -130,7 +125,7 @@ export function UpdatesTab({ asset }: TabProps) {
                             );
                         })
                     ) : (
-                        <Text color="gray.500" p={4}>Nenhum histórico de atualizações (#RelatórioMAA) para este processo até o momento.</Text>
+                        <Text color="gray.500" p={4}>Nenhum histórico de atualizações para este processo até o momento.</Text>
                     )}
                 </VStack>
             </Card.Body>

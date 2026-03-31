@@ -3,12 +3,13 @@
 import {
     Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack
 } from "@chakra-ui/react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control } from "react-hook-form";
 import { useListCollection, useFilter } from "@chakra-ui/react"; 
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash } from "react-icons/pi"; 
+import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react"; 
 import { useApi } from '@/hooks/useApi';
@@ -17,9 +18,8 @@ import { useRouter } from "next/navigation"; // <-- IMPORTANTE: Adicionado route
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
 interface InvestorFormInput {
     userId: string;
-    share?: number; 
-    associateId?: string;       
-    acquisitionDate?: string;   
+    share?: number;
+    acquisitionDate?: string;
 }
 
 interface FormValues {
@@ -69,7 +69,7 @@ function InvestorCombobox(props: any) {
             <Field.Root invalid={!!error} required>
                 <Field.Label>Cliente {index + 1}</Field.Label>
                 <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0]); setInputValue((d.items[0] as UserSelectItem)?.label); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}>
-                    <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar Cliente..." /></Combobox.Input><Combobox.IndicatorGroup><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
+                    <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar Cliente..." onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} /></Combobox.Input><Combobox.IndicatorGroup><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
                     <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto">{collection.items.map((item: any) => (<Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
                 </Combobox.Root>
                 {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
@@ -87,9 +87,8 @@ export default function CreateAssetPage() {
     // --- Buscas de Dados ---
     const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me'); // <-- Busca quem está logado
     const { data: investors, isLoading: isLoadingInvestors, mutate: mutateInvestors } = useApi<UserSelectItem[]>('/api/users');
-    const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
-    
-    const isLoadingData = isLoadingInvestors || isLoadingAssociates || isLoadingProfile;
+
+    const isLoadingData = isLoadingInvestors || isLoadingProfile;
 
     // ============================================================================
     //  TRAVA DE SEGURANÇA (BLOQUEIO DE ROTA PARA INVESTIDORES)
@@ -106,12 +105,26 @@ export default function CreateAssetPage() {
     // ============================================================================
 
     const { register, handleSubmit, control, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormValues>({
-        defaultValues: { processNumber: "", nickname: "", investors: [{ userId: "", share: 0, associateId: "", acquisitionDate: "" }], contractualIndexRate: 0 }
+        defaultValues: {
+            processNumber: "",
+            originalCreditor: "",
+            otherParty: "",
+            nickname: "",
+            origemProcesso: "",
+            acquisitionValue: 0,
+            originalValue: 0,
+            acquisitionDate: "",
+            updateIndexType: "",
+            contractualIndexRate: 0,
+            legalOneId: 0,
+            legalOneType: "Lawsuit",
+            folderId: "",
+            investors: [{ userId: "", share: 0, acquisitionDate: "" }]
+        }
     });
 
     const { fields, append, remove, replace } = useFieldArray({ control, name: "investors" });
     const processNumberValue = useWatch({ control, name: 'processNumber' });
-    const associatesCollection = createListCollection({ items: associates || [] });
 
     const handleFetchProcessData = async () => {
         setIsFetchingData(true);
@@ -166,10 +179,10 @@ export default function CreateAssetPage() {
             const payload = {
                 ...data,
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
-                investors: data.investors.map(inv => ({ 
-                    userId: inv.userId, 
+                investors: data.investors.map(inv => ({
+                    userId: inv.userId,
                     share: 0,
-                    associateId: inv.associateId || null,
+                    associateId: null,
                     acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate + 'T00:00:00Z') : null
                 }))
             };
@@ -226,7 +239,12 @@ export default function CreateAssetPage() {
                          <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>2. Negociação</Heading>
                          
                          <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md" bg="gray.800">
-                            <Heading size="sm" color="brand.400">Participação (Clientes / Investidores)</Heading>
+                            <HStack align="center">
+                                <Heading size="sm" color="brand.400">Participação (Clientes / Associados)</Heading>
+                                <Tooltip content="Associados que desejam acompanhar este processo devem ser cadastrados aqui como Clientes." showArrow>
+                                    <Icon as={PiInfo} color="gray.400" cursor="help" />
+                                </Tooltip>
+                            </HStack>
                             {fields.map((field, index) => (
                                 <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
                                     <Stack direction={{ base: 'column', lg: 'row' }} gap={4} alignItems="flex-end">
@@ -235,18 +253,6 @@ export default function CreateAssetPage() {
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
                                         </Box>
                                         
-                                        <Box flex={2} w="100%">
-                                            <Controller name={`investors.${index}.associateId`} control={control} render={({ field }) => (
-                                                <Field.Root>
-                                                    <Field.Label>Associado (Corretor)</Field.Label>
-                                                    <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
-                                                        <Select.Control><Select.Trigger bgColor={'gray.700'} borderColor="gray.600"><Select.ValueText placeholder="Nenhum" /></Select.Trigger></Select.Control>
-                                                        <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-                                                    </Select.Root>
-                                                </Field.Root>
-                                            )} />
-                                        </Box>
-
                                         <Box flex={1} w="100%">
                                             <Field.Root>
                                                 <Field.Label>Data da Aquisição</Field.Label>

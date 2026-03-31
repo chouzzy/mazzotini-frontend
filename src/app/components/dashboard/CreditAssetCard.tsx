@@ -130,7 +130,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                     {/* Credor */}
                     <HStack color="gray.400">
                         <Icon as={PiBank} />
-                        <Text color='textPrimary' fontSize="sm">Parte(s) Contrária(s): {asset.originalCreditor}</Text>
+                        <Text color='textPrimary' fontSize="sm">Parte(s) Contrária(s): {asset.nickname || asset.originalCreditor}</Text>
                     </HStack>
 
                     {/* Grid de Stats */}

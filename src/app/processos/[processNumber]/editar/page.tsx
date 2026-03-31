@@ -1,14 +1,15 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, Stack, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, IconButton, Combobox,
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, Stack, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox,
 } from "@chakra-ui/react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch } from "react-hook-form";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiFloppyDisk, PiPlusCircle, PiTrash } from "react-icons/pi";
+import { PiCaretDownDuotone, PiFloppyDisk, PiPlusCircle, PiTrash, PiInfo } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -18,7 +19,6 @@ import { useApi } from '@/hooks/useApi';
 interface InvestorFormInput {
     userId: string;
     share?: number;
-    associateId?: string;
     acquisitionDate?: string;
 }
 
@@ -68,13 +68,13 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
         <Controller name={`investors.${index}.userId`} control={control} rules={{ required: "Selecione um investidor" }} render={({ field: controllerField, fieldState: { error } }) => (
             <Field.Root invalid={!!error} required >
                 <Field.Label>Cliente {index + 1}</Field.Label>
-                <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => filter(e.inputValue)} >
+                <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => { setInputValue(e.inputValue); filter(e.inputValue); }} >
                     <Combobox.Control>
                         {(() => {
                             const selectedLabel = controllerField.value ? allInvestors.find(item => item.value === controllerField.value)?.label ?? '' : '';
                             return (
                                 <Combobox.Input asChild autoComplete="off">
-                                    <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={selectedLabel} />
+                                    <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={selectedLabel} onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} />
                                 </Combobox.Input>
                             );
                         })()}
@@ -111,12 +111,11 @@ export default function EditAssetPage() {
 
     const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me');
     const { data: investors, isLoading: isLoadingInvestors } = useApi<UserSelectItem[]>('/api/users');
-    const { data: associates, isLoading: isLoadingAssociates } = useApi<UserSelectItem[]>('/api/users/associates');
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
         processNumber ? `/api/assets/${processNumber}` : null
     );
 
-    const isLoadingData = isLoadingInvestors || isLoadingAssociates || isLoadingAsset || isLoadingProfile;
+    const isLoadingData = isLoadingInvestors || isLoadingAsset || isLoadingProfile;
 
     // ============================================================================
     // TRAVA DE SEGURANÇA (BLOQUEIO DE ROTA)
@@ -135,14 +134,12 @@ export default function EditAssetPage() {
 
     const { fields, append, remove } = useFieldArray({ control, name: "investors" });
 
-    const associatesCollection = createListCollection({ items: associates || [] });
 
     useEffect(() => {
         if (assetData) {
             const investorsFromApi: InvestorFormInput[] = assetData.investors.map((inv: any) => ({
                 userId: inv.user.id,
                 share: inv.investorShare,
-                associateId: inv.associateId || "",
                 acquisitionDate: inv.acquisitionDate ? String(inv.acquisitionDate).substring(0, 10) : ""
             }));
 
@@ -155,7 +152,7 @@ export default function EditAssetPage() {
                 originalValue: assetData.originalValue,
                 acquisitionDate: assetData.acquisitionDate ? String(assetData.acquisitionDate).substring(0, 10) : "",
 
-                investors: investorsFromApi.length > 0 ? investorsFromApi : [{ userId: "", share: 0, associateId: "", acquisitionDate: "" }],
+                investors: investorsFromApi.length > 0 ? investorsFromApi : [{ userId: "", share: 0, acquisitionDate: "" }],
 
                 updateIndexType: assetData.updateIndexType || "Outro",
                 contractualIndexRate: assetData.contractualIndexRate || 0,
@@ -191,7 +188,7 @@ export default function EditAssetPage() {
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
                     share: 0,
-                    associateId: inv.associateId || null,
+                    associateId: null,
                     acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate + 'T00:00:00Z') : null
                 })),
             };
@@ -252,7 +249,12 @@ export default function EditAssetPage() {
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>2. Dados da Negociação e Envolvidos</Heading>
 
                         <VStack gap={4} align="stretch" p={4} borderColor="gray.700" borderWidth={1} borderRadius="md" bg="gray.800">
-                            <Heading size="sm" color="brand.400">Participação (Clientes / Investidores)</Heading>
+                            <HStack align="center">
+                                <Heading size="sm" color="brand.400">Participação (Clientes / Associados)</Heading>
+                                <Tooltip content="Associados que desejam acompanhar este processo devem ser cadastrados aqui como Clientes." showArrow>
+                                    <Icon as={PiInfo} color="gray.400" cursor="help" />
+                                </Tooltip>
+                            </HStack>
 
                             {fields.map((field, index) => (
                                 <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
@@ -263,20 +265,7 @@ export default function EditAssetPage() {
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
                                         </Box>
 
-                                        {/* B. ASSOCIADO (INDIVIDUAL) */}
-                                        <Box flex={2} w="100%">
-                                            <Controller name={`investors.${index}.associateId`} control={control} render={({ field }) => (
-                                                <Field.Root>
-                                                    <Field.Label>Associado (Corretor)</Field.Label>
-                                                    <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
-                                                        <Select.Control><Select.Trigger bgColor={'gray.700'} borderColor="gray.600"><Select.ValueText placeholder="Nenhum" /></Select.Trigger></Select.Control>
-                                                        <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-                                                    </Select.Root>
-                                                </Field.Root>
-                                            )} />
-                                        </Box>
-
-                                        {/* C. DATA DE AQUISIÇÃO (INDIVIDUAL) */}
+                                        {/* B. DATA DE AQUISIÇÃO (INDIVIDUAL) */}
                                         <Box flex={1} w="100%">
                                             <Field.Root>
                                                 <Field.Label>Data da Aquisição</Field.Label>

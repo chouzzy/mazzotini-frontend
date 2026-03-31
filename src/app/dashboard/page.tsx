@@ -3,10 +3,12 @@
 'use client';
 
 import {
-    Box, Heading, VStack, Text, Flex, Icon, Spinner, HStack, Button, Field, Select, Portal, createListCollection
+    Box, Heading, VStack, Text, Flex, Icon, Spinner, HStack, Button, Table, Tag, Accordion, Badge, Link,
+    createListCollection
 } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useState, useEffect } from 'react';
+import NextLink from 'next/link';
 
 import { CreditAssetCard } from '../components/dashboard/CreditAssetCard';
 import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
@@ -15,9 +17,187 @@ import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
 import {
-    PiScalesDuotone, PiWarningCircle, PiCaretLeftBold, PiCaretRightBold
+    PiScalesDuotone, PiWarningCircle, PiCaretLeftBold, PiCaretRightBold,
+    PiFolderOpen, PiArrowRight, PiFilesDuotone, PiGavelDuotone, PiCaretDownBold,
 } from 'react-icons/pi';
 import { AssetSummary } from '@/types/api';
+
+// ── interfaces de pastas ──────────────────────────────────────────────────────
+interface FolderAsset {
+    id: string;
+    processNumber: string;
+    nickname?: string;
+    originalCreditor: string;
+    currentValue: number;
+    status: string;
+    legalOneType?: string;
+}
+interface ProcessFolder {
+    id: string;
+    folderCode: string;
+    description: string;
+    totalAcquisition: number;
+    totalCurrent: number;
+    assets: FolderAsset[];
+}
+interface PaginatedFoldersResponse {
+    items: ProcessFolder[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+const formatBRL = (v: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const statusColor = (s: string) => {
+    switch (s) {
+        case 'Ativo': return 'green';
+        case 'Liquidado': return 'gray';
+        case 'Em Negociação': return 'yellow';
+        case 'PENDING_ENRICHMENT': return 'purple';
+        case 'FAILED_ENRICHMENT': return 'red';
+        default: return 'blue';
+    }
+};
+
+// ── sub-componente: linha da tabela dentro do accordion ───────────────────────
+const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => (
+    <Table.Row _hover={{ bg: 'whiteAlpha.50' }} borderBottom="1px solid" borderColor="gray.800">
+        <Table.Cell pl={6}>
+            <VStack align="start" gap={1}>
+                <Text fontWeight="medium" color="white" fontSize="sm">{asset.processNumber}</Text>
+                {asset.nickname && <Text fontSize="xs" color="brand.300">{asset.nickname}</Text>}
+            </VStack>
+        </Table.Cell>
+        <Table.Cell fontSize="sm">{asset.originalCreditor}</Table.Cell>
+        <Table.Cell fontSize="sm">{formatBRL(asset.currentValue)}</Table.Cell>
+        <Table.Cell>
+            <Tag.Root size="sm" variant="solid" colorPalette={statusColor(asset.status)}>
+                <Tag.Label>{asset.status}</Tag.Label>
+            </Tag.Root>
+        </Table.Cell>
+        <Table.Cell textAlign="right" pr={6}>
+            <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`}>
+                <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
+            </Link>
+        </Table.Cell>
+    </Table.Row>
+);
+
+// ── sub-componente: seção de pastas na home ───────────────────────────────────
+function FoldersSection() {
+    const { data, isLoading } = useApi<PaginatedFoldersResponse>('/api/assets/folders?page=1&limit=999');
+    const folders = data?.items || [];
+
+    if (isLoading) return (
+        <Flex justify="center" py={8}><Spinner size="lg" color="brand.500" /></Flex>
+    );
+
+    if (folders.length === 0) return null;
+
+    return (
+        <Box>
+            <Flex align="center" gap={2} mb={4}>
+                <Icon as={PiFolderOpen} color="brand.400" boxSize={6} />
+                <Heading size="md">Suas Pastas</Heading>
+            </Flex>
+
+            <Accordion.Root multiple collapsible variant="enclosed" spaceY={3}>
+                {folders.map((folder) => {
+                    const lawsuits = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'lawsuit');
+                    const appeals = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'appeal');
+                    const incidents = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'proceduralissue');
+                    const mainList = [
+                        ...lawsuits,
+                        ...folder.assets.filter(a => !['lawsuit', 'appeal', 'proceduralissue'].includes(a.legalOneType?.toLowerCase() || ''))
+                    ];
+
+                    return (
+                        <Accordion.Item key={folder.id} value={folder.id} bg="gray.900" border="1px solid" borderColor="gray.700" borderRadius="md" overflow="hidden">
+                            <Accordion.ItemTrigger _hover={{ bg: 'gray.800' }} py={4} px={6}>
+                                <Flex justify="space-between" w="100%" align="center" gap={4}>
+                                    <VStack align="start" gap={0}>
+                                        <Text fontWeight="bold" fontSize="md" color="white">{folder.folderCode}</Text>
+                                        <Text fontSize="sm" color="gray.400">
+                                            {folder.description !== `Pasta ${folder.folderCode}` ? folder.description : 'Caso Judicial'}
+                                        </Text>
+                                    </VStack>
+                                    <HStack gap={6} align="center">
+                                        <Flex gap={6} align="center" display={{ base: 'none', md: 'flex' }}>
+                                            <VStack align="end" gap={0}>
+                                                <Text fontSize="xs" color="gray.500">Processos</Text>
+                                                <Badge colorPalette="yellow" variant="solid">{folder.assets.length}</Badge>
+                                            </VStack>
+                                            <VStack align="end" gap={0}>
+                                                <Text fontSize="xs" color="gray.500">Total Atual</Text>
+                                                <Text fontWeight="bold" color="brand.400">{formatBRL(folder.totalCurrent)}</Text>
+                                            </VStack>
+                                        </Flex>
+                                        <Accordion.ItemIndicator>
+                                            <Icon as={PiCaretDownBold} color="gray.500" />
+                                        </Accordion.ItemIndicator>
+                                    </HStack>
+                                </Flex>
+                            </Accordion.ItemTrigger>
+
+                            <Accordion.ItemContent bg="blackAlpha.500" p={0}>
+                                <VStack align="stretch" gap={0}>
+                                    {mainList.length > 0 && (
+                                        <Box>
+                                            <HStack bg="blackAlpha.600" px={6} py={2} borderBottom="1px solid" borderColor="gray.800">
+                                                <Icon as={PiScalesDuotone} color="brand.400" />
+                                                <Text fontSize="xs" fontWeight="bold" color="brand.400" textTransform="uppercase">
+                                                    Processos Principais ({mainList.length})
+                                                </Text>
+                                            </HStack>
+                                            <Table.Root size="sm" variant="line">
+                                                <Table.Body>{mainList.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body>
+                                            </Table.Root>
+                                        </Box>
+                                    )}
+                                    <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
+                                        {appeals.length > 0 && (
+                                            <Accordion.Item value="appeals" borderTop="1px solid" borderColor="gray.700">
+                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
+                                                    <Flex justify="space-between" w="100%" align="center">
+                                                        <HStack gap={2}>
+                                                            <Icon as={PiFilesDuotone} color="orange.400" />
+                                                            <Text fontSize="xs" fontWeight="bold" color="orange.400" textTransform="uppercase">Recursos ({appeals.length})</Text>
+                                                        </HStack>
+                                                        <Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="orange.600" boxSize={3} /></Accordion.ItemIndicator>
+                                                    </Flex>
+                                                </Accordion.ItemTrigger>
+                                                <Accordion.ItemContent bg="blackAlpha.400">
+                                                    <Table.Root size="sm" variant="line"><Table.Body>{appeals.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                </Accordion.ItemContent>
+                                            </Accordion.Item>
+                                        )}
+                                        {incidents.length > 0 && (
+                                            <Accordion.Item value="incidents" borderTop="1px solid" borderColor="gray.700">
+                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
+                                                    <Flex justify="space-between" w="100%" align="center">
+                                                        <HStack gap={2}>
+                                                            <Icon as={PiGavelDuotone} color="purple.400" />
+                                                            <Text fontSize="xs" fontWeight="bold" color="purple.400" textTransform="uppercase">Incidentes ({incidents.length})</Text>
+                                                        </HStack>
+                                                        <Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="purple.600" boxSize={3} /></Accordion.ItemIndicator>
+                                                    </Flex>
+                                                </Accordion.ItemTrigger>
+                                                <Accordion.ItemContent bg="blackAlpha.400">
+                                                    <Table.Root size="sm" variant="line"><Table.Body>{incidents.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                </Accordion.ItemContent>
+                                            </Accordion.Item>
+                                        )}
+                                    </Accordion.Root>
+                                </VStack>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    );
+                })}
+            </Accordion.Root>
+        </Box>
+    );
+}
 
 interface PaginatedResponse {
     items: AssetSummary[];

@@ -1,26 +1,21 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, createListCollection, Select, Portal, Checkbox, Stack, RadioGroup, Avatar, CheckboxGroup, Box,
-    HStack,
-    IconButton,
-    Separator,
-    Combobox,
-    FileUpload
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, createListCollection, Select, Portal, Checkbox, Stack, RadioGroup, Box,
+    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset,
 } from "@chakra-ui/react";
-import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch, useFieldArray } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useController } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiChartLineUp, PiPlusCircle, PiCaretDownDuotone } from "react-icons/pi";
+import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiWarningCircle } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { maskCPFOrCNPJ, maskPhone, unmask, maskCEP } from "@/utils/masks";
-import { useSWRConfig } from "swr";
+import { maskCPFOrCNPJ, maskPhone, unmask } from "@/utils/masks";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
-import { useListCollection, useFilter } from "@chakra-ui/react";
-import { PaginatedAssetsResponse } from "@/types/api";
+import { AddressBlock } from "@/app/components/management/AddressBlock";
+import { InvestmentsSummary } from "@/app/components/management/InvestmentsSummary";
 
 // ============================================================================
 //  INTERFACES
@@ -63,19 +58,6 @@ interface UserFormData {
     personalDocuments?: FileList;
 }
 
-interface InvestmentForm {
-    investments: {
-        assetId: string;
-        share: number;
-        documents: string[];
-    }[];
-}
-
-interface AssetOption {
-    label: string;
-    value: string;
-}
-
 interface Associate { value: string; label: string; }
 
 // ============================================================================
@@ -101,285 +83,6 @@ const nacionalidadesCollection = createListCollection({
 });
 
 // ============================================================================
-//  SUB-COMPONENTE: ENDEREÇO
-// ============================================================================
-interface AddressBlockProps {
-    type: 'residential' | 'commercial';
-    control: Control<UserFormData>;
-    register: UseFormRegister<UserFormData>;
-    errors: FieldErrors<UserFormData>;
-    watch: (name: any) => any;
-    setValue: UseFormSetValue<UserFormData>;
-    isDisabled?: boolean;
-}
-
-function AddressBlock({ type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
-    const [isCepLoading, setIsCepLoading] = useState(false);
-    const cepValue = watch(`${type}Cep` as const);
-
-    useEffect(() => {
-        const fetchAddress = async (cep: string) => {
-            setIsCepLoading(true);
-            try {
-                const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-                const { logradouro, bairro, localidade, uf, erro } = response.data;
-                if (erro) {
-                    toaster.create({ title: "CEP não encontrado.", type: "error" });
-                    return;
-                };
-                setValue(`${type}Street`, logradouro);
-                setValue(`${type}Neighborhood`, bairro);
-                setValue(`${type}City`, localidade);
-                setValue(`${type}State`, uf);
-            } catch (error) { console.error("Erro ao buscar CEP:", error); } finally { setIsCepLoading(false); }
-        };
-        const unmaskedCep = unmask(cepValue || '');
-        if (unmaskedCep.length === 8) fetchAddress(unmaskedCep);
-    }, [cepValue, setValue, type]);
-
-    const isRequired = type === 'residential' || !isDisabled;
-
-    return (
-        <VStack gap={4} align="stretch" opacity={isDisabled ? 0.5 : 1}>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                <Field.Root invalid={!!errors[`${type}Cep`]} required={isRequired}>
-                    <Field.Label gap={2}>CEP {isCepLoading && <Spinner size="sm" />}</Field.Label>
-                    <Controller name={`${type}Cep`} control={control} rules={{ required: isRequired ? "O CEP é obrigatório" : false }} render={({ field }) => (
-                        <Input disabled={isDisabled} bgColor={'gray.700'} value={field.value ? maskCEP(field.value) : ''} onChange={field.onChange} maxLength={10} />
-                    )} />
-                </Field.Root>
-                <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
-                    <Field.Label>Estado</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}State`, { required: isRequired })} readOnly />
-                </Field.Root>
-                <Field.Root invalid={!!errors[`${type}City`]} required={isRequired}>
-                    <Field.Label>Cidade</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}City`, { required: isRequired })} readOnly />
-                </Field.Root>
-            </SimpleGrid>
-            <Field.Root invalid={!!errors[`${type}Street`]} required={isRequired}>
-                <Field.Label>Rua / Logradouro</Field.Label>
-                <Input disabled bgColor={'gray.700'} {...register(`${type}Street`, { required: isRequired })} readOnly />
-            </Field.Root>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-                <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
-                    <Field.Label>Número</Field.Label>
-                    <Input disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Number`, { required: isRequired ? "O número é obrigatório" : false })} />
-                </Field.Root>
-                <Field.Root>
-                    <Field.Label>Complemento</Field.Label>
-                    <Input disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Complement`)} />
-                </Field.Root>
-                <Field.Root invalid={!!errors[`${type}Neighborhood`]} required={isRequired}>
-                    <Field.Label>Bairro</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}Neighborhood`, { required: isRequired })} readOnly />
-                </Field.Root>
-            </SimpleGrid>
-        </VStack>
-    );
-}
-
-// ============================================================================
-//  NOVO SUB-COMPONENTE: CARTEIRA DE INVESTIMENTOS
-// ============================================================================
-function UserInvestmentsSection({ userId, initialInvestments }: { userId: string, initialInvestments: any[] }) {
-    const { getAccessTokenSilently } = useAuth0();
-    const [isSaving, setIsSaving] = useState(false);
-
-    // Busca todos os processos disponíveis para o select
-    const { data: allAssetsResponse } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
-
-    const assetOptions = useMemo(() => {
-        const items = allAssetsResponse?.items || [];
-
-        if (items.length === 0) return [];
-
-        // 2. O TypeScript já sabe que 'asset' é do tipo AssetSummary global!
-        return items.map((asset) => ({
-            label: `${asset.processNumber} ${asset.nickname ? `(${asset.nickname})` : ''}`,
-            value: asset.id
-        }));
-    }, [allAssetsResponse]);
-
-    const { control, register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<InvestmentForm>({
-        defaultValues: {
-            investments: initialInvestments.map(inv => ({
-                assetId: inv.asset.id,
-                share: inv.investorShare,
-                documents: inv.documents || []
-            }))
-        }
-    });
-
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: "investments"
-    });
-
-    const handleUploadDoc = async (index: number, files: File[]) => {
-        const file = files[0];
-        if (!file) return;
-
-        toaster.create({ title: "Enviando documento...", type: "info" });
-        try {
-            const token = await getAccessTokenSilently();
-            const formData = new FormData();
-            formData.append('document', file);
-
-            // Adiciona o assetId para renomear o arquivo com o número do processo
-            const assetId = getValues(`investments.${index}.assetId`);
-            if (assetId) {
-                formData.append('assetId', assetId);
-            }
-
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userId}/investments/documents`, formData, {
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-            });
-
-            const url = response.data.url;
-            const currentDocs = getValues(`investments.${index}.documents`) || [];
-            setValue(`investments.${index}.documents`, [...currentDocs, url]);
-
-            toaster.create({ title: "Documento anexado!", type: "success" });
-        } catch (error) {
-            console.error(error);
-            toaster.create({ title: "Erro no upload", type: "error" });
-        }
-    };
-
-    const handleRemoveDoc = (invIndex: number, docUrl: string) => {
-        const currentDocs = getValues(`investments.${invIndex}.documents`) || [];
-        const newDocs = currentDocs.filter(d => d !== docUrl);
-        setValue(`investments.${invIndex}.documents`, newDocs);
-    };
-
-    const onSubmit: SubmitHandler<InvestmentForm> = async (data) => {
-        setIsSaving(true);
-        try {
-            const token = await getAccessTokenSilently();
-            await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userId}/investments`, data, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toaster.create({ title: "Carteira atualizada!", type: "success" });
-        } catch (error) {
-            toaster.create({ title: "Erro ao salvar carteira.", type: "error" });
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Sub-componente interno para o Combobox de cada linha
-    const AssetCombobox = ({ index, control }: { index: number, control: any }) => {
-        const currentAssetId = useWatch({ control, name: `investments.${index}.assetId` });
-        const defaultLabel = useMemo(() => assetOptions.find((a: { value: any; }) => a.value === currentAssetId)?.label || "", [currentAssetId]);
-        const [inputValue, setInputValue] = useState(defaultLabel);
-
-        useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
-
-        const { contains } = useFilter({ sensitivity: "base" });
-        const { collection, filter } = useListCollection({ initialItems: assetOptions, filter: contains });
-
-        return (
-            <Controller name={`investments.${index}.assetId`} control={control} rules={{ required: "Selecione um processo" }} render={({ field }) => (
-                <Field.Root invalid={!!errors.investments?.[index]?.assetId} required w="100%">
-                    <Combobox.Root collection={collection} value={field.value ? [field.value] : []} onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}>
-                        <Combobox.Control>
-                            <Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Buscar processo..." /></Combobox.Input>
-                            <Combobox.IndicatorGroup><Combobox.Trigger /></Combobox.IndicatorGroup>
-                        </Combobox.Control>
-                        <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto">{collection.items.map(item => <Combobox.Item key={item.value} item={item}>{item.label}</Combobox.Item>)}</Combobox.Content></Combobox.Positioner></Portal>
-                    </Combobox.Root>
-                </Field.Root>
-            )} />
-        );
-    };
-
-    // Sub-componente para a Lista de Documentos dentro do Investimento
-    const DocumentsList = ({ index }: { index: number }) => {
-        const docs = useWatch({ control, name: `investments.${index}.documents` }) || [];
-
-        return (
-            <VStack align="start" w="100%" mt={2} pl={2} borderLeft="2px solid" borderColor="gray.600">
-                <Text fontSize="xs" fontWeight="bold" color="gray.400">Documentos do Investimento:</Text>
-
-                {docs.map((url, docIndex) => {
-                    const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Doc ${docIndex + 1}`);
-                    return (
-                        <HStack key={url} justify="space-between" w="100%" bg="gray.700" p={1} borderRadius="sm">
-                            <HStack>
-                                <Icon as={PiFilePdf} color="red.300" />
-                                <Text fontSize="xs" truncate maxW="150px">{fileName}</Text>
-                            </HStack>
-                            <HStack gap={1}>
-                                <IconButton size="xs" variant="ghost" aria-label="Ver" onClick={() => window.open(url, '_blank')} type="button"><Icon as={PiEye} /></IconButton>
-                                <IconButton size="xs" variant="ghost" colorPalette="red" aria-label="Remover" onClick={() => handleRemoveDoc(index, url)} type="button"><Icon as={PiTrash} /></IconButton>
-                            </HStack>
-                        </HStack>
-                    )
-                })}
-
-                <FileUpload.Root accept={[".pdf", ".jpg", ".png"]} maxFiles={1} onFileAccept={(e) => handleUploadDoc(index, e.files)}>
-                    <FileUpload.HiddenInput />
-                    <FileUpload.Trigger asChild>
-                        <Button size="xs" variant="subtle" colorPalette="gray" type="button">
-                            <Icon as={PiUploadSimple} /> Anexar Documento
-                        </Button>
-                    </FileUpload.Trigger>
-                </FileUpload.Root>
-            </VStack>
-        )
-    }
-
-    return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <VStack gap={4} align="stretch" p={6} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
-                <Flex justify="space-between" align="center">
-                    <Heading size="md" display="flex" gap={2} alignItems="center">
-                        <Icon as={PiChartLineUp} color="brand.400" /> Carteira de Investimentos
-                    </Heading>
-                    <Button size="xs" variant="outline" colorPalette="blue" onClick={() => append({ assetId: "", share: 0, documents: [] })} type="button">
-                        <Icon as={PiPlusCircle} /> Adicionar
-                    </Button>
-                </Flex>
-
-                {fields.length === 0 ? (
-                    <Text color="gray.500" fontSize="sm">Este usuário não possui investimentos vinculados.</Text>
-                ) : (
-                    fields.map((field, index) => (
-                        <Box key={field.id} p={4} bg="whiteAlpha.50" borderRadius="md" mb={2}>
-                            <Stack direction={{ base: 'column', md: 'row' }} gap={4} align="flex-end">
-                                <Box flex={1}>
-                                    <Text fontSize="xs" mb={1} color="gray.400">Processo</Text>
-                                    <AssetCombobox index={index} control={control} />
-                                </Box>
-                                {/* <Box w={{ base: '100%', md: '120px' }}>
-                                    <Field.Root>
-                                        <Field.Label fontSize="xs">Share (%)</Field.Label>
-                                        <Input type="number" step="0.1" bgColor={'gray.700'} borderColor={'gray.600'} {...register(`investments.${index}.share`, { valueAsNumber: true })} />
-                                    </Field.Root>
-                                </Box> */}
-                                <IconButton aria-label="Remover" colorPalette="red" variant="ghost" onClick={() => remove(index)} type="button">
-                                    <Icon as={PiTrash} />
-                                </IconButton>
-                            </Stack>
-
-                            {/* Lista de Documentos do Investimento */}
-                            <DocumentsList index={index} />
-                        </Box>
-                    ))
-                )}
-
-                <Flex justify="flex-end" pt={4}>
-                    <Button type="submit" loading={isSaving} colorPalette="green" size="sm">
-                        <Icon as={PiFloppyDisk} /> Salvar Carteira
-                    </Button>
-                </Flex>
-            </VStack>
-        </form>
-    );
-}
-
-// ============================================================================
 //  PÁGINA PRINCIPAL
 // ============================================================================
 export default function EditUserPage() {
@@ -389,9 +92,11 @@ export default function EditUserPage() {
     const params = useParams();
     const userId = params.id as string;
 
-    // 1. Busca dados do usuário (Agora inclui 'investments' com documentos)
+    // 1. Busca dados do usuário e solicitações pendentes
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
+    const { data: pendingChanges, mutate: mutatePendingChanges } = useApi<any[]>('/api/management/profile-changes');
+    const pendingChange = pendingChanges?.find((r: any) => r.userId === userId) || null;
 
     // =================================================================
     //  A CORREÇÃO: Adicionado 'getValues' na destruturação
@@ -467,28 +172,6 @@ export default function EditUserPage() {
             const token = await getAccessTokenSilently();
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-            // 1. Processar novos uploads de Documentos Pessoais
-            const finalDocumentUrls = [...data.personalDocumentUrls];
-            if (data.personalDocuments && data.personalDocuments.length > 0) {
-                const files = Array.from(data.personalDocuments);
-                for (const file of files) {
-                    const formData = new FormData();
-                    formData.append('document', file);
-
-                    const uploadRes = await axios.post(`${apiBaseUrl}/api/management/users/${userId}/documents`, formData, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    });
-
-                    if (uploadRes.data.url) {
-                        finalDocumentUrls.push(uploadRes.data.url);
-                    }
-                }
-            }
-
-            // 2. Enviar dados atualizados
             const payload = {
                 name: data.name,
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
@@ -500,10 +183,8 @@ export default function EditUserPage() {
                 profession: data.profession,
                 contactPreference: data.contactPreference?.join(','),
                 infoEmail: data.infoEmail,
-
                 referredById: data.unknownAssociate ? null : data.referredById,
                 indication: data.unknownAssociate ? data.manualReferral : null,
-
                 residentialCep: unmask(data.residentialCep),
                 residentialStreet: data.residentialStreet,
                 residentialNumber: data.residentialNumber,
@@ -523,19 +204,22 @@ export default function EditUserPage() {
                 }),
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
-
-                personalDocumentUrls: finalDocumentUrls
             };
 
-            await axios.patch(`${apiBaseUrl}/api/management/users/${userId}`, payload, {
+            // Envia como solicitação de alteração — pendente até aprovação do ADM
+            await axios.post(`${apiBaseUrl}/api/management/users/${userId}/request-change`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toaster.create({ title: "Usuário Atualizado!", description: "Os dados foram sincronizados com o Legal One.", type: "success" });
-            router.push('/gestao/usuarios');
+            mutatePendingChanges();
+            toaster.create({
+                title: "Solicitação enviada!",
+                description: "As alterações ficam pendentes até aprovação de outro administrador.",
+                type: "success"
+            });
 
         } catch (error: any) {
-            console.error("Erro ao atualizar:", error);
+            console.error("Erro ao solicitar alteração:", error);
             toaster.create({ title: "Erro ao Salvar", description: error.response?.data?.error || "Erro desconhecido", type: "error" });
         } finally {
             setIsSubmitting(false);
@@ -547,7 +231,7 @@ export default function EditUserPage() {
     }
 
     return (
-        <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
+        <Flex w="100%" p={8} bgColor={'bodyBg'} borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             {/* Botão de Voltar */}
             <Flex w="100%" mb={6}>
                 <Link href="/gestao/usuarios" passHref>
@@ -560,13 +244,28 @@ export default function EditUserPage() {
             <VStack gap={8} align="stretch" w="100%">
                 <VStack align="start">
                     <Heading as="h1" size="xl">Editar Usuário</Heading>
-                    <Text color="gray.400">Gerencie os dados cadastrais e a carteira de investimentos.</Text>
+                    <Text color="gray.400">Gerencie os dados cadastrais do investidor.</Text>
                 </VStack>
 
-                {/* 1. SEÇÃO DE CARTEIRA (COM UPLOAD DE DOCUMENTOS) */}
-                {userData && <UserInvestmentsSection userId={userId} initialInvestments={userData.investments || []} />}
+                {/* 1. RESUMO DA CARTEIRA (read-only) */}
+                {userData && <InvestmentsSummary userId={userId} investments={userData.investments || []} />}
 
                 <Separator borderColor="gray.700" />
+
+                {/* BANNER: alteração pendente de aprovação */}
+                {pendingChange && (
+                    <Alert.Root status="warning" borderRadius="md">
+                        <Alert.Indicator><Icon as={PiWarningCircle} /></Alert.Indicator>
+                        <Alert.Content>
+                            <Alert.Title>Alteração aguardando aprovação</Alert.Title>
+                            <Alert.Description>
+                                Existe uma solicitação de edição pendente para este perfil, enviada em{' '}
+                                {new Date(pendingChange.createdAt).toLocaleString('pt-BR')}.
+                                As alterações abaixo substituirão a solicitação anterior se submetidas novamente.
+                            </Alert.Description>
+                        </Alert.Content>
+                    </Alert.Root>
+                )}
 
                 {/* 2. FORMULÁRIO DE DADOS PESSOAIS */}
                 <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
@@ -607,23 +306,36 @@ export default function EditUserPage() {
                                 )} />
                             </Field.Root>
                             <Field.Root disabled={isCnpj}>
+                                <Field.Label>Estado Civil</Field.Label>
+                                <Controller name="maritalStatus" control={control} render={({ field }) => (
+                                    <Select.Root collection={estadoCivilCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])} disabled={isCnpj}>
+                                        <Select.Control><Select.Trigger bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
+                                        <Portal><Select.Positioner><Select.Content>{estadoCivilCollection.items.map((i) => (<Select.Item item={i} key={i.value}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
+                                    </Select.Root>
+                                )} />
+                            </Field.Root>
+                            <Field.Root disabled={isCnpj}>
                                 <Field.Label>Gênero</Field.Label>
                                 <Controller name="gender" control={control} render={({ field }) => (
                                     <RadioGroup.Root value={field.value} onValueChange={(d) => field.onChange(d.value)} disabled={isCnpj}>
                                         <Stack direction="row" gap={4} mt={2}>
-                                            <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator /><RadioGroup.ItemText>Masc.</RadioGroup.ItemText></RadioGroup.Item>
-                                            <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator /><RadioGroup.ItemText>Fem.</RadioGroup.ItemText></RadioGroup.Item>
+                                            <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator bgColor={field.value === 'Male' ? 'brand.700' : 'gray.200'} /><RadioGroup.ItemText>Masc.</RadioGroup.ItemText></RadioGroup.Item>
+                                            <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator bgColor={field.value === 'Female' ? 'brand.700' : 'gray.200'} /><RadioGroup.ItemText>Fem.</RadioGroup.ItemText></RadioGroup.Item>
                                         </Stack>
                                     </RadioGroup.Root>
                                 )} />
                             </Field.Root>
                         </SimpleGrid>
+                        <Field.Root disabled={isCnpj}>
+                            <Field.Label>Profissão</Field.Label>
+                            <Input bgColor={'gray.700'} {...register("profession")} disabled={isCnpj} />
+                        </Field.Root>
                     </VStack>
 
                     {/* CONTATO */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Contato</Heading>
-                        <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cellPhone} required>
                                 <Field.Label>Celular</Field.Label>
                                 <Controller name="cellPhone" control={control} rules={{ required: "Obrigatório" }} render={({ field }) => (
@@ -631,10 +343,34 @@ export default function EditUserPage() {
                                 )} />
                             </Field.Root>
                             <Field.Root>
-                                <Field.Label>E-mail</Field.Label>
+                                <Field.Label>Telefone Fixo</Field.Label>
+                                <Controller name="phone" control={control} render={({ field }) => (
+                                    <Input bgColor={'gray.700'} value={field.value ? maskPhone(field.value) : ''} onChange={field.onChange} />
+                                )} />
+                            </Field.Root>
+                            <Field.Root>
+                                <Field.Label>E-mail Informativo</Field.Label>
                                 <Input type="email" bgColor={'gray.700'} {...register("infoEmail")} />
                             </Field.Root>
                         </SimpleGrid>
+                        <Fieldset.Root>
+                            <Fieldset.Legend>Preferência de Contato</Fieldset.Legend>
+                            <CheckboxGroup
+                                value={contactPreference.field.value}
+                                onValueChange={contactPreference.field.onChange}
+                                name={contactPreference.field.name}
+                            >
+                                <Fieldset.Content display="flex" flexDirection="row" flexWrap="wrap" gap={4} mt={1}>
+                                    {['WhatsApp', 'E-mail', 'Telefone', 'SMS'].map(opt => (
+                                        <Checkbox.Root key={opt} value={opt}>
+                                            <Checkbox.HiddenInput />
+                                            <Checkbox.Control bgColor={'gray.100'} color={'black'} />
+                                            <Checkbox.Label>{opt}</Checkbox.Label>
+                                        </Checkbox.Root>
+                                    ))}
+                                </Fieldset.Content>
+                            </CheckboxGroup>
+                        </Fieldset.Root>
                     </VStack>
 
                     {/* INDICAÇÃO */}
@@ -705,7 +441,7 @@ export default function EditUserPage() {
                                             <HStack>
                                                 <Button
                                                     size="xs"
-                                                    variant="outline"
+                                                    variant='solid'
                                                     colorPalette="blue"
                                                     onClick={() => window.open(url, '_blank')}
                                                     type="button"
@@ -738,7 +474,7 @@ export default function EditUserPage() {
                             <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
                                 <FileUpload.HiddenInput  {...register("personalDocuments")} />
                                 <FileUpload.Trigger asChild>
-                                    <Flex bg={'gray.100'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2}>
+                                    <Flex bg={'brand.400'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2} borderRadius={4}>
                                         <Icon as={PiUploadSimple} />
                                         Anexar Documentos
                                     </Flex>
@@ -749,9 +485,9 @@ export default function EditUserPage() {
                     </VStack>
                     {/* ================================================================= */}
 
-                    <Button type="submit" colorPalette="green" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch" mt={8}>
+                    <Button type="submit" colorPalette="yellow" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch" mt={8}>
                         <Icon as={PiFloppyDisk} />
-                        Salvar Dados Cadastrais
+                        Solicitar Alteração (Pendente de Aprovação)
                     </Button>
                 </form>
             </VStack>

@@ -169,6 +169,7 @@ export default function OperatorAssetsPage() {
                                     <Table.Header>
                                         <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
                                             <Table.ColumnHeader color={'brand.600'} p={8}>Nº do Processo</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} p={8}>Parte Contrária</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} p={8}>Cliente Principal</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} p={8}>Credor</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} p={8}>Estimativa Atual</Table.ColumnHeader>
@@ -193,6 +194,7 @@ export default function OperatorAssetsPage() {
                                                         {asset.legalOneType === 'ProceduralIssue' && <Text fontSize="xs" color="purple.400">Incidente</Text>}
                                                     </VStack>
                                                 </Table.Cell>
+                                                <Table.Cell px={8} py={4}>{asset.nickname || '—'}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>{asset.mainInvestorName}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>{asset.originalCreditor}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>{formatCurrency(asset.currentValue)}</Table.Cell>
