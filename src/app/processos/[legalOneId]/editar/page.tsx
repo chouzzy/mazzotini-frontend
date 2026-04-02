@@ -20,7 +20,10 @@ interface InvestorFormInput {
     userId: string;
     share?: number;
     acquisitionDate?: string;
+    associateId?: string;
 }
+
+interface AssociateSelectItem { value: string; label: string; }
 
 interface FormValues {
     processNumber: string;
@@ -100,6 +103,44 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
     );
 }
 
+function AssociateCombobox(props: { control: any; index: number; allAssociates: AssociateSelectItem[] }) {
+    const { control, index, allAssociates } = props;
+    const currentId = useWatch({ control, name: `investors.${index}.associateId` });
+    const defaultLabel = useMemo(() => {
+        if (!currentId || !allAssociates) return "";
+        return allAssociates.find(a => a.value === currentId)?.label || "";
+    }, [currentId, allAssociates]);
+    const [inputValue, setInputValue] = useState(defaultLabel);
+    useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
+    const { contains } = useFilter({ sensitivity: "base" });
+    const { collection, filter } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+    return (
+        <Controller name={`investors.${index}.associateId`} control={control} render={({ field: cf }) => (
+            <Field.Root>
+                <Field.Label>Associado (opcional)</Field.Label>
+                <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
+                    <Combobox.Control>
+                        <Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input>
+                        <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
+                    </Combobox.Control>
+                    <Portal>
+                        <Combobox.Positioner>
+                            <Combobox.Content maxH="200px" overflowY="auto">
+                                <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
+                                {collection.items.map((item) => (
+                                    <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
+                                        {item.label}<Combobox.ItemIndicator />
+                                    </Combobox.Item>
+                                ))}
+                            </Combobox.Content>
+                        </Combobox.Positioner>
+                    </Portal>
+                </Combobox.Root>
+            </Field.Root>
+        )} />
+    );
+}
+
 export default function EditAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
@@ -113,6 +154,11 @@ export default function EditAssetPage() {
     const { data: investors, isLoading: isLoadingInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
         legalOneId ? `/api/assets/${legalOneId}` : null
+    );
+    const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
+    const associates: AssociateSelectItem[] = useMemo(
+        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
+        [associatesRaw]
     );
 
     const isLoadingData = isLoadingInvestors || isLoadingAsset || isLoadingProfile;
@@ -140,7 +186,8 @@ export default function EditAssetPage() {
             const investorsFromApi: InvestorFormInput[] = assetData.investors.map((inv: any) => ({
                 userId: inv.user.id,
                 share: inv.investorShare,
-                acquisitionDate: inv.acquisitionDate ? String(inv.acquisitionDate).substring(0, 10) : ""
+                acquisitionDate: inv.acquisitionDate ? String(inv.acquisitionDate).substring(0, 10) : "",
+                associateId: inv.associate?.id || ""
             }));
 
             const formData = {
@@ -188,7 +235,7 @@ export default function EditAssetPage() {
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
                     share: 0,
-                    associateId: null,
+                    associateId: inv.associateId || null,
                     acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate + 'T00:00:00Z') : null
                 })),
             };
@@ -259,13 +306,18 @@ export default function EditAssetPage() {
                             {fields.map((field, index) => (
                                 <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
                                     <Stack direction={{ base: 'column', lg: 'row' }} gap={4} alignItems="flex-end">
-                                        
+
                                         {/* A. CLIENTE */}
                                         <Box flex={2} w="100%">
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
                                         </Box>
 
-                                        {/* B. DATA DE AQUISIÇÃO (INDIVIDUAL) */}
+                                        {/* B. ASSOCIADO */}
+                                        <Box flex={2} w="100%">
+                                            <AssociateCombobox control={control} index={index} allAssociates={associates} />
+                                        </Box>
+
+                                        {/* C. DATA DE AQUISIÇÃO */}
                                         <Box flex={1} w="100%">
                                             <Field.Root>
                                                 <Field.Label>Data da Aquisição</Field.Label>

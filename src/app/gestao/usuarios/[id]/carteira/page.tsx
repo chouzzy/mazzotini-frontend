@@ -28,10 +28,16 @@ interface InvestmentForm {
         assetId: string;
         share: number;
         documents: string[];
+        associateId?: string;
     }[];
 }
 
 interface AssetOption {
+    label: string;
+    value: string;
+}
+
+interface AssociateOption {
     label: string;
     value: string;
 }
@@ -178,6 +184,70 @@ function DocumentsList({ index, control, userId, getValues, setValue }: {
 }
 
 // ============================================================================
+//  SUB-COMPONENTE: COMBOBOX DE ASSOCIADO
+// ============================================================================
+function AssociateCombobox({ index, control, associateOptions }: {
+    index: number;
+    control: any;
+    associateOptions: AssociateOption[];
+}) {
+    const currentId = useWatch({ control, name: `investments.${index}.associateId` });
+    const defaultLabel = useMemo(
+        () => associateOptions.find(a => a.value === currentId)?.label || '',
+        [currentId, associateOptions]
+    );
+    const [inputValue, setInputValue] = useState(defaultLabel);
+    useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
+
+    const { contains } = useFilter({ sensitivity: "base" });
+    const { collection, filter } = useListCollection({ initialItems: associateOptions, filter: contains });
+
+    return (
+        <Controller
+            name={`investments.${index}.associateId`}
+            control={control}
+            render={({ field }) => (
+                <Field.Root w="100%">
+                    <Text fontSize="xs" mb={1} color="gray.400">Associado (opcional)</Text>
+                    <Combobox.Root
+                        collection={collection}
+                        value={field.value ? [field.value] : []}
+                        onValueChange={(d) => { field.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }}
+                        inputValue={inputValue}
+                        onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) field.onChange(""); }}
+                    >
+                        <Combobox.Control>
+                            <Combobox.Input asChild autoComplete="off">
+                                <Input
+                                    bgColor="gray.700"
+                                    borderColor="gray.600"
+                                    placeholder="Nenhum associado..."
+                                    onPaste={(e) => {
+                                        const text = e.clipboardData.getData('text/plain').trim();
+                                        setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                                    }}
+                                />
+                            </Combobox.Input>
+                            <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
+                        </Combobox.Control>
+                        <Portal>
+                            <Combobox.Positioner>
+                                <Combobox.Content maxH="200px" overflowY="auto">
+                                    <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
+                                    {collection.items.map(item => (
+                                        <Combobox.Item key={item.value} item={item}>{item.label}</Combobox.Item>
+                                    ))}
+                                </Combobox.Content>
+                            </Combobox.Positioner>
+                        </Portal>
+                    </Combobox.Root>
+                </Field.Root>
+            )}
+        />
+    );
+}
+
+// ============================================================================
 //  PÁGINA
 // ============================================================================
 export default function UserCarteiraPage() {
@@ -189,6 +259,11 @@ export default function UserCarteiraPage() {
 
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: allAssetsResponse } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
+    const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
+    const associateOptions: AssociateOption[] = useMemo(
+        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
+        [associatesRaw]
+    );
 
     const assetOptions: AssetOption[] = useMemo(() => {
         const items = allAssetsResponse?.items || [];
@@ -211,6 +286,7 @@ export default function UserCarteiraPage() {
                     assetId: inv.asset.id,
                     share: inv.investorShare,
                     documents: inv.documents || [],
+                    associateId: inv.associate?.id || ""
                 }))
             });
         }
@@ -287,7 +363,7 @@ export default function UserCarteiraPage() {
                             size="sm"
                             variant="outline"
                             colorPalette="blue"
-                            onClick={() => append({ assetId: "", share: 0, documents: [] })}
+                            onClick={() => append({ assetId: "", share: 0, documents: [], associateId: "" })}
                             type="button"
                         >
                             <Icon as={PiPlusCircle} /> Adicionar Processo
@@ -310,6 +386,13 @@ export default function UserCarteiraPage() {
                                             control={control}
                                             assetOptions={assetOptions}
                                             errors={errors}
+                                        />
+                                    </Box>
+                                    <Box flex={1}>
+                                        <AssociateCombobox
+                                            index={index}
+                                            control={control}
+                                            associateOptions={associateOptions}
                                         />
                                     </Box>
                                     <IconButton

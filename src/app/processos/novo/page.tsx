@@ -20,7 +20,10 @@ interface InvestorFormInput {
     userId: string;
     share?: number;
     acquisitionDate?: string;
+    associateId?: string;
 }
+
+interface AssociateSelectItem { value: string; label: string; }
 
 interface FormValues {
     processNumber: string;
@@ -54,7 +57,7 @@ interface LookupResponse {
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
     nickname?: string;
     processFolderId?: string;
-    suggestedInvestors?: { userId: string; share: number }[];
+    suggestedInvestors?: { userId: string; name: string; share: number }[];
     legalOneMatches: LegalOneMatch[];
 }
 
@@ -86,6 +89,30 @@ function InvestorCombobox(props: any) {
     );
 }
 
+function AssociateCombobox(props: any) {
+    const { control, index, allAssociates } = props;
+    const currentId = useWatch({ control, name: `investors.${index}.associateId` });
+    const defaultLabel = useMemo(() => {
+        if (!currentId || !allAssociates) return "";
+        return allAssociates.find((a: AssociateSelectItem) => a.value === currentId)?.label || "";
+    }, [currentId, allAssociates]);
+    const [inputValue, setInputValue] = useState(defaultLabel);
+    useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
+    const { contains } = useFilter({ sensitivity: "base" });
+    const { collection, filter } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+    return (
+        <Controller name={`investors.${index}.associateId`} control={control} render={({ field: cf }) => (
+            <Field.Root>
+                <Field.Label>Associado (opcional)</Field.Label>
+                <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue((d.items[0] as AssociateSelectItem)?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
+                    <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input><Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
+                    <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto"><Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>{collection.items.map((item: any) => (<Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
+                </Combobox.Root>
+            </Field.Root>
+        )} />
+    );
+}
+
 type SearchMode = 'processNumber' | 'folderCode';
 
 export default function CreateAssetPage() {
@@ -98,8 +125,13 @@ export default function CreateAssetPage() {
     const [legalOneMatches, setLegalOneMatches] = useState<LegalOneMatch[]>([]);
 
     // --- Buscas de Dados ---
-    const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me'); // <-- Busca quem está logado
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me');
     const { data: investors, isLoading: isLoadingInvestors, mutate: mutateInvestors } = useApi<UserSelectItem[]>('/api/users');
+    const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
+    const associates: AssociateSelectItem[] = useMemo(
+        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
+        [associatesRaw]
+    );
 
     const isLoadingData = isLoadingInvestors || isLoadingProfile;
 
@@ -154,7 +186,17 @@ export default function CreateAssetPage() {
         setLegalOneMatches(matches || []);
 
         if (suggestedInvestors && suggestedInvestors.length > 0) {
-            await mutateInvestors();
+            // Injeta os shadow users diretamente no cache SWR para evitar race condition.
+            // Sem isso, o combobox re-renderiza antes do mutate propagar e mostra o campo vazio.
+            const currentInvestors = investors || [];
+            const newEntries = suggestedInvestors
+                .filter(si => !currentInvestors.find((i: UserSelectItem) => i.value === si.userId))
+                .map(si => ({ value: si.userId, label: si.name || si.userId, role: 'INVESTOR' }));
+
+            if (newEntries.length > 0) {
+                await mutateInvestors([...currentInvestors, ...newEntries], { revalidate: false });
+            }
+
             replace(suggestedInvestors.map(inv => ({ userId: inv.userId, share: inv.share, associateId: "", acquisitionDate: "" })));
             toaster.create({ title: "Clientes vinculados automaticamente!", type: "info" });
         }
@@ -212,7 +254,7 @@ export default function CreateAssetPage() {
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
                     share: 0,
-                    associateId: null,
+                    associateId: inv.associateId || null,
                     acquisitionDate: inv.acquisitionDate ? new Date(inv.acquisitionDate + 'T00:00:00Z') : null
                 }))
             };
@@ -343,11 +385,15 @@ export default function CreateAssetPage() {
                             {fields.map((field, index) => (
                                 <Box key={field.id} p={4} borderWidth={1} borderColor="gray.600" borderRadius="md" bg="gray.900">
                                     <Stack direction={{ base: 'column', lg: 'row' }} gap={4} alignItems="flex-end">
-                                        
+
                                         <Box flex={2} w="100%">
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
                                         </Box>
-                                        
+
+                                        <Box flex={2} w="100%">
+                                            <AssociateCombobox control={control} index={index} allAssociates={associates} />
+                                        </Box>
+
                                         <Box flex={1} w="100%">
                                             <Field.Root>
                                                 <Field.Label>Data da Aquisição</Field.Label>
