@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
-import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch, useController } from "react-hook-form";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -54,12 +54,16 @@ const indexTypesCollection = createListCollection({
 
 function InvestorCombobox(props: { control: Control<FormValues>, index: number, allInvestors: UserSelectItem[] }) {
     const { control, index, allInvestors } = props;
-    const currentUserId = useWatch({ control, name: `investors.${index}.userId` });
+    const { field: controllerField, fieldState: { error } } = useController({
+        name: `investors.${index}.userId`,
+        control,
+        rules: { required: "Selecione um investidor" }
+    });
 
     const defaultLabel = useMemo(() => {
-        if (!currentUserId || !allInvestors) return "";
-        return allInvestors.find(inv => inv.value === currentUserId)?.label || "";
-    }, [currentUserId, allInvestors]);
+        if (!controllerField.value || !allInvestors) return "";
+        return allInvestors.find(inv => inv.value === controllerField.value)?.label || "";
+    }, [controllerField.value, allInvestors]);
 
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
@@ -68,76 +72,67 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
     const { collection, filter } = useListCollection({ initialItems: allInvestors || [], filter: contains });
 
     return (
-        <Controller name={`investors.${index}.userId`} control={control} rules={{ required: "Selecione um investidor" }} render={({ field: controllerField, fieldState: { error } }) => (
-            <Field.Root invalid={!!error} required >
-                <Field.Label>Cliente {index + 1}</Field.Label>
-                <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => { setInputValue(e.inputValue); filter(e.inputValue); }} >
-                    <Combobox.Control>
-                        {(() => {
-                            const selectedLabel = controllerField.value ? allInvestors.find(item => item.value === controllerField.value)?.label ?? '' : '';
-                            return (
-                                <Combobox.Input asChild autoComplete="off">
-                                    <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={selectedLabel} onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} />
-                                </Combobox.Input>
-                            );
-                        })()}
-                        <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
-                    </Combobox.Control>
-                    <Portal>
-                        <Combobox.Positioner>
-                            <Combobox.Content>
-                                <Combobox.Empty>Nenhum investidor encontrado</Combobox.Empty>
-                                {collection.items.map((item) => (
-                                    <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
-                                        {item.label}
-                                        <Combobox.ItemIndicator />
-                                    </Combobox.Item>
-                                ))}
-                            </Combobox.Content>
-                        </Combobox.Positioner>
-                    </Portal>
-                </Combobox.Root>
-                {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
-            </Field.Root>
-        )} />
+        <Field.Root invalid={!!error} required>
+            <Field.Label>Cliente {index + 1}</Field.Label>
+            <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => { setInputValue(e.inputValue); filter(e.inputValue); }}>
+                <Combobox.Control>
+                    <Combobox.Input asChild autoComplete="off">
+                        <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={defaultLabel} onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} />
+                    </Combobox.Input>
+                    <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
+                </Combobox.Control>
+                <Portal>
+                    <Combobox.Positioner>
+                        <Combobox.Content>
+                            <Combobox.Empty>Nenhum investidor encontrado</Combobox.Empty>
+                            {collection.items.map((item) => (
+                                <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
+                                    {item.label}
+                                    <Combobox.ItemIndicator />
+                                </Combobox.Item>
+                            ))}
+                        </Combobox.Content>
+                    </Combobox.Positioner>
+                </Portal>
+            </Combobox.Root>
+            {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
+        </Field.Root>
     );
 }
 
 function AssociateCombobox(props: { control: any; index: number; allAssociates: AssociateSelectItem[] }) {
     const { control, index, allAssociates } = props;
-    const currentId = useWatch({ control, name: `investors.${index}.associateId` });
+    const { field: cf } = useController({ name: `investors.${index}.associateId`, control });
     const defaultLabel = useMemo(() => {
-        if (!currentId || !allAssociates) return "";
-        return allAssociates.find(a => a.value === currentId)?.label || "";
-    }, [currentId, allAssociates]);
+        if (!cf.value || !allAssociates) return "";
+        return allAssociates.find(a => a.value === cf.value)?.label || "";
+    }, [cf.value, allAssociates]);
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
     const { contains } = useFilter({ sensitivity: "base" });
     const { collection, filter } = useListCollection({ initialItems: allAssociates || [], filter: contains });
     return (
-        <Controller name={`investors.${index}.associateId`} control={control} render={({ field: cf }) => (
-            <Field.Root>
-                <Field.Label>Associado (opcional)</Field.Label>
-                <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
-                    <Combobox.Control>
-                        <Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input>
-                        <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
-                    </Combobox.Control>
-                    <Portal>
-                        <Combobox.Positioner>
-                            <Combobox.Content maxH="200px" overflowY="auto">
-                                <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
-                                {collection.items.map((item) => (
-                                    <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
-                                        {item.label}<Combobox.ItemIndicator />
-                                    </Combobox.Item>
-                                ))}
-                            </Combobox.Content>
-                        </Combobox.Positioner>
-                    </Portal>
-                </Combobox.Root>
-            </Field.Root>
-        )} />
+        <Field.Root>
+            <Field.Label>Associado (opcional)</Field.Label>
+            <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
+                <Combobox.Control>
+                    <Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input>
+                    <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
+                </Combobox.Control>
+                <Portal>
+                    <Combobox.Positioner>
+                        <Combobox.Content maxH="200px" overflowY="auto">
+                            <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
+                            {collection.items.map((item) => (
+                                <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
+                                    {item.label}<Combobox.ItemIndicator />
+                                </Combobox.Item>
+                            ))}
+                        </Combobox.Content>
+                    </Combobox.Positioner>
+                </Portal>
+            </Combobox.Root>
+        </Field.Root>
     );
 }
 

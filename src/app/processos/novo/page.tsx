@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
-import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control, useController } from "react-hook-form";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -64,52 +64,54 @@ interface LookupResponse {
 interface UserSelectItem { value: string; label: string; }
 const indexTypesCollection = createListCollection({ items: [{ label: "SELIC", value: "SELIC" }, { label: "IPCA", value: "IPCA" }, { label: "CDI", value: "CDI" }, { label: "IGP-M", value: "IGP-M" }, { label: "Outro", value: "OUTRO" }] });
 
-function InvestorCombobox(props: any) { 
+function InvestorCombobox(props: any) {
     const { control, index, allInvestors } = props;
-    const currentUserId = useWatch({ control, name: `investors.${index}.userId` });
+    const validInvestors = useMemo(() => (allInvestors || []).filter((i: any) => i && i.value != null && i.value !== ""), [allInvestors]);
+    const { field: cf, fieldState: { error } } = useController({
+        name: `investors.${index}.userId`,
+        control,
+        rules: { required: "Selecione um Cliente" }
+    });
     const defaultLabel = useMemo(() => {
-        if (!currentUserId || !allInvestors) return "";
-        return allInvestors.find((inv: any) => inv.value === currentUserId)?.label || "";
-    }, [currentUserId, allInvestors]);
+        if (!cf.value || !validInvestors) return "";
+        return validInvestors.find((inv: any) => inv.value === cf.value)?.label || "";
+    }, [cf.value, validInvestors]);
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: allInvestors, filter: contains });
+    const { collection, filter } = useListCollection({ items: validInvestors, initialItems: validInvestors, filter: contains });
     return (
-        <Controller name={`investors.${index}.userId`} control={control} rules={{ required: "Selecione um Cliente" }} render={({ field: cf, fieldState: { error } }) => (
-            <Field.Root invalid={!!error} required>
-                <Field.Label>Cliente {index + 1}</Field.Label>
-                <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0]); setInputValue((d.items[0] as UserSelectItem)?.label); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}>
-                    <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar Cliente..." onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} /></Combobox.Input><Combobox.IndicatorGroup><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
-                    <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto">{collection.items.map((item: any) => (<Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
-                </Combobox.Root>
-                {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
-            </Field.Root>
-        )} />
+        <Field.Root invalid={!!error} required>
+            <Field.Label>Cliente {index + 1}</Field.Label>
+            <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0]); setInputValue((d.items[0] as UserSelectItem)?.label); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}>
+                <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar Cliente..." onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} /></Combobox.Input><Combobox.IndicatorGroup><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
+                <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto">{collection.items.map((item: any, idx: number) => (<Combobox.Item item={item} key={`${item.value}-${idx}`} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
+            </Combobox.Root>
+            {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
+        </Field.Root>
     );
 }
 
 function AssociateCombobox(props: any) {
     const { control, index, allAssociates } = props;
-    const currentId = useWatch({ control, name: `investors.${index}.associateId` });
+    const validAssociates = useMemo(() => (allAssociates || []).filter((a: any) => a && a.value != null && a.value !== ""), [allAssociates]);
+    const { field: cf } = useController({ name: `investors.${index}.associateId`, control });
     const defaultLabel = useMemo(() => {
-        if (!currentId || !allAssociates) return "";
-        return allAssociates.find((a: AssociateSelectItem) => a.value === currentId)?.label || "";
-    }, [currentId, allAssociates]);
+        if (!cf.value || !validAssociates) return "";
+        return validAssociates.find((a: AssociateSelectItem) => a.value === cf.value)?.label || "";
+    }, [cf.value, validAssociates]);
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+    const { collection, filter } = useListCollection({ items: validAssociates, initialItems: validAssociates, filter: contains });
     return (
-        <Controller name={`investors.${index}.associateId`} control={control} render={({ field: cf }) => (
-            <Field.Root>
-                <Field.Label>Associado (opcional)</Field.Label>
-                <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue((d.items[0] as AssociateSelectItem)?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
-                    <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input><Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
-                    <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto"><Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>{collection.items.map((item: any) => (<Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
-                </Combobox.Root>
-            </Field.Root>
-        )} />
+        <Field.Root>
+            <Field.Label>Associado (opcional)</Field.Label>
+            <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue((d.items[0] as AssociateSelectItem)?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
+                <Combobox.Control><Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input><Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup></Combobox.Control>
+                <Portal><Combobox.Positioner><Combobox.Content maxH="200px" overflowY="auto"><Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>{collection.items.map((item: any, idx: number) => (<Combobox.Item item={item} key={`${item.value}-${idx}`} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>{item.label}<Combobox.ItemIndicator /></Combobox.Item>))}</Combobox.Content></Combobox.Positioner></Portal>
+            </Combobox.Root>
+        </Field.Root>
     );
 }
 
@@ -129,7 +131,9 @@ export default function CreateAssetPage() {
     const { data: investors, isLoading: isLoadingInvestors, mutate: mutateInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
     const associates: AssociateSelectItem[] = useMemo(
-        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
+        () => (associatesRaw || [])
+            .map((a: any) => ({ value: a.id || a.userId || a._id, label: a.name || 'Sem nome' }))
+            .filter((a) => a.value != null && a.value !== ""),
         [associatesRaw]
     );
 

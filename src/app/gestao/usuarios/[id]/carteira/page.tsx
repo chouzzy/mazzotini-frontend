@@ -5,7 +5,7 @@ import {
     HStack, IconButton, Stack, Box,
     FileUpload,
 } from "@chakra-ui/react";
-import { useForm, SubmitHandler, Controller, useFieldArray, useWatch } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useFieldArray, useWatch, useController } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import {
@@ -191,10 +191,10 @@ function AssociateCombobox({ index, control, associateOptions }: {
     control: any;
     associateOptions: AssociateOption[];
 }) {
-    const currentId = useWatch({ control, name: `investments.${index}.associateId` });
+    const { field } = useController({ name: `investments.${index}.associateId`, control });
     const defaultLabel = useMemo(
-        () => associateOptions.find(a => a.value === currentId)?.label || '',
-        [currentId, associateOptions]
+        () => associateOptions.find(a => a.value === field.value)?.label || '',
+        [field.value, associateOptions]
     );
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
@@ -203,47 +203,41 @@ function AssociateCombobox({ index, control, associateOptions }: {
     const { collection, filter } = useListCollection({ initialItems: associateOptions, filter: contains });
 
     return (
-        <Controller
-            name={`investments.${index}.associateId`}
-            control={control}
-            render={({ field }) => (
-                <Field.Root w="100%">
-                    <Text fontSize="xs" mb={1} color="gray.400">Associado (opcional)</Text>
-                    <Combobox.Root
-                        collection={collection}
-                        value={field.value ? [field.value] : []}
-                        onValueChange={(d) => { field.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }}
-                        inputValue={inputValue}
-                        onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) field.onChange(""); }}
-                    >
-                        <Combobox.Control>
-                            <Combobox.Input asChild autoComplete="off">
-                                <Input
-                                    bgColor="gray.700"
-                                    borderColor="gray.600"
-                                    placeholder="Nenhum associado..."
-                                    onPaste={(e) => {
-                                        const text = e.clipboardData.getData('text/plain').trim();
-                                        setTimeout(() => { setInputValue(text); filter(text); }, 0);
-                                    }}
-                                />
-                            </Combobox.Input>
-                            <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
-                        </Combobox.Control>
-                        <Portal>
-                            <Combobox.Positioner>
-                                <Combobox.Content maxH="200px" overflowY="auto">
-                                    <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
-                                    {collection.items.map(item => (
-                                        <Combobox.Item key={item.value} item={item}>{item.label}</Combobox.Item>
-                                    ))}
-                                </Combobox.Content>
-                            </Combobox.Positioner>
-                        </Portal>
-                    </Combobox.Root>
-                </Field.Root>
-            )}
-        />
+        <Field.Root w="100%">
+            <Text fontSize="xs" mb={1} color="gray.400">Associado (opcional)</Text>
+            <Combobox.Root
+                collection={collection}
+                value={field.value ? [field.value] : []}
+                onValueChange={(d) => { field.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }}
+                inputValue={inputValue}
+                onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) field.onChange(""); }}
+            >
+                <Combobox.Control>
+                    <Combobox.Input asChild autoComplete="off">
+                        <Input
+                            bgColor="gray.700"
+                            borderColor="gray.600"
+                            placeholder="Nenhum associado..."
+                            onPaste={(e) => {
+                                const text = e.clipboardData.getData('text/plain').trim();
+                                setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                            }}
+                        />
+                    </Combobox.Input>
+                    <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
+                </Combobox.Control>
+                <Portal>
+                    <Combobox.Positioner>
+                        <Combobox.Content maxH="200px" overflowY="auto">
+                            <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
+                            {collection.items.map(item => (
+                                <Combobox.Item key={item.value} item={item}>{item.label}</Combobox.Item>
+                            ))}
+                        </Combobox.Content>
+                    </Combobox.Positioner>
+                </Portal>
+            </Combobox.Root>
+        </Field.Root>
     );
 }
 
