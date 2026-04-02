@@ -13,7 +13,7 @@ import {
   Icon
 } from '@chakra-ui/react';
 import { PiTargetDuotone, PiPencilSimple, PiX, PiCheck } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { useSWRConfig } from 'swr';
@@ -66,7 +66,7 @@ export function StrategyTab({ asset }: StrategyTabProps) {
       );
 
       // Atualiza o SWR globalmente para esta rota, forçando o recarregamento dos dados na tela
-      mutate(`/api/assets/${asset.processNumber}`);
+      mutate(`/api/assets/${asset.legalOneId}`);
       
       setIsEditing(false);
       

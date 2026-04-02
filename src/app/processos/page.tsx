@@ -183,7 +183,7 @@ export default function OperatorAssetsPage() {
                                                 cursor={'pointer'} 
                                                 _hover={{ bg: 'whiteAlpha.50', color: 'brand.600' }} 
                                                 bgColor={tableBgColor} 
-                                                onClick={() => window.location.href = `/processos/${encodeURIComponent(asset.processNumber)}`}
+                                                onClick={() => window.location.href = `/processos/${asset.legalOneId}`}
                                             >
                                                 <Table.Cell px={8} py={4} fontWeight="semibold">
                                                     <VStack align="start" gap={0}>

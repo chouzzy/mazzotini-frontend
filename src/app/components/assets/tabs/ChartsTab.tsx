@@ -3,7 +3,7 @@
 import { Box, Heading, VStack, Spinner, Flex } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { useApi } from '@/hooks/useApi'; // Importar o useApi
 
 interface TabProps {

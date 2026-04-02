@@ -1,5 +1,6 @@
 export interface FolderAsset {
     id: string;
+    legalOneId: number;
     processNumber: string;
     nickname?: string;
     originalCreditor: string;

@@ -45,10 +45,10 @@ export interface DetailedCreditAsset {
 // Componente principal da página
 export default function AssetDetailsPage() {
   const params = useParams();
-  const processNumber = params.processNumber as string;
+  const legalOneId = params.legalOneId as string;
 
   const { data: asset, isLoading, error } = useApi<DetailedCreditAsset>(
-    processNumber ? `/api/assets/${processNumber}` : null
+    legalOneId ? `/api/assets/${legalOneId}` : null
   );
 
   if (isLoading) {

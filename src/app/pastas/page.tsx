@@ -21,6 +21,7 @@ import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
 
 interface AssetSummary {
     id: string;
+    legalOneId: number;
     processNumber: string;
     nickname?: string;
     originalCreditor: string;
@@ -77,7 +78,7 @@ const AssetTableRow = ({ asset }: { asset: AssetSummary }) => (
             </Tag.Root>
         </Table.Cell>
         <Table.Cell textAlign="right" pr={6}>
-            <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`}>
+            <Link as={NextLink} href={`/processos/${asset.legalOneId}`}>
                 <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
             </Link>
         </Table.Cell>

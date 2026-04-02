@@ -1,6 +1,7 @@
 // Atualize o AssetSummary existente para incluir os campos novos
 export interface AssetSummary {
     id: string;
+    legalOneId: number;
     processNumber: string;
     nickname?: string | null; // <-- ADICIONADO
     originalCreditor: string;

@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { PiFilePdf, PiLockKey, PiGlobe } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';

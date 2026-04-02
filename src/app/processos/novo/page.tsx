@@ -1,19 +1,19 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack, Alert
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control } from "react-hook-form";
-import { useListCollection, useFilter } from "@chakra-ui/react"; 
+import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo } from "react-icons/pi";
+import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiWarning, PiFolderOpen, PiHash } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { useState, useMemo, useEffect } from "react"; 
+import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
-import { useRouter } from "next/navigation"; // <-- IMPORTANTE: Adicionado router
+import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
 interface InvestorFormInput {
@@ -39,7 +39,14 @@ interface FormValues {
     investors: InvestorFormInput[];
 }
 
+interface LegalOneMatch {
+    legalOneId: number;
+    folderCode: string;
+    legalOneType: string;
+}
+
 interface LookupResponse {
+    processNumber: string;
     originalCreditor: string;
     otherParty?: string;
     origemProcesso: string;
@@ -47,7 +54,8 @@ interface LookupResponse {
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
     nickname?: string;
     processFolderId?: string;
-    suggestedInvestors?: { userId: string; share: number }[]; 
+    suggestedInvestors?: { userId: string; share: number }[];
+    legalOneMatches: LegalOneMatch[];
 }
 
 interface UserSelectItem { value: string; label: string; }
@@ -78,11 +86,16 @@ function InvestorCombobox(props: any) {
     );
 }
 
+type SearchMode = 'processNumber' | 'folderCode';
+
 export default function CreateAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
-    const router = useRouter(); // <-- Router instanciado
-    const [isFetchingData, setIsFetchingData] = useState(false); 
+    const router = useRouter();
+    const [isFetchingData, setIsFetchingData] = useState(false);
+    const [searchMode, setSearchMode] = useState<SearchMode>('processNumber');
+    const [folderCodeInput, setFolderCodeInput] = useState('');
+    const [legalOneMatches, setLegalOneMatches] = useState<LegalOneMatch[]>([]);
 
     // --- Buscas de Dados ---
     const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me'); // <-- Busca quem está logado
@@ -126,41 +139,58 @@ export default function CreateAssetPage() {
     const { fields, append, remove, replace } = useFieldArray({ control, name: "investors" });
     const processNumberValue = useWatch({ control, name: 'processNumber' });
 
+    const applyLookupResponse = async (data: LookupResponse) => {
+        const { processNumber: pn, originalCreditor, origemProcesso, legalOneId, legalOneType, otherParty, nickname, processFolderId, suggestedInvestors, legalOneMatches: matches } = data;
+
+        if (pn) setValue("processNumber", pn);
+        setValue("originalCreditor", originalCreditor);
+        setValue("origemProcesso", origemProcesso);
+        if (otherParty) setValue("otherParty", otherParty);
+        if (nickname) setValue("nickname", nickname);
+        if (processFolderId) setValue("folderId", processFolderId);
+        setValue("legalOneId", legalOneId);
+        setValue("legalOneType", legalOneType);
+
+        setLegalOneMatches(matches || []);
+
+        if (suggestedInvestors && suggestedInvestors.length > 0) {
+            await mutateInvestors();
+            replace(suggestedInvestors.map(inv => ({ userId: inv.userId, share: inv.share, associateId: "", acquisitionDate: "" })));
+            toaster.create({ title: "Clientes vinculados automaticamente!", type: "info" });
+        }
+
+        toaster.create({ title: "Dados Encontrados!", type: "success" });
+    };
+
     const handleFetchProcessData = async () => {
         setIsFetchingData(true);
-        const processNumber = getValues("processNumber"); 
-        if (!processNumber) { toaster.create({ title: "Erro", type: "error" }); setIsFetchingData(false); return; }
+        setLegalOneMatches([]);
+        const processNumber = getValues("processNumber");
+        if (!processNumber) { toaster.create({ title: "Informe o número do processo", type: "error" }); setIsFetchingData(false); return; }
 
         try {
             const token = await getAccessTokenSilently();
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
             const response = await axios.get<LookupResponse>(`${apiBaseUrl}/api/assets/lookup/${processNumber}`, { headers: { Authorization: `Bearer ${token}` } });
-            
-            const { originalCreditor, origemProcesso, legalOneId, legalOneType, otherParty, nickname, processFolderId, suggestedInvestors } = response.data;
-            
-            setValue("originalCreditor", originalCreditor);
-            setValue("origemProcesso", origemProcesso);
-            if (otherParty) setValue("otherParty", otherParty);
-            if (nickname) setValue("nickname", nickname);
-            if (processFolderId) setValue("folderId", processFolderId);
-
-            setValue("legalOneId", legalOneId);
-            setValue("legalOneType", legalOneType);
-
-            if (suggestedInvestors && suggestedInvestors.length > 0) {
-                await mutateInvestors();
-                const investorsForm = suggestedInvestors.map(inv => ({
-                    userId: inv.userId,
-                    share: inv.share,
-                    associateId: "", // Vazio por padrão
-                    acquisitionDate: ""
-                }));
-                replace(investorsForm);
-                toaster.create({ title: "Clientes vinculados automaticamente!", type: "info" });
-            }
-            toaster.create({ title: "Dados Encontrados!", type: "success" });
+            await applyLookupResponse(response.data);
         } catch (error: any) {
             toaster.create({ title: "Erro ao Buscar", description: error.response?.data?.error, type: "error" });
+        } finally { setIsFetchingData(false); }
+    };
+
+    const handleFetchByFolder = async () => {
+        setIsFetchingData(true);
+        setLegalOneMatches([]);
+        if (!folderCodeInput.trim()) { toaster.create({ title: "Informe o código da pasta", type: "error" }); setIsFetchingData(false); return; }
+
+        try {
+            const token = await getAccessTokenSilently();
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+            const encoded = encodeURIComponent(folderCodeInput.trim());
+            const response = await axios.get<LookupResponse>(`${apiBaseUrl}/api/assets/lookup/folder/${encoded}`, { headers: { Authorization: `Bearer ${token}` } });
+            await applyLookupResponse(response.data);
+        } catch (error: any) {
+            toaster.create({ title: "Pasta não encontrada", description: error.response?.data?.error || "Verifique o código da pasta e tente novamente.", type: "error" });
         } finally { setIsFetchingData(false); }
     };
 
@@ -189,7 +219,7 @@ export default function CreateAssetPage() {
 
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
             toaster.create({ title: "Processo Registrado!", type: "success" });
-            window.location.href = `/processos/${data.processNumber}`;
+            window.location.href = `/processos/${data.legalOneId}`;
         } catch (error: any) {
             toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
         }
@@ -208,13 +238,78 @@ export default function CreateAssetPage() {
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2}>1. Identificação</Heading>
                         <input type="hidden" {...register("folderId")} />
 
-                        <Field.Root invalid={!!errors.processNumber} required>
-                            <Field.Label>Número do Processo</Field.Label>
-                            <Input placeholder="Ex: 0012345..." borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true, setValueAs: (value) => value?.trim() })} />
-                            <Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'} mt={2}>
-                                <Icon as={PiMagnifyingGlass} /> Buscar
+                        {/* Toggle de modo de busca */}
+                        <HStack gap={2}>
+                            <Button
+                                size="sm"
+                                variant={searchMode === 'processNumber' ? 'solid' : 'outline'}
+                                colorPalette="blue"
+                                onClick={() => { setSearchMode('processNumber'); setExistingAssets([]); }}
+                            >
+                                <Icon as={PiHash} /> Número do Processo
                             </Button>
-                        </Field.Root>
+                            <Button
+                                size="sm"
+                                variant={searchMode === 'folderCode' ? 'solid' : 'outline'}
+                                colorPalette="blue"
+                                onClick={() => { setSearchMode('folderCode'); setExistingAssets([]); }}
+                            >
+                                <Icon as={PiFolderOpen} /> Código da Pasta
+                            </Button>
+                        </HStack>
+
+                        {/* Busca por número de processo */}
+                        {searchMode === 'processNumber' && (
+                            <Field.Root invalid={!!errors.processNumber} required>
+                                <Field.Label>Número do Processo</Field.Label>
+                                <Input placeholder="Ex: 0012345-67.2023.8.26.0100" borderColor={'gray.700'} bgColor={'gray.700'} {...register("processNumber", { required: true, setValueAs: (value) => value?.trim() })} />
+                                <Button size="sm" onClick={handleFetchProcessData} loading={isFetchingData} disabled={!processNumberValue} bgColor={'brand.800'} color={'white'} mt={2}>
+                                    <Icon as={PiMagnifyingGlass} /> Buscar
+                                </Button>
+                            </Field.Root>
+                        )}
+
+                        {/* Busca por código de pasta */}
+                        {searchMode === 'folderCode' && (
+                            <Field.Root>
+                                <Field.Label>Código da Pasta</Field.Label>
+                                <Input
+                                    placeholder="Ex: Proc-0002091/032"
+                                    borderColor={'gray.700'}
+                                    bgColor={'gray.700'}
+                                    value={folderCodeInput}
+                                    onChange={e => setFolderCodeInput(e.target.value)}
+                                />
+                                <Text fontSize="xs" color="gray.500" mt={1}>Digite o código exato da pasta conforme aparece no Legal One.</Text>
+                                <Button size="sm" onClick={handleFetchByFolder} loading={isFetchingData} disabled={!folderCodeInput.trim()} bgColor={'brand.800'} color={'white'} mt={2}>
+                                    <Icon as={PiMagnifyingGlass} /> Buscar Pasta
+                                </Button>
+                            </Field.Root>
+                        )}
+
+                        {/* Banner: múltiplas pastas no Legal One para este número de processo */}
+                        {legalOneMatches.length > 1 && (
+                            <Alert.Root status="warning" borderRadius="md" borderWidth="1px" borderColor="yellow.600">
+                                <Alert.Indicator />
+                                <Alert.Content>
+                                    <Alert.Title>
+                                        Este número de processo existe em {legalOneMatches.length} pastas no Legal One
+                                    </Alert.Title>
+                                    <Alert.Description>
+                                        <VStack align="start" gap={1} mt={1}>
+                                            {legalOneMatches.map(m => (
+                                                <Text key={m.legalOneId} fontSize="sm">
+                                                    • {m.folderCode || 'Sem pasta'}
+                                                </Text>
+                                            ))}
+                                            <Text fontSize="sm" color="yellow.200" mt={1}>
+                                                Você está registrando a pasta <strong>{legalOneMatches.find(m => m.legalOneId === getValues('legalOneId'))?.folderCode || '—'}</strong>. Confirme antes de salvar.
+                                            </Text>
+                                        </VStack>
+                                    </Alert.Description>
+                                </Alert.Content>
+                            </Alert.Root>
+                        )}
 
                         <Field.Root invalid={!!errors.originalCreditor} required>
                             <Field.Label>Credor Original (Cliente)</Field.Label>

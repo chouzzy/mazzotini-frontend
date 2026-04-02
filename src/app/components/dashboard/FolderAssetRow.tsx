@@ -31,7 +31,7 @@ export function FolderAssetRow({ asset }: { asset: FolderAsset }) {
             <Table.Cell fontSize="sm">{asset.originalCreditor}</Table.Cell>
             <Table.Cell fontSize="sm">{formatBRL(asset.currentValue)}</Table.Cell>
             <Table.Cell textAlign="right" pr={6}>
-                <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`}>
+                <Link as={NextLink} href={`/processos/${asset.legalOneId}`}>
                     <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
                 </Link>
             </Table.Cell>

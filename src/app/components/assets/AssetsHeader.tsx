@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
 import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -69,7 +69,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
             await axios.post(
-                `${apiBaseUrl}/api/assets/${asset.processNumber}/sync`,
+                `${apiBaseUrl}/api/assets/${asset.legalOneId}/sync`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -99,7 +99,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     };
 
     const handleEdit = () => {
-        router.push(`/processos/${asset.processNumber}/editar`);
+        router.push(`/processos/${asset.legalOneId}/editar`);
     };
 
     return (

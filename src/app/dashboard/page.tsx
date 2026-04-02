@@ -25,6 +25,7 @@ import { AssetSummary } from '@/types/api';
 // ── interfaces de pastas ──────────────────────────────────────────────────────
 interface FolderAsset {
     id: string;
+    legalOneId: number;
     processNumber: string;
     nickname?: string;
     originalCreditor: string;
@@ -77,7 +78,7 @@ const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => (
             </Tag.Root>
         </Table.Cell>
         <Table.Cell textAlign="right" pr={6}>
-            <Link as={NextLink} href={`/processos/${encodeURIComponent(asset.processNumber)}`}>
+            <Link as={NextLink} href={`/processos/${asset.legalOneId}`}>
                 <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
             </Link>
         </Table.Cell>

@@ -74,7 +74,7 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
                                 </Tag.Root>
                             </Table.Cell>
                             <Table.Cell px={4} py={3} textAlign="right">
-                                <Link href={`/processos/${encodeURIComponent(inv.asset.processNumber)}`} passHref>
+                                <Link href={`/processos/${inv.asset.legalOneId}`} passHref>
                                     <Button size="xs" variant="ghost" colorPalette="blue" type="button">
                                         <Icon as={PiArrowRight} />
                                     </Button>

@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react';
 // IMPORTAMOS NOVOS ÍCONES AQUI:
 import { PiClockClockwise, PiFilePdf, PiFileText, PiImage, PiFile } from 'react-icons/pi';
-import { DetailedCreditAsset } from '@/app/processos/[processNumber]/page';
+import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { extractFreeText } from '@/utils';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useApi } from '@/hooks/useApi';

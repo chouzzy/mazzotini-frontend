@@ -107,12 +107,12 @@ export default function EditAssetPage() {
     const params = useParams();
     const { mutate } = useSWRConfig();
 
-    const processNumber = params.processNumber as string;
+    const legalOneId = params.legalOneId as string;
 
     const { data: myProfile, isLoading: isLoadingProfile } = useApi<any>('/api/users/me');
     const { data: investors, isLoading: isLoadingInvestors } = useApi<UserSelectItem[]>('/api/users');
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
-        processNumber ? `/api/assets/${processNumber}` : null
+        legalOneId ? `/api/assets/${legalOneId}` : null
     );
 
     const isLoadingData = isLoadingInvestors || isLoadingAsset || isLoadingProfile;
@@ -193,13 +193,13 @@ export default function EditAssetPage() {
                 })),
             };
 
-            await axios.patch(`${apiBaseUrl}/api/assets/${processNumber}`, payload, { headers: { Authorization: `Bearer ${token}` } });
-            
-            await mutate(`/api/assets/${processNumber}`);
+            await axios.patch(`${apiBaseUrl}/api/assets/${legalOneId}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+
+            await mutate(`/api/assets/${legalOneId}`);
             await mutate(`/api/assets`);
-            
+
             toaster.create({ title: "Processo Atualizado!", type: "success" });
-            router.push(`/processos/${processNumber}`);
+            router.push(`/processos/${legalOneId}`);
 
         } catch (error: any) {
             toaster.create({ title: "Erro ao Salvar", description: "Falha na atualização.", type: "error" });
