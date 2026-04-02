@@ -13,7 +13,8 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
         investedValue: 50000,
         currentValue: 54250.75,
         investorShare: 100,
-        updateIndexType: 'IPCA + 6% a.a'
+        updateIndexType: 'IPCA + 6% a.a',
+        legalOneId: 0
     },
     {
         processNumber: '0098765-43.2021.8.26.0500',
@@ -23,7 +24,8 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
         investedValue: 120000,
         currentValue: 129880.00,
         investorShare: 80,
-        updateIndexType: 'SELIC'
+        updateIndexType: 'SELIC',
+        legalOneId: 0
     },
     {
         processNumber: '0055555-11.2020.8.11.0202',
@@ -33,7 +35,8 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
         investedValue: 75000,
         currentValue: 76125.00,
         investorShare: 90,
-        updateIndexType: 'IPCA'
+        updateIndexType: 'IPCA',
+        legalOneId: 0
     },
     {
         processNumber: '0044444-22.2019.8.04.0303',
@@ -43,7 +46,8 @@ const mockInvestorAssets: InvestorCreditAsset[] = [
         investedValue: 200000,
         currentValue: 255000.00,
         investorShare: 100,
-        updateIndexType: 'IPCA + Juros'
+        updateIndexType: 'IPCA + Juros',
+        legalOneId: 0
     },
 ];
 // ============================================================================
