@@ -244,7 +244,7 @@ export default function CreateAssetPage() {
                                 size="sm"
                                 variant={searchMode === 'processNumber' ? 'solid' : 'outline'}
                                 colorPalette="blue"
-                                onClick={() => { setSearchMode('processNumber'); setExistingAssets([]); }}
+                                onClick={() => { setSearchMode('processNumber'); setLegalOneMatches([]); }}
                             >
                                 <Icon as={PiHash} /> Número do Processo
                             </Button>
@@ -252,7 +252,7 @@ export default function CreateAssetPage() {
                                 size="sm"
                                 variant={searchMode === 'folderCode' ? 'solid' : 'outline'}
                                 colorPalette="blue"
-                                onClick={() => { setSearchMode('folderCode'); setExistingAssets([]); }}
+                                onClick={() => { setSearchMode('folderCode'); setLegalOneMatches([]); }}
                             >
                                 <Icon as={PiFolderOpen} /> Código da Pasta
                             </Button>
