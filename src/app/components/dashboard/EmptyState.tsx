@@ -12,7 +12,7 @@ interface EmptyStateProps {
     buttonHref?: string;
 }
 
-export function EmptyState({ title = 'No data found', description = 'There is no data to display. Add some data to see it here.', buttonLabel = 'Add data', buttonHref = '#' }: EmptyStateProps) {
+export function EmptyState({ title = 'No data found', description = 'There is no data to display. Add some data to see it here.', buttonLabel, buttonHref }: EmptyStateProps) {
     return (
         <VStack
             bg="gray.900"
@@ -29,14 +29,14 @@ export function EmptyState({ title = 'No data found', description = 'There is no
             <Text color="gray.400" maxW="md">
                 {description}
             </Text>
-            <Link href={buttonHref} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                <Button
-                    colorScheme="blue"
-                >
-                    <Icon as={PiPlusCircle} mr={2} />
-                    {buttonLabel}
-                </Button>
-            </Link>
+            {buttonLabel && buttonHref && (
+                <Link href={buttonHref} style={{ textDecoration: 'none' }}>
+                    <Button colorScheme="blue">
+                        <Icon as={PiPlusCircle} mr={2} />
+                        {buttonLabel}
+                    </Button>
+                </Link>
+            )}
         </VStack>
     );
 }

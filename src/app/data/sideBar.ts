@@ -5,7 +5,7 @@ const SideBarItems = [
     { name: 'Dashboard', icon: PiChartPieSlice, href: '/dashboard' },
     { name: 'Pastas', icon: PiFolderFill, href: '/pastas' },
     { name: 'Meus Processos', icon: PiScales, href: '/processos' },
-    { name: 'Novo Processo', icon: PiList, href: '/processos/novo' },
+    { name: 'Novo Processo', icon: PiList, href: '/processos/novo', roles: ['ADMIN', 'OPERATOR'] },
     { name: 'Meu Perfil', icon: PiUser, href: '/perfil' },
     { name: 'Usuários', icon: PiUsers, href: '/gestao/usuarios' },
     // { name: 'Configurações', icon: PiGear, href: '/configuracoes' },

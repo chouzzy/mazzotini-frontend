@@ -53,47 +53,60 @@ interface NavItemProps {
 // ============================================================================
 //  COMPONENTE: Sidebar
 // ============================================================================
-const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps) => (
-    <Flex
-        as="nav"
-        transition="3s ease"
-        bg="gray.900"
-        borderRight="1px solid"
-        borderRightColor="gray.600"
-        w={{ base: 'full', md: 60 }}
-        minH="100vh"
-        flexDir={'column'}
-    >
-        <IconButton
-            display={{ base: 'flex', md: 'none' }}
-            aria-label="Close Menu"
-            borderRadius="full"
-            variant="ghost"
-            onClick={onClose}
-            alignSelf="flex-end"
-            m={2}
+import { useApi } from '@/hooks/useApi';
+
+const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps) => {
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const userRole = myProfile?.role;
+
+    const visibleItems = SideBarItems.filter(link => {
+        if (!link.roles) return true;
+        return userRole && link.roles.includes(userRole);
+    });
+
+    return (
+        <Flex
+            as="nav"
+            transition="3s ease"
+            bg="gray.900"
+            borderRight="1px solid"
+            borderRightColor="gray.600"
+            w={{ base: 'full', md: 60 }}
+            minH="100vh"
+            flexDir={'column'}
+            {...rest}
         >
-            <PiX />
-        </IconButton>
-        <Flex alignItems={'center'} gap={{ base: 2, md: 8 }} p={8}>
-            <Link href="/" _focus={{ boxShadow: 'none' }}>
-                <Image
-                    src={headerData.logoSrc}
-                    alt="Logo da Mazzotini"
-                    objectFit={'contain'}
-                    maxW={{ base: 32, md: 40 }}
-                />
-            </Link>
+            <IconButton
+                display={{ base: 'flex', md: 'none' }}
+                aria-label="Close Menu"
+                borderRadius="full"
+                variant="ghost"
+                onClick={onClose}
+                alignSelf="flex-end"
+                m={2}
+            >
+                <PiX />
+            </IconButton>
+            <Flex alignItems={'center'} gap={{ base: 2, md: 8 }} p={8}>
+                <Link href="/" _focus={{ boxShadow: 'none' }}>
+                    <Image
+                        src={headerData.logoSrc}
+                        alt="Logo da Mazzotini"
+                        objectFit={'contain'}
+                        maxW={{ base: 32, md: 40 }}
+                    />
+                </Link>
+            </Flex>
+            <VStack as="nav" gap={1} align="stretch" px={2} py={4}>
+                {visibleItems.map((link) => (
+                    <NavItem key={link.name} icon={link.icon} href={link.href} onClick={onClose}>
+                        {link.name}
+                    </NavItem>
+                ))}
+            </VStack>
         </Flex>
-        <VStack as="nav" gap={1} align="stretch" px={2} py={4}>
-            {SideBarItems.map((link) => (
-                <NavItem key={link.name} icon={link.icon} href={link.href} onClick={onClose}>
-                    {link.name}
-                </NavItem>
-            ))}
-        </VStack>
-    </Flex>
-);
+    );
+};
 
 // ============================================================================
 //  COMPONENTE: Item de Navegação

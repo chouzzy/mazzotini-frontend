@@ -91,6 +91,9 @@ export default function OperatorAssetsPage() {
         setPage(1);
     }, [filterStatus, filterType]);
 
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+
     // A URL consome debouncedSearch e filterType
     const { data, isLoading, error, mutate } = useApi<PaginatedResponse>(
         `/api/assets?page=${page}&limit=${limit}&status=${filterStatus}&search=${debouncedSearch}&type=${filterType}`
@@ -156,8 +159,8 @@ export default function OperatorAssetsPage() {
                             <EmptyState
                                 title="Nenhum processo Registado"
                                 description="Ainda não há nenhum processo de crédito no sistema. Comece por registrar o primeiro."
-                                buttonLabel="Registrar Primeiro processo"
-                                buttonHref="/processos/novo"
+                                buttonLabel={isAdminOrOperator ? "Registrar Primeiro processo" : undefined}
+                                buttonHref={isAdminOrOperator ? "/processos/novo" : undefined}
                             />
                         ) : assets.length === 0 && !isLoading ? (
                             <Flex justify="center" p={10} bg="gray.900" borderRadius="md">
