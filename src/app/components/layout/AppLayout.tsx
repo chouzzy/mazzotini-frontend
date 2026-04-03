@@ -7,7 +7,6 @@ import {
     Flex,
     Drawer,
     useDisclosure,
-    BoxProps,
     FlexProps,
     Icon,
     Text,
@@ -55,7 +54,7 @@ interface NavItemProps {
 // ============================================================================
 import { useApi } from '@/hooks/useApi';
 
-const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps) => {
+const SidebarContent = ({ onClose }: { onClose: () => void }) => {
     const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
     const userRole = myProfile?.role;
 
@@ -74,7 +73,6 @@ const SidebarContent = ({ onClose, ...rest }: { onClose: () => void } & BoxProps
             w={{ base: 'full', md: 60 }}
             minH="100vh"
             flexDir={'column'}
-            {...rest}
         >
             <IconButton
                 display={{ base: 'flex', md: 'none' }}
@@ -216,7 +214,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return (
         <Flex w="100%" minH="100vh" bg="gray.800">
             {/* Coluna da Esquerda: Sidebar visível apenas no desktop */}
-            {showSidebar && shouldShowSidebar && <SidebarContent onClose={onClose} display={{ base: 'none', sm: 'none', lg: 'flex' }} />}
+            {showSidebar && shouldShowSidebar && <SidebarContent onClose={onClose} />}
 
             {/* Drawer para a sidebar no mobile */}
             <Drawer.Root open={open} placement="start">
