@@ -87,11 +87,18 @@ const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => (
 
 // ── sub-componente: seção de pastas na home ───────────────────────────────────
 function FoldersSection() {
-    const { data, isLoading } = useApi<PaginatedFoldersResponse>('/api/assets/folders?page=1&limit=999');
+    const { data, isLoading, error } = useApi<PaginatedFoldersResponse>('/api/assets/folders?page=1&limit=999');
     const folders = data?.items || [];
 
     if (isLoading) return (
         <Flex justify="center" py={8}><Spinner size="lg" color="brand.500" /></Flex>
+    );
+
+    if (error) return (
+        <Flex justify="center" py={4} gap={2} color="red.400">
+            <Icon as={PiWarningCircle} />
+            <Text fontSize="sm">Não foi possível carregar as pastas.</Text>
+        </Flex>
     );
 
     if (folders.length === 0) return null;
@@ -298,9 +305,7 @@ export default function DashboardPage() {
                         {assets.length === 0 && !isLoading && !debouncedSearch && !filterStatus && filterType === 'ALL' ? (
                             <EmptyState
                                 title="Nenhum Processo na Sua Carteira"
-                                description="Você ainda não possui nenhum processo de crédito. Quando um processo for associado a si, ele aparecerá aqui."
-                                buttonLabel="Contactar Suporte"
-                                buttonHref="#"
+                                description="Você ainda não possui nenhum processo de crédito. Quando um processo for associado a você, ele aparecerá aqui."
                             />
                         ) : assets.length === 0 && !isLoading ? (
                             <Flex justify="center" p={10} bg="gray.900" borderRadius="md">

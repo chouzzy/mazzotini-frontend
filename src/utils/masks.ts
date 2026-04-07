@@ -56,7 +56,7 @@ export const maskCPFOrCNPJ = (value: string) => {
 };
 
 /**
- * Aplica uma máscara de telemóvel/celular.
+ * Aplica uma máscara de celular.
  * @param value A string contendo os números.
  */
 export const maskPhone = (value: string) => {

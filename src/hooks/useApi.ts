@@ -7,9 +7,10 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  timeout: 15000,
 });
 
-export function useApi<T = any>(endpoint: string | null) {
+export function useApi<T = unknown>(endpoint: string | null) {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const fetcher = async (url: string) => {

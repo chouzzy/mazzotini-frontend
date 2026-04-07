@@ -102,7 +102,7 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
                     </Dialog.Header>
                     <Dialog.Body>
                         <VStack align="start" gap={4}>
-                            <Text>Selecione a permissão que este utilizador deve ter:</Text>
+                            <Text>Selecione a permissão que este usuário deve ter:</Text>
                             {isLoadingRoles ? (
                                 <Spinner />
                             ) : (

@@ -5,13 +5,12 @@ import {
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
-    PiChartLineUp, PiWallet, PiArrowRight, PiWhatsappLogo, PiWarningCircle,
+    PiChartLineUp, PiWallet, PiArrowRight, PiWarningCircle,
     PiHandWavingDuotone, PiFolderOpen,
 } from 'react-icons/pi';
 import NextLink from 'next/link';
 import { useApi } from '@/hooks/useApi';
 import { InvestorCreditAsset } from '../../dashboard/CreditAssetCard';
-import { whatsappLink } from '@/utils';
 import { PaginatedFoldersResponse } from '@/types/folders';
 import { FoldersSection } from '../../dashboard/FoldersSection';
 
@@ -109,13 +108,6 @@ export function DashboardOverview() {
                                     <PiWallet /> Ver Todos os Processos
                                 </Button>
                             </Link>
-                            <Button
-                                bgColor="gray.900" _hover={{ bgColor: 'gray.950', transition: '300ms' }}
-                                color="whatsapp" as="a" onClick={() => window.open(whatsappLink())}
-                                w="100%" size="lg" variant="ghost" gap={2}
-                            >
-                                <PiWhatsappLogo /> Falar com Suporte
-                            </Button>
                         </VStack>
                     </VStack>
                 </SimpleGrid>

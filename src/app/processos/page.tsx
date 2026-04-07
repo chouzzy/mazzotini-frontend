@@ -128,7 +128,7 @@ export default function OperatorAssetsPage() {
                             <Heading as="h1" size="xl">GESTÃO DE PROCESSOS</Heading>
                         </Flex>
                         <Text color="gray.400" mt={2}>
-                            Visualize, pesquise e gira todos os processos de crédito da plataforma.
+                            Visualize, pesquise e gerencie todos os processos de crédito da plataforma.
                         </Text>
                     </Box>
                 </Flex>
@@ -157,7 +157,7 @@ export default function OperatorAssetsPage() {
                         {/* Exibição Condicional de Resultados Vázios */}
                         {assets.length === 0 && !isLoading && !debouncedSearch && !filterStatus && filterType === 'ALL' ? (
                             <EmptyState
-                                title="Nenhum processo Registado"
+                                title="Nenhum processo Registrado"
                                 description="Ainda não há nenhum processo de crédito no sistema. Comece por registrar o primeiro."
                                 buttonLabel={isAdminOrOperator ? "Registrar Primeiro processo" : undefined}
                                 buttonHref={isAdminOrOperator ? "/processos/novo" : undefined}

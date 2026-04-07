@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
                         </Heading>
                         <Text mb={2}>O tratamento dos seus dados tem as seguintes bases legais e finalidades:</Text>
                         <List.Root ps={5} gap={2}>
-                            <List.Item><strong>Execução de Contrato:</strong> Para criar a sua conta, gerir o seu portfólio de ativos e permitir o acesso ao Dashboard.</List.Item>
+                            <List.Item><strong>Execução de Contrato:</strong> Para criar a sua conta, gerenciar o seu portfólio de ativos e permitir o acesso ao Dashboard.</List.Item>
                             <List.Item><strong>Integração Jurídica:</strong> Para vincular o seu perfil aos processos judiciais nos sistemas dos Tribunais e sistemas parceiros (Legal One).</List.Item>
                             <List.Item><strong>Cumprimento de Dever Legal:</strong> Para manter registros exigidos pela legislação fiscal e judicial brasileira.</List.Item>
                             <List.Item><strong>Segurança:</strong> Para verificar a sua identidade e prevenir fraudes ou acessos não autorizados.</List.Item>
@@ -90,7 +90,7 @@ export default function PrivacyPolicyPage() {
                             </Text>
                             <Box h={0.5} bgColor='gray.600' w='100%'/>
                             <Text>
-                                <strong>3.2. Provedor de Identidade (Auth0):</strong> Utilizamos serviços de autenticação segura para gerir o seu login e proteger as suas credenciais.
+                                <strong>3.2. Provedor de Identidade (Auth0):</strong> Utilizamos serviços de autenticação segura para gerenciar o seu login e proteger as suas credenciais.
                             </Text>
                             <Box h={0.5} bgColor='gray.600' w='100%'/>
                             <Text>

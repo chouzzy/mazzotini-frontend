@@ -64,7 +64,7 @@ export default function ApprovalQueuePage() {
                                 <Badge colorPalette="red" variant="solid" borderRadius="full" px={2}>{pendingUsers.length}</Badge>
                             )}
                         </Flex>
-                        <Text color="gray.400" mb={4}>Reveja e aprove os novos perfis de utilizadores.</Text>
+                        <Text color="gray.400" mb={4}>Revise e aprove os novos perfis de usuários.</Text>
 
                         {!pendingUsers || pendingUsers.length === 0 ? (
                             <Flex p={6} bg="gray.900" borderRadius="md" justify="center">

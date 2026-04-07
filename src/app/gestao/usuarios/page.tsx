@@ -28,6 +28,7 @@ interface UserManagementInfo {
     lastLogin?: string;
     roles: string[];
     status?: string;
+    associateName?: string | null;
 }
 
 interface PaginatedUsersResponse {
@@ -115,9 +116,8 @@ export default function UserManagementPage() {
                 authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
             });
 
-            // Pedimos à API TODOS os utilizadores filtrados (limit=9999) para a exportação
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=9999&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=500&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -127,17 +127,18 @@ export default function UserManagementPage() {
             if (usersToExport.length === 0) return;
 
             // Preparamos os cabeçalhos e as linhas. Separador = ';' para o Excel Brasileiro/Português
-            const headers = ['Nome', 'E-mail', 'Permissões', 'Status', 'Último Login'];
+            const headers = ['Nome', 'E-mail', 'Permissões', 'Associado', 'Status', 'Último Login'];
             const rows = usersToExport.map((u: UserManagementInfo) => [
                 `"${u.name}"`,
                 `"${u.email}"`,
                 `"${u.roles.map(r => translateRole(r)).join(', ')}"`,
+                `"${u.associateName || '-'}"`,
                 `"${u.status === 'ACTIVE' ? 'Ativo' : u.status === 'PENDING_REVIEW' ? 'Pendente Revisão' : 'Pendente Cadastro'}"`,
                 `"${u.email.includes('placeholder') ? 'Importado' : (u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca')}"`
             ]);
 
             // \uFEFF é o BOM (Byte Order Mark) que garante que o Excel reconheça acentos (UTF-8)
-            const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map((r: any[]) => r.join(';'))].join('\n');
+            const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map((r: string[]) => r.join(';'))].join('\n');
             
             // Criar o Blob e forçar o download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -166,7 +167,7 @@ export default function UserManagementPage() {
             <RoleGuard>
                 <VStack gap={8} align="stretch" w="100%">
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
-                        <Box><Heading as="h1" size="xl">Gestão de Usuários</Heading><Text color="gray.400" mt={2}>Convide novos usuários e gira permissões.</Text></Box>
+                        <Box><Heading as="h1" size="xl">Gestão de Usuários</Heading><Text color="gray.400" mt={2}>Convide novos usuários e gerencie permissões.</Text></Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
                             <Button colorPalette={'blue'} variant={'solid'} gap={2} onClick={onInviteOpen}><Icon as={PiUserPlus} boxSize={5} />Novo usuário</Button>
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
@@ -226,7 +227,7 @@ export default function UserManagementPage() {
                                 colorPalette="green"
                                 onClick={handleExportExcel}
                                 loading={isExporting}
-                                loadingText="A Exportar..."
+                                loadingText="Exportando..."
                                 gap={2}
                                 h="40px"
                                 _hover={{ bg: "green.700", color: "white" }}

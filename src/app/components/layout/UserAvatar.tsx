@@ -7,7 +7,6 @@
 
 import {
     Flex,
-    Link as ChakraLink,
     Avatar,
     Menu,
     Portal,
@@ -15,10 +14,9 @@ import {
     Text,
     Icon,
     SkeletonCircle,
-    Tag, 
+    Tag,
 } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
-import { whatsappLink } from "@/utils";
 import { PiSignOut } from "react-icons/pi";
 import { MotionButton } from "../ui/MotionButton";
 import { useApi } from "@/hooks/useApi"; 
@@ -119,9 +117,7 @@ export function UserAvatar() {
                         </Menu.Root >
                     </Flex>
                 ) : (
-                    <ChakraLink href={whatsappLink()} _hover={{ textDecoration: 'none' }} target="_blank">
-                        <MotionButton />
-                    </ChakraLink>
+                    <MotionButton />
                 )
             }
         </>

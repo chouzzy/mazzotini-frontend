@@ -72,7 +72,7 @@ interface OnboardingFormData {
     nationality: string;
     maritalStatus: string;
 
-    // Campos para os ficheiros
+    // Campos para os arquivos
     profilePicture?: FileList;
     personalDocuments?: FileList;
 }

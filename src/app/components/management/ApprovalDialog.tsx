@@ -15,6 +15,8 @@ import {
     Icon,
     Link,
     Avatar,
+    Textarea,
+    Field,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -42,8 +44,18 @@ const ProfileField = ({ label, value }: { label: string, value?: string | null }
     );
 };
 
+interface InvestmentPreview {
+    asset?: {
+        [key: string]: unknown;
+        processNumber?: string;
+        nickname?: string;
+        origemProcesso?: string;
+    };
+}
+
 export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: ApprovalDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
     const { getAccessTokenSilently } = useAuth0();
 
     const handleApprove = async () => {
@@ -69,12 +81,11 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
     const handleReject = async () => {
         if (!user) return;
         setIsLoading(true);
-        // TODO: Adicionar um campo de motivo da rejeição
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
             await axios.patch(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${user.id}/reject`,
-                {},
+                { reason: rejectionReason || undefined },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toaster.create({ title: "Perfil Rejeitado", description: `O perfil de ${user.name} foi rejeitado.`, type: "success" });
@@ -173,7 +184,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                 <Box>
                                     <Heading size="sm" mb={4} color="brand.500">Processos Vinculados (Pré-Cadastrados)</Heading>
                                     <VStack align="stretch" gap={3}>
-                                        {user.investments.map((inv: any, idx: number) => (
+                                        {user.investments.map((inv: InvestmentPreview, idx: number) => (
                                             <Flex key={idx} p={3} bg="gray.900" borderRadius="md" align="center" gap={4} border="1px solid" borderColor="gray.700">
                                                 <Flex boxSize={10} bg="brand.900" borderRadius="md" align="center" justify="center">
                                                     <Icon as={PiScalesDuotone} color="brand.400" boxSize={6} />
@@ -218,16 +229,29 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                 <Spinner size="sm" />
                                 Processando...
                             </Flex>
-                        ) :
-                            <>
-                                <Button colorPalette="red" onClick={handleReject} variant="solid">
-                                    <Icon as={PiXCircle} /> Rejeitar Perfil
-                                </Button>
-                                <Button colorPalette="green" ml={3} onClick={handleApprove} >
-                                    <Icon as={PiCheckCircle} /> Aprovar e Ativar Acesso
-                                </Button>
-                            </>
-                        }
+                        ) : (
+                            <VStack align="stretch" w="100%" gap={3}>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">Motivo da rejeição (opcional)</Field.Label>
+                                    <Textarea
+                                        placeholder="Descreva o motivo para rejeitar este perfil..."
+                                        value={rejectionReason}
+                                        onChange={(e) => setRejectionReason(e.target.value)}
+                                        bgColor="gray.900"
+                                        borderColor="gray.600"
+                                        rows={2}
+                                    />
+                                </Field.Root>
+                                <Flex justify="flex-end" gap={3}>
+                                    <Button colorPalette="red" onClick={handleReject} variant="solid">
+                                        <Icon as={PiXCircle} /> Rejeitar Perfil
+                                    </Button>
+                                    <Button colorPalette="green" onClick={handleApprove}>
+                                        <Icon as={PiCheckCircle} /> Aprovar e Ativar Acesso
+                                    </Button>
+                                </Flex>
+                            </VStack>
+                        )}
                     </Dialog.Footer>
                 </Dialog.Content>
             </Dialog.Positioner>

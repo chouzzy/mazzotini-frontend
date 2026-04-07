@@ -107,7 +107,7 @@ export function InviteUserDialog({ isOpen, onClose, onInviteSuccess }: InviteUse
                 <Dialog.Content bg="gray.800">
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <Dialog.Header>
-                            <Dialog.Title>{generatedLink ? "Convite Gerado com Sucesso!" : "Convidar Novo Utilizador"}</Dialog.Title>
+                            <Dialog.Title>{generatedLink ? "Convite Gerado com Sucesso!" : "Convidar Novo Usuário"}</Dialog.Title>
                             <Dialog.CloseTrigger asChild>
                                 <Button variant="ghost" size="sm">&times;</Button>
                             </Dialog.CloseTrigger>
@@ -117,7 +117,7 @@ export function InviteUserDialog({ isOpen, onClose, onInviteSuccess }: InviteUse
                         {generatedLink ? (
                             <Dialog.Body>
                                 <VStack gap={4} align="stretch">
-                                    <Text>Partilhe o link abaixo com o novo utilizador. Ele é único e seguro para a criação da conta.</Text>
+                                    <Text>Compartilhe o link abaixo com o novo usuário. Ele é único e seguro para a criação da conta.</Text>
                                     <Input value={generatedLink} readOnly bgColor="gray.700" />
                                     <Button colorPalette="blue" gap={2} onClick={handleCopy}>
                                         <Icon as={PiCopy} />

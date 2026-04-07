@@ -58,7 +58,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
         setIsSyncing(true);
         toaster.create({
             title: 'Sincronização Iniciada',
-            description: "A buscar novos andamentos no Legal One...",
+            description: "Buscando novos andamentos no Legal One...",
             type: 'info',
             duration: 9000,
             closable: true,
@@ -144,7 +144,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                             <Button
                                 onClick={handleSync}
                                 loading={isSyncing}
-                                loadingText="A Sincronizar"
+                                loadingText="Sincronizando"
                                 bgColor="brand.500"
                                 gap={2} 
                             >
