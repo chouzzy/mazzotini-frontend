@@ -180,13 +180,8 @@ export default function EditAssetPage() {
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
         legalOneId ? `/api/assets/${legalOneId}` : null
     );
-    const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
-    const associates: AssociateSelectItem[] = useMemo(
-        () => (associatesRaw || [])
-            .filter(a => a.id)
-            .map(a => ({ value: a.id, label: a.name || a.email || a.id })),
-        [associatesRaw]
-    );
+    // O controller já retorna { value, label } — usar direto sem remapear
+    const { data: associates } = useApi<AssociateSelectItem[]>('/api/users/associates');
 
     const isLoadingData = isLoadingInvestors || isLoadingAsset || isLoadingProfile;
 
@@ -341,7 +336,7 @@ export default function EditAssetPage() {
 
                                         {/* B. ASSOCIADO */}
                                         <Box flex={2} w="100%">
-                                            <AssociateCombobox control={control} index={index} allAssociates={associates} />
+                                            <AssociateCombobox control={control} index={index} allAssociates={associates || []} />
                                         </Box>
 
                                         {/* C. DATA DE AQUISIÇÃO */}
