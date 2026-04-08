@@ -6,7 +6,7 @@ import {
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch, useController } from "react-hook-form";
-import { useListCollection, useFilter } from "@chakra-ui/react";
+import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { PiCaretDownDuotone, PiFloppyDisk, PiPlusCircle, PiTrash, PiInfo } from "react-icons/pi";
@@ -79,20 +79,24 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
 
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter, set } = useListCollection({ initialItems: allInvestors || [], filter: contains });
 
-    // Atualiza a collection quando a lista de investidores carrega assincronamente.
-    // Sem isso, o Combobox inicializa vazio e ao receber um value via reset() o
-    // zag-js tenta buscar o item na collection vazia, retorna {} e crasha.
-    useEffect(() => { set(allInvestors || []); }, [allInvestors]);
+    // Filtragem manual: re-computa a partir de allInvestors atual (não do initialItems stale).
+    // useListCollection.filter() usa um closure sobre initialItems (sempre vazio na montagem),
+    // então digitando nunca mostraria resultados.
+    const collection = useMemo(() => {
+        const filtered = inputValue
+            ? allInvestors.filter(item => contains(item.label ?? '', inputValue))
+            : allInvestors;
+        return createListCollection({ items: filtered });
+    }, [allInvestors, inputValue, contains]);
 
     return (
         <Field.Root invalid={!!error} required>
             <Field.Label>Cliente {index + 1}</Field.Label>
-            <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => { setInputValue(e.inputValue); filter(e.inputValue); }}>
+            <Combobox.Root width="100%" collection={collection} value={controllerField.value ? [controllerField.value] : []} onValueChange={(details) => controllerField.onChange(details.value[0])} onInputValueChange={(e) => setInputValue(e.inputValue)}>
                 <Combobox.Control>
                     <Combobox.Input asChild autoComplete="off">
-                        <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={defaultLabel} onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => { setInputValue(text); filter(text); }, 0); }} />
+                        <Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Pesquisar cliente..." defaultValue={defaultLabel} onPaste={(e) => { const text = e.clipboardData.getData('text/plain').trim(); setTimeout(() => setInputValue(text), 0); }} />
                     </Combobox.Input>
                     <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
                 </Combobox.Control>
@@ -124,21 +128,23 @@ function AssociateCombobox(props: { control: any; index: number; allAssociates: 
     }, [cf.value, allAssociates]);
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
-    const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter, set } = useListCollection({
-        initialItems: allAssociates || [],
-        // itemToString garante que o filter nunca chame .normalize() em null/undefined
-        itemToString: (item) => item?.label ?? '',
-        filter: contains,
-    });
 
-    // Mantém a collection sincronizada quando a lista de associados carrega
-    useEffect(() => { set(allAssociates || []); }, [allAssociates]);
+    const { contains } = useFilter({ sensitivity: "base" });
+
+    // Mesma abordagem do InvestorCombobox: filtragem manual via useMemo.
+    // useListCollection.filter() usa closure sobre initialItems (vazio na montagem),
+    // fazendo a busca nunca retornar resultados quando os dados chegam depois.
+    const collection = useMemo(() => {
+        const filtered = inputValue
+            ? allAssociates.filter(item => contains(item.label ?? '', inputValue))
+            : allAssociates;
+        return createListCollection({ items: filtered });
+    }, [allAssociates, inputValue, contains]);
 
     return (
         <Field.Root>
             <Field.Label>Associado (opcional)</Field.Label>
-            <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
+            <Combobox.Root width="100%" collection={collection} value={cf.value ? [cf.value] : []} onValueChange={(d) => { cf.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }} inputValue={inputValue} onInputValueChange={(d) => { setInputValue(d.inputValue); if (!d.inputValue) cf.onChange(""); }}>
                 <Combobox.Control>
                     <Combobox.Input asChild autoComplete="off"><Input bgColor={'gray.700'} borderColor={'gray.600'} placeholder="Nenhum associado..." /></Combobox.Input>
                     <Combobox.IndicatorGroup><Combobox.ClearTrigger /><Combobox.Trigger /></Combobox.IndicatorGroup>
