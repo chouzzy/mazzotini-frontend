@@ -99,8 +99,8 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
                 <Portal>
                     <Combobox.Positioner>
                         <Combobox.Content>
-                            <Combobox.Empty>Nenhum investidor encontrado</Combobox.Empty>
-                            {collection.items.map((item) => (
+                            <Combobox.Empty key="__empty">Nenhum investidor encontrado</Combobox.Empty>
+                            {collection.items.filter(item => item.value).map((item) => (
                                 <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
                                     {item.label}
                                     <Combobox.ItemIndicator />
@@ -141,8 +141,8 @@ function AssociateCombobox(props: { control: any; index: number; allAssociates: 
                 <Portal>
                     <Combobox.Positioner>
                         <Combobox.Content maxH="200px" overflowY="auto">
-                            <Combobox.Empty>Nenhum associado encontrado</Combobox.Empty>
-                            {collection.items.map((item) => (
+                            <Combobox.Empty key="__empty">Nenhum associado encontrado</Combobox.Empty>
+                            {collection.items.filter(item => item.value).map((item) => (
                                 <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
                                     {item.label}<Combobox.ItemIndicator />
                                 </Combobox.Item>
