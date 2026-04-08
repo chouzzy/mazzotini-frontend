@@ -84,6 +84,8 @@ export default function UserManagementPage() {
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [filterOnlyShadow, setFilterOnlyShadow] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [associateQuery, setAssociateQuery] = useState("");
+    const [debouncedAssociate, setDebouncedAssociate] = useState("");
     const limit = 10;
 
     useEffect(() => {
@@ -94,8 +96,16 @@ export default function UserManagementPage() {
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedAssociate(associateQuery);
+            setPage(1);
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [associateQuery]);
+
     const { data, isLoading, error, mutate } = useApi<PaginatedUsersResponse>(
-        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`
+        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}`
     );
     const { data: pendingUsers, isLoading: isLoadingPending } = useApi<UserProfile[]>('/api/management/pending-users');
 
@@ -117,7 +127,7 @@ export default function UserManagementPage() {
             });
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=500&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=500&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -182,12 +192,30 @@ export default function UserManagementPage() {
                         <Box flex={1} minW="200px">
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">Busca por Nome ou E-mail</Field.Label>
-                                <Input 
-                                    placeholder="Comece a digitar para pesquisar..." 
-                                    value={searchQuery} 
-                                    onChange={(e) => setSearchQuery(e.target.value)} 
-                                    bgColor="gray.800" 
-                                    borderColor="gray.700" 
+                                <Input
+                                    placeholder="Comece a digitar para pesquisar..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    bgColor="gray.800"
+                                    borderColor="gray.700"
+                                />
+                            </Field.Root>
+                        </Box>
+                        <Box flex={1} minW="200px">
+                            <Field.Root>
+                                <Field.Label fontSize="sm" color="gray.400">
+                                    <HStack gap={2} align="center">
+                                        <Text>Busca por Associado</Text>
+                                        <Badge colorPalette="purple" variant="solid" fontSize="2xs" px={2}>Associado</Badge>
+                                    </HStack>
+                                </Field.Label>
+                                <Input
+                                    placeholder="Nome do associado vinculado..."
+                                    value={associateQuery}
+                                    onChange={(e) => setAssociateQuery(e.target.value)}
+                                    bgColor="gray.800"
+                                    borderColor={associateQuery ? "purple.500" : "gray.700"}
+                                    _focus={{ borderColor: "purple.400", boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)" }}
                                 />
                             </Field.Root>
                         </Box>
