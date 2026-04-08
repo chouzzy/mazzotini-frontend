@@ -79,7 +79,12 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
 
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: allInvestors || [], filter: contains });
+    const { collection, filter, set } = useListCollection({ initialItems: allInvestors || [], filter: contains });
+
+    // Atualiza a collection quando a lista de investidores carrega assincronamente.
+    // Sem isso, o Combobox inicializa vazio e ao receber um value via reset() o
+    // zag-js tenta buscar o item na collection vazia, retorna {} e crasha.
+    useEffect(() => { set(allInvestors || []); }, [allInvestors]);
 
     return (
         <Field.Root invalid={!!error} required>
@@ -120,7 +125,11 @@ function AssociateCombobox(props: { control: any; index: number; allAssociates: 
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+    const { collection, filter, set } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+
+    // Mantém a collection sincronizada quando a lista de associados carrega
+    useEffect(() => { set(allAssociates || []); }, [allAssociates]);
+
     return (
         <Field.Root>
             <Field.Label>Associado (opcional)</Field.Label>
