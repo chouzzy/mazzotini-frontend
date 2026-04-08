@@ -125,7 +125,12 @@ function AssociateCombobox(props: { control: any; index: number; allAssociates: 
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter, set } = useListCollection({ initialItems: allAssociates || [], filter: contains });
+    const { collection, filter, set } = useListCollection({
+        initialItems: allAssociates || [],
+        // itemToString garante que o filter nunca chame .normalize() em null/undefined
+        itemToString: (item) => item?.label ?? '',
+        filter: contains,
+    });
 
     // Mantém a collection sincronizada quando a lista de associados carrega
     useEffect(() => { set(allAssociates || []); }, [allAssociates]);
@@ -171,7 +176,9 @@ export default function EditAssetPage() {
     );
     const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
     const associates: AssociateSelectItem[] = useMemo(
-        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
+        () => (associatesRaw || [])
+            .filter(a => a.id)
+            .map(a => ({ value: a.id, label: a.name || a.email || a.id })),
         [associatesRaw]
     );
 
