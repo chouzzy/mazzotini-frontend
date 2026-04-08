@@ -255,6 +255,7 @@ export default function UserManagementPage() {
                                         <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
                                             <Table.ColumnHeader color={'white'} p={8}>Usuários</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Permissões</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={8}>Associado</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Status</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Último Login</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Ações</Table.ColumnHeader>
@@ -275,6 +276,11 @@ export default function UserManagementPage() {
                                                     </Flex>
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}><Flex gap={2}>{u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}</Flex></Table.Cell>
+                                                <Table.Cell px={8} py={4}>
+                                                    <Text fontSize="sm" color={u.associateName ? 'white' : 'gray.500'}>
+                                                        {u.associateName || '—'}
+                                                    </Text>
+                                                </Table.Cell>
                                                 <Table.Cell px={8} py={4}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
                                                 <Table.Cell px={8} py={4}>
                                                     {u.email.includes('placeholder') ? (
