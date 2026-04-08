@@ -15,11 +15,15 @@
 
 import { test, expect } from '@playwright/test';
 
-// Rotas a testar. Ajuste os IDs reais conforme necessário.
+// Rotas a testar.
+// Para rotas dinâmicas (ex: /editar), use um legalOneId real e estável do banco.
+// O ID 4680 é o processo 0033246-68.1998.8.26.0224, usado como fixture de smoke.
 const ROUTES = [
     { path: '/dashboard', name: 'Dashboard' },
     { path: '/processos', name: 'Lista de Processos' },
     { path: '/processos/novo', name: 'Novo Processo' },
+    { path: '/processos/4680', name: 'Detalhe do Processo' },
+    { path: '/processos/4680/editar', name: 'Editar Processo' },
     { path: '/pastas', name: 'Pastas' },
     { path: '/gestao/usuarios', name: 'Gestão de Usuários' },
     { path: '/gestao/aprovacoes', name: 'Gestão de Aprovações' },
