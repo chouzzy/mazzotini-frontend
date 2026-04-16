@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, Stack, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox,
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, Stack, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Badge,
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
-import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch, useController } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useFieldArray, Control, useWatch, useController, UseFormSetValue } from "react-hook-form";
 import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -40,7 +40,12 @@ interface FormValues {
     investors: InvestorFormInput[];
 }
 
-interface UserSelectItem { value: string; label: string; }
+interface UserSelectItem {
+    value: string;
+    label: string;
+    indication?: string | null;
+    referredByName?: string | null;
+}
 
 const indexTypesCollection = createListCollection({
     items: [
@@ -166,6 +171,51 @@ function AssociateCombobox(props: { control: any; index: number; allAssociates: 
     );
 }
 
+function SuggestAssociateBanner({
+    control, index, allInvestors, allAssociates, setValue
+}: {
+    control: Control<FormValues>;
+    index: number;
+    allInvestors: UserSelectItem[];
+    allAssociates: AssociateSelectItem[];
+    setValue: UseFormSetValue<FormValues>;
+}) {
+    const selectedUserId    = useWatch({ control, name: `investors.${index}.userId` });
+    const currentAssociateId = useWatch({ control, name: `investors.${index}.associateId` });
+
+    const suggestion = useMemo(() => {
+        if (!selectedUserId) return null;
+        const investor = allInvestors.find(inv => inv.value === selectedUserId);
+        const suggestedName = investor?.referredByName || investor?.indication;
+        if (!suggestedName) return null;
+
+        const normalized = suggestedName.toLowerCase();
+        const matched = allAssociates.find(a =>
+            a.label.toLowerCase().includes(normalized) || normalized.includes(a.label.toLowerCase())
+        );
+        return { name: suggestedName, associateId: matched?.value ?? null };
+    }, [selectedUserId, allInvestors, allAssociates]);
+
+    if (!suggestion || currentAssociateId) return null;
+
+    return (
+        <Flex mt={1} p={2} bg="blue.900/30" border="1px solid" borderColor="blue.700" borderRadius="md" align="center" justify="space-between" gap={2}>
+            <Flex align="center" gap={2} minW={0}>
+                <Badge colorPalette="blue" variant="solid" fontSize="2xs" flexShrink={0}>Sugestão</Badge>
+                <Text fontSize="xs" color="blue.200" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                    {suggestion.name}
+                </Text>
+            </Flex>
+            {suggestion.associateId && (
+                <Button size="xs" colorPalette="blue" flexShrink={0}
+                    onClick={() => setValue(`investors.${index}.associateId`, suggestion.associateId!, { shouldDirty: true })}>
+                    Aplicar
+                </Button>
+            )}
+        </Flex>
+    );
+}
+
 export default function EditAssetPage() {
     const MotionFlex = motion(Flex);
     const { getAccessTokenSilently, isAuthenticated, isLoading: isAuthLoading } = useAuth0();
@@ -198,7 +248,7 @@ export default function EditAssetPage() {
     }, [myProfile, isLoadingProfile, router, isAdminOrOperator]);
     // ============================================================================
 
-    const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>();
+    const { register, handleSubmit, control, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>();
 
     const { fields, append, remove } = useFieldArray({ control, name: "investors" });
 
@@ -332,6 +382,7 @@ export default function EditAssetPage() {
                                         {/* A. CLIENTE */}
                                         <Box flex={2} w="100%">
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
+                                            <SuggestAssociateBanner control={control} index={index} allInvestors={investors || []} allAssociates={associates || []} setValue={setValue} />
                                         </Box>
 
                                         {/* B. ASSOCIADO */}

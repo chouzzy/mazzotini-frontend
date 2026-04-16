@@ -2,14 +2,14 @@
 
 import {
     Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, createListCollection, Select, Portal, Checkbox, Stack, RadioGroup, Box,
-    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset,
+    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset, Dialog, CloseButton, Card,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, useController } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiWarningCircle } from "react-icons/pi";
+import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiWarningCircle, PiKey, PiEnvelope } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask } from "@/utils/masks";
 import { useApi } from "@/hooks/useApi";
@@ -88,6 +88,15 @@ const nacionalidadesCollection = createListCollection({
 export default function EditUserPage() {
     const { getAccessTokenSilently } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Estados para seção de segurança
+    const [isSendingReset, setIsSendingReset] = useState(false);
+    const [resetLink, setResetLink] = useState<string | null>(null);
+    const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+    const [newEmail, setNewEmail] = useState('');
+    const [confirmEmail, setConfirmEmail] = useState('');
+    const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+    const emailInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const params = useParams();
     const userId = params.id as string;
@@ -249,6 +258,103 @@ export default function EditUserPage() {
 
                 {/* 1. RESUMO DA CARTEIRA (read-only) */}
                 {userData && <InvestmentsSummary userId={userId} investments={userData.investments || []} />}
+
+                {/* 2. SEGURANÇA */}
+                {userData?.auth0UserId && (
+                    <Card.Root bg="gray.900" borderColor="gray.700" borderWidth={1}>
+                        <Card.Body>
+                            <Heading size="sm" color="brand.400" mb={4}>Segurança da Conta</Heading>
+                            <HStack gap={4} wrap="wrap">
+                                <Button
+                                    variant="outline" colorPalette="orange" gap={2}
+                                    loading={isSendingReset}
+                                    onClick={async () => {
+                                        setIsSendingReset(true);
+                                        setResetLink(null);
+                                        try {
+                                            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+                                            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userData.auth0UserId}/password-reset`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                                            setResetLink(res.data.resetLink);
+                                            toaster.create({ title: 'Link gerado!', description: 'Copie o link abaixo e envie ao usuário.', type: 'success' });
+                                        } catch {
+                                            toaster.create({ title: 'Erro ao gerar link.', type: 'error' });
+                                        } finally {
+                                            setIsSendingReset(false);
+                                        }
+                                    }}
+                                >
+                                    <Icon as={PiKey} /> Gerar Link de Redefinição de Senha
+                                </Button>
+                                <Button variant="outline" colorPalette="blue" gap={2} onClick={() => { setNewEmail(''); setConfirmEmail(''); setIsEmailDialogOpen(true); }}>
+                                    <Icon as={PiEnvelope} /> Alterar E-mail
+                                </Button>
+                            </HStack>
+                            {resetLink && (
+                                <Box mt={3} p={3} bg="orange.900/20" border="1px solid" borderColor="orange.700" borderRadius="md">
+                                    <Text fontSize="xs" color="gray.400" mb={1}>Link de redefinição (válido por 5 dias):</Text>
+                                    <Text fontSize="xs" color="orange.300" wordBreak="break-all">{resetLink}</Text>
+                                    <Button size="xs" mt={2} colorPalette="orange" onClick={() => { navigator.clipboard.writeText(resetLink); toaster.create({ title: 'Copiado!', type: 'success' }); }}>
+                                        Copiar link
+                                    </Button>
+                                </Box>
+                            )}
+                        </Card.Body>
+                    </Card.Root>
+                )}
+
+                {/* DIALOG: Alterar E-mail */}
+                <Dialog.Root open={isEmailDialogOpen} onOpenChange={(d) => !d.open && setIsEmailDialogOpen(false)}>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner>
+                        <Dialog.Content bg="gray.800">
+                            <Dialog.Header>
+                                <Dialog.Title>Alterar E-mail do Usuário</Dialog.Title>
+                                <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
+                            </Dialog.Header>
+                            <Dialog.Body>
+                                <VStack gap={4} align="stretch">
+                                    <Text fontSize="sm" color="gray.400">E-mail atual: <strong>{userData?.email}</strong></Text>
+                                    <Alert.Root status="warning" borderRadius="md" fontSize="xs">
+                                        <Alert.Indicator />
+                                        <Alert.Description>O usuário precisará fazer login novamente com o novo e-mail. O e-mail precisará ser verificado.</Alert.Description>
+                                    </Alert.Root>
+                                    <Field.Root>
+                                        <Field.Label>Novo E-mail</Field.Label>
+                                        <Input ref={emailInputRef} type="email" bgColor="gray.700" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="novo@email.com" />
+                                    </Field.Root>
+                                    <Field.Root>
+                                        <Field.Label>Confirmar Novo E-mail</Field.Label>
+                                        <Input type="email" bgColor="gray.700" value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} placeholder="novo@email.com" borderColor={confirmEmail && newEmail !== confirmEmail ? 'red.500' : 'gray.600'} />
+                                        {confirmEmail && newEmail !== confirmEmail && <Field.ErrorText>Os e-mails não coincidem.</Field.ErrorText>}
+                                    </Field.Root>
+                                </VStack>
+                            </Dialog.Body>
+                            <Dialog.Footer>
+                                <Button variant="ghost" onClick={() => setIsEmailDialogOpen(false)}>Cancelar</Button>
+                                <Button
+                                    colorPalette="blue"
+                                    loading={isUpdatingEmail}
+                                    disabled={!newEmail || newEmail !== confirmEmail}
+                                    onClick={async () => {
+                                        setIsUpdatingEmail(true);
+                                        try {
+                                            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+                                            await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userData.auth0UserId}/email`, { newEmail }, { headers: { Authorization: `Bearer ${token}` } });
+                                            toaster.create({ title: 'E-mail atualizado!', description: 'O usuário deve fazer login com o novo e-mail.', type: 'success' });
+                                            setIsEmailDialogOpen(false);
+                                        } catch (err: any) {
+                                            toaster.create({ title: 'Erro ao atualizar e-mail.', description: err.response?.data?.error || err.message, type: 'error' });
+                                        } finally {
+                                            setIsUpdatingEmail(false);
+                                        }
+                                    }}
+                                >
+                                    Confirmar Alteração
+                                </Button>
+                            </Dialog.Footer>
+                        </Dialog.Content>
+                    </Dialog.Positioner>
+                </Dialog.Root>
 
                 <Separator borderColor="gray.700" />
 

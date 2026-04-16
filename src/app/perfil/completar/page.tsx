@@ -27,14 +27,15 @@ import {
     Box,
     HStack,
     Progress,
-    Badge
+    Badge,
+    Combobox,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { PiEnvelope, PiFloppyDisk, PiUploadSimple, PiWhatsappLogoDuotone, PiCheckCircle, PiCircleNotch } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask, maskCEP } from "@/utils/masks";
 import { useSWRConfig } from "swr";
@@ -54,7 +55,7 @@ interface OnboardingFormData {
     cpfOrCnpj: string;
     rg: string;
     birthDate: string;
-    gender: "Male" | "Female";
+    gender: "Male" | "Female" | "Other";
     cellPhone: string;
     phone?: string;
     infoEmail?: string;
@@ -358,7 +359,12 @@ export default function CompleteProfilePage() {
 
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
-                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500"> <Text>Foto de Perfil (obrigatório)</Text></Field.Label>
+                        <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500">
+                            <HStack justify="center" gap={2}>
+                                <Text>Foto de Perfil</Text>
+                                <Badge colorPalette="gray" variant="outline" fontSize="xs">Opcional</Badge>
+                            </HStack>
+                        </Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
                             <Avatar.Root boxSize={'40'} my={8}>
                                 <Avatar.Fallback name={watch('name')} />
@@ -426,10 +432,11 @@ export default function CompleteProfilePage() {
                         <Field.Root invalid={!!errors.gender} required={!isCnpj} disabled={isCnpj}>
                             <Field.Label>Gênero</Field.Label>
                             <Controller name="gender" control={control} rules={{ required: !isCnpj ? "O gênero é obrigatório" : false }} render={({ field }) => (
-                                <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "Male" | "Female")} disabled={isCnpj}>
+                                <RadioGroup.Root value={field.value} onValueChange={(details) => field.onChange(details.value as "Male" | "Female" | "Other")} disabled={isCnpj}>
                                     <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
                                         <RadioGroup.Item value="Male"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj ? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Masculino</RadioGroup.ItemText></RadioGroup.Item>
                                         <RadioGroup.Item value="Female"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj ? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Feminino</RadioGroup.ItemText></RadioGroup.Item>
+                                        <RadioGroup.Item value="Other"><RadioGroup.ItemHiddenInput onBlur={field.onBlur} /><RadioGroup.ItemIndicator bgColor={isCnpj ? 'gray.600' : 'gray.100'} color={'black'} cursor={isCnpj ? 'not-allowed' : 'pointer'} /><RadioGroup.ItemText>Não quero especificar</RadioGroup.ItemText></RadioGroup.Item>
                                     </Stack>
                                 </RadioGroup.Root>
                             )} />
@@ -490,15 +497,63 @@ export default function CompleteProfilePage() {
                                 <Field.HelperText>Nós iremos verificar esta informação internamente.</Field.HelperText>
                             </Field.Root>
                         ) : (
-                            <Controller name="referredById" control={control} render={({ field }) => (
-                                <Field.Root>
-                                    <Field.Label>Selecionar Associado</Field.Label>
-                                    <Select.Root collection={associatesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
-                                        <Select.Control><Select.Trigger bgColor={'gray.700'}><Select.ValueText placeholder="Selecione..." /></Select.Trigger></Select.Control>
-                                        <Portal><Select.Positioner><Select.Content>{associatesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-                                    </Select.Root>
-                                </Field.Root>
-                            )} />
+                            <Controller name="referredById" control={control} render={({ field }) => {
+                                const [codeInput, setCodeInput] = useState("");
+                                const filteredCollection = useMemo(() => {
+                                    const filtered = codeInput
+                                        ? associatesCollection.items.filter(i => i.label.startsWith(codeInput))
+                                        : [];
+                                    return createListCollection({ items: filtered });
+                                }, [codeInput]);
+                                const selectedLabel = associatesCollection.items.find(i => i.value === field.value)?.label || "";
+                                return (
+                                    <Field.Root>
+                                        <Field.Label>Selecionar Associado</Field.Label>
+                                        <Field.HelperText mb={1} color="gray.400" fontSize="xs">
+                                            Digite o código numérico do associado (ex: 002) para localizá-lo.
+                                        </Field.HelperText>
+                                        <Combobox.Root
+                                            width="100%"
+                                            collection={filteredCollection}
+                                            value={field.value ? [field.value] : []}
+                                            inputValue={field.value ? selectedLabel : codeInput}
+                                            onValueChange={(d) => {
+                                                field.onChange(d.value[0] ?? "");
+                                                setCodeInput(d.items[0]?.label ?? "");
+                                            }}
+                                            onInputValueChange={(d) => {
+                                                setCodeInput(d.inputValue);
+                                                if (!d.inputValue) field.onChange("");
+                                            }}
+                                        >
+                                            <Combobox.Control>
+                                                <Combobox.Input asChild autoComplete="off">
+                                                    <Input bgColor={'gray.700'} placeholder="Digite o código (ex: 002)..." />
+                                                </Combobox.Input>
+                                                <Combobox.IndicatorGroup>
+                                                    <Combobox.ClearTrigger />
+                                                    <Combobox.Trigger />
+                                                </Combobox.IndicatorGroup>
+                                            </Combobox.Control>
+                                            <Portal>
+                                                <Combobox.Positioner>
+                                                    <Combobox.Content>
+                                                        <Combobox.Empty key="__empty">
+                                                            {codeInput ? "Código não encontrado" : "Digite o código do associado"}
+                                                        </Combobox.Empty>
+                                                        {filteredCollection.items.map((i) => (
+                                                            <Combobox.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
+                                                                {i.label}
+                                                                <Combobox.ItemIndicator />
+                                                            </Combobox.Item>
+                                                        ))}
+                                                    </Combobox.Content>
+                                                </Combobox.Positioner>
+                                            </Portal>
+                                        </Combobox.Root>
+                                    </Field.Root>
+                                );
+                            }} />
                         )}
                     </VStack>
 

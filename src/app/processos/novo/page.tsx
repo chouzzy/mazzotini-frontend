@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack, Alert
+    Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, Select, createListCollection, Portal, Box, HStack, IconButton, Combobox, Stack, Alert, Badge
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { motion } from 'framer-motion';
-import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control, useController } from "react-hook-form";
+import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control, useController, UseFormSetValue } from "react-hook-form";
 import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
@@ -61,7 +61,12 @@ interface LookupResponse {
     legalOneMatches: LegalOneMatch[];
 }
 
-interface UserSelectItem { value: string; label: string; }
+interface UserSelectItem {
+    value: string;
+    label: string;
+    indication?: string | null;
+    referredByName?: string | null;
+}
 const indexTypesCollection = createListCollection({ items: [{ label: "SELIC", value: "SELIC" }, { label: "IPCA", value: "IPCA" }, { label: "CDI", value: "CDI" }, { label: "IGP-M", value: "IGP-M" }, { label: "Outro", value: "OUTRO" }] });
 
 function InvestorCombobox(props: any) {
@@ -98,6 +103,50 @@ function InvestorCombobox(props: any) {
             </Combobox.Root>
             {error && <Field.ErrorText>{error.message}</Field.ErrorText>}
         </Field.Root>
+    );
+}
+
+function SuggestAssociateBannerNovo({
+    control, index, allInvestors, allAssociates, setValue
+}: {
+    control: Control<FormValues>;
+    index: number;
+    allInvestors: UserSelectItem[];
+    allAssociates: AssociateSelectItem[];
+    setValue: UseFormSetValue<FormValues>;
+}) {
+    const selectedUserId     = useWatch({ control, name: `investors.${index}.userId` });
+    const currentAssociateId = useWatch({ control, name: `investors.${index}.associateId` });
+
+    const suggestion = useMemo(() => {
+        if (!selectedUserId) return null;
+        const investor = allInvestors.find(inv => inv.value === selectedUserId);
+        const suggestedName = investor?.referredByName || investor?.indication;
+        if (!suggestedName) return null;
+        const normalized = suggestedName.toLowerCase();
+        const matched = allAssociates.find(a =>
+            a.label.toLowerCase().includes(normalized) || normalized.includes(a.label.toLowerCase())
+        );
+        return { name: suggestedName, associateId: matched?.value ?? null };
+    }, [selectedUserId, allInvestors, allAssociates]);
+
+    if (!suggestion || currentAssociateId) return null;
+
+    return (
+        <Flex mt={1} p={2} bg="blue.900/30" border="1px solid" borderColor="blue.700" borderRadius="md" align="center" justify="space-between" gap={2}>
+            <Flex align="center" gap={2} minW={0}>
+                <Badge colorPalette="blue" variant="solid" fontSize="2xs" flexShrink={0}>Sugestão</Badge>
+                <Text fontSize="xs" color="blue.200" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                    {suggestion.name}
+                </Text>
+            </Flex>
+            {suggestion.associateId && (
+                <Button size="xs" colorPalette="blue" flexShrink={0}
+                    onClick={() => setValue(`investors.${index}.associateId`, suggestion.associateId!, { shouldDirty: true })}>
+                    Aplicar
+                </Button>
+            )}
+        </Flex>
     );
 }
 
@@ -403,6 +452,7 @@ export default function CreateAssetPage() {
 
                                         <Box flex={2} w="100%">
                                             <InvestorCombobox control={control} index={index} allInvestors={investors || []} />
+                                            <SuggestAssociateBannerNovo control={control} index={index} allInvestors={investors || []} allAssociates={associates || []} setValue={setValue} />
                                         </Box>
 
                                         <Box flex={2} w="100%">
