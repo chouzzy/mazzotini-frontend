@@ -30,6 +30,7 @@ interface UserManagementInfo {
     status?: string;
     associateName?: string | null;
     approvedAt?: string | null;
+    createdAt?: string | null;
 }
 
 interface PaginatedUsersResponse {
@@ -358,6 +359,10 @@ export default function UserManagementPage() {
                                                     {u.approvedAt ? (
                                                         <Text fontSize="sm" color="green.300">
                                                             {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
+                                                        </Text>
+                                                    ) : u.createdAt ? (
+                                                        <Text fontSize="sm" color="gray.400">
+                                                            {new Date(u.createdAt).toLocaleDateString('pt-BR')}
                                                         </Text>
                                                     ) : (
                                                         <Text fontSize="sm" color="gray.600">—</Text>
