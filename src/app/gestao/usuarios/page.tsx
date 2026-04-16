@@ -29,6 +29,7 @@ interface UserManagementInfo {
     roles: string[];
     status?: string;
     associateName?: string | null;
+    approvedAt?: string | null;
 }
 
 interface PaginatedUsersResponse {
@@ -86,6 +87,8 @@ export default function UserManagementPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [associateQuery, setAssociateQuery] = useState("");
     const [debouncedAssociate, setDebouncedAssociate] = useState("");
+    const [approvedFrom, setApprovedFrom] = useState("");
+    const [approvedTo, setApprovedTo] = useState("");
     const limit = 10;
 
     useEffect(() => {
@@ -104,8 +107,11 @@ export default function UserManagementPage() {
         return () => clearTimeout(handler);
     }, [associateQuery]);
 
+    const approvedFromParam = approvedFrom ? `&approvedFrom=${approvedFrom}` : '';
+    const approvedToParam   = approvedTo   ? `&approvedTo=${approvedTo}`     : '';
+
     const { data, isLoading, error, mutate } = useApi<PaginatedUsersResponse>(
-        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}`
+        `/api/management/users?page=${page}&limit=${limit}&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}${approvedFromParam}${approvedToParam}`
     );
     const { data: pendingUsers, isLoading: isLoadingPending } = useApi<UserProfile[]>('/api/management/pending-users');
 
@@ -127,7 +133,7 @@ export default function UserManagementPage() {
             });
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=500&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users?page=1&limit=500&search=${debouncedSearch}&role=${filterRole}&status=${filterStatus}&placeholder=${filterOnlyShadow}&associateSearch=${debouncedAssociate}${approvedFromParam}${approvedToParam}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -137,12 +143,13 @@ export default function UserManagementPage() {
             if (usersToExport.length === 0) return;
 
             // Preparamos os cabeçalhos e as linhas. Separador = ';' para o Excel Brasileiro/Português
-            const headers = ['Nome', 'E-mail', 'Permissões', 'Associado', 'Status', 'Último Login'];
+            const headers = ['Nome', 'E-mail', 'Permissões', 'Associado', 'Aprovado em', 'Status', 'Último Login'];
             const rows = usersToExport.map((u: UserManagementInfo) => [
                 `"${u.name}"`,
                 `"${u.email}"`,
                 `"${u.roles.map(r => translateRole(r)).join(', ')}"`,
                 `"${u.associateName || '-'}"`,
+                `"${u.approvedAt ? new Date(u.approvedAt).toLocaleDateString('pt-BR') : '-'}"`,
                 `"${u.status === 'ACTIVE' ? 'Ativo' : u.status === 'PENDING_REVIEW' ? 'Pendente Revisão' : 'Pendente Cadastro'}"`,
                 `"${u.email.includes('placeholder') ? 'Importado' : (u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca')}"`
             ]);
@@ -219,6 +226,43 @@ export default function UserManagementPage() {
                                 />
                             </Field.Root>
                         </Box>
+                        <Box flex={1} minW="150px" maxW="180px">
+                            <Field.Root>
+                                <Field.Label fontSize="sm" color="gray.400">
+                                    <HStack gap={2} align="center">
+                                        <Text>Aprovado de</Text>
+                                        <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
+                                    </HStack>
+                                </Field.Label>
+                                <Input
+                                    type="date"
+                                    value={approvedFrom}
+                                    onChange={(e) => { setApprovedFrom(e.target.value); setPage(1); }}
+                                    bgColor="gray.800"
+                                    borderColor={approvedFrom ? "green.500" : "gray.700"}
+                                    _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
+                                    colorScheme="dark"
+                                />
+                            </Field.Root>
+                        </Box>
+                        <Box flex={1} minW="150px" maxW="180px">
+                            <Field.Root>
+                                <Field.Label fontSize="sm" color="gray.400">
+                                    <HStack gap={2} align="center">
+                                        <Text>Aprovado até</Text>
+                                        <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
+                                    </HStack>
+                                </Field.Label>
+                                <Input
+                                    type="date"
+                                    value={approvedTo}
+                                    onChange={(e) => { setApprovedTo(e.target.value); setPage(1); }}
+                                    bgColor="gray.800"
+                                    borderColor={approvedTo ? "green.500" : "gray.700"}
+                                    _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
+                                />
+                            </Field.Root>
+                        </Box>
                         <Box w={{ base: "100%", md: "180px" }}>
                             <Field.Root><Field.Label fontSize="sm" color="gray.400">Cargo</Field.Label>
                                 <Select.Root collection={roleOptions} value={[filterRole]} onValueChange={(d) => { setFilterRole(d.value[0]); setPage(1); }}>
@@ -284,6 +328,7 @@ export default function UserManagementPage() {
                                             <Table.ColumnHeader color={'white'} p={8}>Usuários</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Permissões</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Associado</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={8}>Aprovado em</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Status</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Último Login</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'white'} p={8}>Ações</Table.ColumnHeader>
@@ -308,6 +353,15 @@ export default function UserManagementPage() {
                                                     <Text fontSize="sm" color={u.associateName ? 'white' : 'gray.500'}>
                                                         {u.associateName || '—'}
                                                     </Text>
+                                                </Table.Cell>
+                                                <Table.Cell px={8} py={4}>
+                                                    {u.approvedAt ? (
+                                                        <Text fontSize="sm" color="green.300">
+                                                            {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
+                                                        </Text>
+                                                    ) : (
+                                                        <Text fontSize="sm" color="gray.600">—</Text>
+                                                    )}
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
                                                 <Table.Cell px={8} py={4}>
