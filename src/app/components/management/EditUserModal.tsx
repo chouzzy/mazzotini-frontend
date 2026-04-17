@@ -97,7 +97,7 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
                     <Dialog.Header>
                         <Dialog.Title>Editar Permissão de {user?.name}</Dialog.Title>
                         <Dialog.CloseTrigger asChild>
-                            <Button variant="ghost" size="sm">&times;</Button>
+                            <Button variant="solid" colorPalette="gray" size="sm">&times;</Button>
                         </Dialog.CloseTrigger>
                     </Dialog.Header>
                     <Dialog.Body>

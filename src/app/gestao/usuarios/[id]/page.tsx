@@ -244,7 +244,7 @@ export default function EditUserPage() {
             {/* Botão de Voltar */}
             <Flex w="100%" mb={6}>
                 <Link href="/gestao/usuarios" passHref>
-                    <Button variant="ghost" size="sm" gap={2} pl={0}>
+                    <Button variant="solid" colorPalette="gray" size="sm" gap={2} pl={0}>
                         <Icon as={PiArrowLeft} /> Voltar para Lista
                     </Button>
                 </Link>
@@ -266,7 +266,7 @@ export default function EditUserPage() {
                             <Heading size="sm" color="brand.400" mb={4}>Segurança da Conta</Heading>
                             <HStack gap={4} wrap="wrap">
                                 <Button
-                                    variant="outline" colorPalette="orange" gap={2}
+                                    variant="solid" colorPalette="orange" gap={2}
                                     loading={isSendingReset}
                                     onClick={async () => {
                                         setIsSendingReset(true);
@@ -285,7 +285,7 @@ export default function EditUserPage() {
                                 >
                                     <Icon as={PiKey} /> Gerar Link de Redefinição de Senha
                                 </Button>
-                                <Button variant="outline" colorPalette="blue" gap={2} onClick={() => { setNewEmail(''); setConfirmEmail(''); setIsEmailDialogOpen(true); }}>
+                                <Button variant="solid" colorPalette="blue" gap={2} onClick={() => { setNewEmail(''); setConfirmEmail(''); setIsEmailDialogOpen(true); }}>
                                     <Icon as={PiEnvelope} /> Alterar E-mail
                                 </Button>
                             </HStack>
@@ -330,7 +330,7 @@ export default function EditUserPage() {
                                 </VStack>
                             </Dialog.Body>
                             <Dialog.Footer>
-                                <Button variant="ghost" onClick={() => setIsEmailDialogOpen(false)}>Cancelar</Button>
+                                <Button variant="solid" colorPalette="gray" onClick={() => setIsEmailDialogOpen(false)}>Cancelar</Button>
                                 <Button
                                     colorPalette="blue"
                                     loading={isUpdatingEmail}
@@ -558,10 +558,7 @@ export default function EditUserPage() {
                                                     aria-label="Excluir documento"
                                                     size="xs"
                                                     colorPalette="red"
-                                                    variant="ghost"
-                                                    // =================================================================
-                                                    // A CORREÇÃO: type="button" para evitar submit
-                                                    // =================================================================
+                                                    variant="solid"
                                                     type="button"
                                                     onClick={() => handleDeleteDocument(index)}
                                                 >

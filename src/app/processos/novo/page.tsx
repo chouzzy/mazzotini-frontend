@@ -468,14 +468,14 @@ export default function CreateAssetPage() {
 
                                         <Field.Root w={{ base: '100%', lg: 'auto' }}>
                                             {fields.length > 1 && (
-                                                <IconButton aria-label="Remover" colorScheme="red" variant="outline" w={{ base: '100%', lg: 'auto' }} onClick={() => remove(index)} > <Icon as={PiTrash} /> </IconButton>
+                                                <IconButton aria-label="Remover" colorPalette="red" variant="solid" w={{ base: '100%', lg: 'auto' }} onClick={() => remove(index)} > <Icon as={PiTrash} /> </IconButton>
                                             )}
                                         </Field.Root>
 
                                     </Stack>
                                 </Box>
                             ))}
-                            <Button size="sm" variant="outline" colorScheme="blue" onClick={() => append({ userId: "", share: 0 })} alignSelf="flex-start"> 
+                            <Button size="sm" variant="solid" colorPalette="blue" onClick={() => append({ userId: "", share: 0 })} alignSelf="flex-start">
                                 <Icon as={PiPlusCircle} /> Adicionar Cliente
                             </Button>
                         </VStack>

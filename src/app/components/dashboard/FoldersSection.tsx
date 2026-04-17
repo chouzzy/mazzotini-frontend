@@ -120,7 +120,7 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
 
             {folders.length > 3 && (
                 <Link as={NextLink} href="/pastas" _hover={{ textDecoration: 'none' }}>
-                    <Button variant="outline" w="100%" size="sm" gap={2} borderColor="gray.600" color="gray.300" _hover={{ bg: 'gray.800' }}>
+                    <Button variant="solid" colorPalette="gray" w="100%" size="sm" gap={2}>
                         Ver mais {folders.length - 3} pasta{folders.length - 3 !== 1 ? 's' : ''} <Icon as={PiArrowRight} />
                     </Button>
                 </Link>

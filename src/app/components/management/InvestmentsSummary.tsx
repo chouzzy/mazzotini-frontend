@@ -75,7 +75,7 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
                             </Table.Cell>
                             <Table.Cell px={4} py={3} textAlign="right">
                                 <Link href={`/processos/${inv.asset.legalOneId}`} passHref>
-                                    <Button size="xs" variant="ghost" colorPalette="blue" type="button">
+                                    <Button size="xs" variant="solid" colorPalette="blue" type="button">
                                         <Icon as={PiArrowRight} />
                                     </Button>
                                 </Link>
@@ -87,7 +87,7 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
 
             {investments.length > visibleCount && (
                 <Button
-                    variant="ghost" size="sm" colorPalette="gray" alignSelf="center"
+                    variant="solid" size="sm" colorPalette="gray" alignSelf="center"
                     onClick={() => setVisibleCount(c => c + LOAD_MORE_STEP)}
                 >
                     Ver mais {Math.min(LOAD_MORE_STEP, investments.length - visibleCount)} processos

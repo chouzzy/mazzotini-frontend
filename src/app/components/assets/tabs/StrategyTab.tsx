@@ -120,7 +120,7 @@ export function StrategyTab({ asset }: StrategyTabProps) {
             p={4}
           />
           <HStack justify="flex-end" pt={2}>
-            <Button variant="ghost" color="gray.400" onClick={handleCancel} disabled={isSaving}>
+            <Button variant="solid" colorPalette="gray" onClick={handleCancel} disabled={isSaving}>
               <Icon as={PiX} mr={2} /> Cancelar
             </Button>
             <Button

@@ -112,7 +112,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                 <Dialog.Content bg="gray.800">
                     <Dialog.Header>
                         <Dialog.CloseTrigger asChild>
-                            <Button variant="ghost" size="sm"><PiX /></Button>
+                            <Button variant="solid" colorPalette="gray" size="sm"><PiX /></Button>
                         </Dialog.CloseTrigger>
                     </Dialog.Header>
                     <Dialog.Body>

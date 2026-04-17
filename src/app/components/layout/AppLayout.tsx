@@ -78,7 +78,8 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
                 display={{ base: 'flex', md: 'none' }}
                 aria-label="Close Menu"
                 borderRadius="full"
-                variant="ghost"
+                variant="solid"
+                colorPalette="gray"
                 onClick={onClose}
                 alignSelf="flex-end"
                 m={2}

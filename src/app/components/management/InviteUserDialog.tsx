@@ -109,7 +109,7 @@ export function InviteUserDialog({ isOpen, onClose, onInviteSuccess }: InviteUse
                         <Dialog.Header>
                             <Dialog.Title>{generatedLink ? "Convite Gerado com Sucesso!" : "Convidar Novo Usuário"}</Dialog.Title>
                             <Dialog.CloseTrigger asChild>
-                                <Button variant="ghost" size="sm">&times;</Button>
+                                <Button variant="solid" colorPalette="gray" size="sm">&times;</Button>
                             </Dialog.CloseTrigger>
                         </Dialog.Header>
 
@@ -168,7 +168,7 @@ export function InviteUserDialog({ isOpen, onClose, onInviteSuccess }: InviteUse
                                 <Button bgColor='brand.700' color='white' _hover={{ bgColor:'brand.800'}} onClick={onClose}>Fechar</Button>
                             ) : (
                                 <>
-                                    <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                                    <Button variant="solid" colorPalette="gray" onClick={onClose}>Cancelar</Button>
                                     <Button colorPalette="blue" ml={3} type="submit" loading={isSubmitting}>
                                         Gerar Link de Convite
                                     </Button>

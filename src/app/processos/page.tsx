@@ -106,7 +106,7 @@ export default function OperatorAssetsPage() {
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os processos. Tente atualizar a página.</Text>
-                    <Button onClick={() => mutate()} variant="outline" size="sm">Tentar Novamente</Button>
+                    <Button onClick={() => mutate()} variant="solid" colorPalette="gray" size="sm">Tentar Novamente</Button>
                 </VStack>
             </Flex>
         )
@@ -218,9 +218,10 @@ export default function OperatorAssetsPage() {
                                             Mostrando <b>{assets.length}</b> de <b>{meta.total}</b> processos
                                         </Text>
                                         <HStack gap={2}>
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
+                                            <Button
+                                                size="sm"
+                                                variant="solid"
+                                                colorPalette="gray"
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                                 disabled={page === 1}
                                             >
@@ -235,10 +236,8 @@ export default function OperatorAssetsPage() {
                                                             {i > 0 && arr[i-1] !== p - 1 && <Text color="gray.600">...</Text>}
                                                             <Button
                                                                 size="sm"
-                                                                variant={page === p ? "solid" : "ghost"}
-                                                                colorScheme={page === p ? "brand" : "gray"}
-                                                                bg={page === p ? "brand.600" : "transparent"}
-                                                                color={page === p ? "white" : "gray.300"}
+                                                                variant="solid"
+                                                                colorPalette={page === p ? "brand" : "gray"}
                                                                 onClick={() => setPage(p)}
                                                             >
                                                                 {p}
@@ -248,9 +247,10 @@ export default function OperatorAssetsPage() {
                                                 }
                                             </HStack>
 
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
+                                            <Button
+                                                size="sm"
+                                                variant="solid"
+                                                colorPalette="gray"
                                                 onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
                                                 disabled={page === meta.totalPages}
                                             >

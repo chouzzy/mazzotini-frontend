@@ -332,7 +332,8 @@ export default function DashboardPage() {
                                         <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
                                             <Button
                                                 size="sm"
-                                                variant="outline"
+                                                variant="solid"
+                                                colorPalette="gray"
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                                 disabled={page === 1}
                                             >
@@ -347,10 +348,8 @@ export default function DashboardPage() {
                                                             {i > 0 && arr[i - 1] !== p - 1 && <Text color="gray.600">...</Text>}
                                                             <Button
                                                                 size="sm"
-                                                                variant={page === p ? "solid" : "ghost"}
-                                                                colorScheme={page === p ? "brand" : "gray"}
-                                                                bg={page === p ? "brand.600" : "transparent"}
-                                                                color={page === p ? "white" : "gray.300"}
+                                                                variant="solid"
+                                                                colorPalette={page === p ? "brand" : "gray"}
                                                                 onClick={() => setPage(p)}
                                                             >
                                                                 {p}
@@ -362,7 +361,8 @@ export default function DashboardPage() {
 
                                             <Button
                                                 size="sm"
-                                                variant="outline"
+                                                variant="solid"
+                                                colorPalette="gray"
                                                 onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
                                                 disabled={page === meta.totalPages}
                                             >

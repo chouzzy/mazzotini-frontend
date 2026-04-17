@@ -161,10 +161,10 @@ function DocumentsList({ index, control, userId, getValues, setValue }: {
                             <Text fontSize="xs" truncate maxW="200px">{fileName}</Text>
                         </HStack>
                         <HStack gap={1}>
-                            <IconButton size="xs" variant="ghost" aria-label="Ver" onClick={() => window.open(url, '_blank')} type="button">
+                            <IconButton size="xs" variant="solid" colorPalette="gray" aria-label="Ver" onClick={() => window.open(url, '_blank')} type="button">
                                 <Icon as={PiEye} />
                             </IconButton>
-                            <IconButton size="xs" variant="ghost" colorPalette="red" aria-label="Remover" onClick={() => handleRemove(url)} type="button">
+                            <IconButton size="xs" variant="solid" colorPalette="red" aria-label="Remover" onClick={() => handleRemove(url)} type="button">
                                 <Icon as={PiTrash} />
                             </IconButton>
                         </HStack>
@@ -323,7 +323,7 @@ export default function UserCarteiraPage() {
             {/* Cabeçalho */}
             <Flex w="100%" mb={6} justify="space-between" align="center">
                 <Link href={`/gestao/usuarios/${userId}`} passHref>
-                    <Button variant="ghost" size="sm" gap={2} pl={0}>
+                    <Button variant="solid" colorPalette="gray" size="sm" gap={2} pl={0}>
                         <Icon as={PiArrowLeft} /> Voltar para o Cadastro
                     </Button>
                 </Link>
@@ -355,7 +355,7 @@ export default function UserCarteiraPage() {
                         />
                         <Button
                             size="sm"
-                            variant="outline"
+                            variant="solid"
                             colorPalette="blue"
                             onClick={() => append({ assetId: "", share: 0, documents: [], associateId: "" })}
                             type="button"
@@ -392,7 +392,7 @@ export default function UserCarteiraPage() {
                                     <IconButton
                                         aria-label="Remover"
                                         colorPalette="red"
-                                        variant="ghost"
+                                        variant="solid"
                                         onClick={() => remove(index)}
                                         type="button"
                                     >
