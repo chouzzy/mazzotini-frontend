@@ -253,7 +253,7 @@ export default function UserCarteiraPage() {
 
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: allAssetsResponse, isLoading: isLoadingAssets } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
-    const { data: associatesRaw } = useApi<{ id: string; name: string }[]>('/api/users/associates');
+    const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<{ id: string; name: string }[]>('/api/users/associates');
     const associateOptions: AssociateOption[] = useMemo(
         () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
         [associatesRaw]
@@ -303,7 +303,7 @@ export default function UserCarteiraPage() {
         }
     };
 
-    if (isLoadingUser || isLoadingAssets) {
+    if (isLoadingUser || isLoadingAssets || isLoadingAssociates) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
