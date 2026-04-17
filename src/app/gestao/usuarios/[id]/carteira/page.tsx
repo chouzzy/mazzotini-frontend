@@ -253,11 +253,8 @@ export default function UserCarteiraPage() {
 
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: allAssetsResponse, isLoading: isLoadingAssets } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
-    const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<{ id: string; name: string }[]>('/api/users/associates');
-    const associateOptions: AssociateOption[] = useMemo(
-        () => (associatesRaw || []).map(a => ({ value: a.id, label: a.name })),
-        [associatesRaw]
-    );
+    const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<AssociateOption[]>('/api/users/associates');
+    const associateOptions: AssociateOption[] = associatesRaw || [];
 
     const assetOptions: AssetOption[] = useMemo(() => {
         const items = allAssetsResponse?.items || [];
