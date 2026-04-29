@@ -48,27 +48,23 @@ const mailLink = (path?: string) => {
 const extractFreeText = (description: string | null | undefined): string => {
     if (!description) return "Atualização de Valor";
 
-    // Se não for um andamento padronizado, retorna o texto original.
-    if (!description.includes('#RelatórioMAA')) {
-        return description;
-    }
+    const hasTag = /^#Relat[oó]rioMAA/im.test(description);
+    if (!hasTag) return description;
 
-    // Encontra a última linha de valor (ex: "Valor Atualizado: R$ ...")
-    const lastValueIndex = description.lastIndexOf('R$');
-    if (lastValueIndex === -1) {
-        return description.substring(description.indexOf('#RelatórioMAA') + 3).trim();
-    }
-    
-    // Encontra a próxima quebra de linha após o último valor
-    const textStartIndex = description.indexOf('\n', lastValueIndex);
-    
-    // Se não houver texto após os valores, retorna um texto genérico
-    if (textStartIndex === -1) {
-        return "Atualização de valores do processo";
-    }
-    
-    // Retorna o texto que vem depois, limpando espaços em branco
-    return description.substring(textStartIndex).trim();
+    const filtered = description
+        .split('\n')
+        .filter(line => {
+            const t = line.trim();
+            if (/^#Relat[oó]rioMAA/i.test(t)) return false;
+            if (/^Valor da Causa:/i.test(t)) return false;
+            if (/^Valor da Compra:/i.test(t)) return false;
+            if (/^Valor Atualizado:/i.test(t)) return false;
+            return true;
+        })
+        .join('\n')
+        .trim();
+
+    return filtered || "Atualização de Valor";
 };
 
 

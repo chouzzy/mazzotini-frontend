@@ -43,10 +43,11 @@ export function UpdatesTab({ asset }: TabProps) {
                     {updatesToDisplay.length > 0 ? (
                         updatesToDisplay.map(upd => {
 
-                            // Extrai o texto limpo para o TÍTULO.
+                            // Usa extractFreeText para título e conteúdo — remove a tag e as
+                            // linhas de valor estruturadas ("Valor Atualizado: R$ ..."),
+                            // mantendo apenas o texto descritivo dos andamentos.
                             const titleText = extractFreeText(upd.fullDescription || upd.description);
-                            // Usa a descrição original e completa para o CONTEÚDO.
-                            const fullContentText = upd.fullDescription || upd.description;
+                            const fullContentText = extractFreeText(upd.fullDescription || upd.description);
 
                             return (
                                 <Collapsible.Root key={upd.id} defaultOpen={!upd.read}>
