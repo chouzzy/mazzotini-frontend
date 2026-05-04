@@ -379,8 +379,8 @@ export default function CompleteProfilePage() {
                     </VStack>
 
                     {/* FOTO DE PERFIL */}
+                    <StepHeading step={1} title="Foto de Perfil" hint="Opcional — você pode pular esta etapa" />
                     <Field.Root>
-                        <StepHeading step={1} title="Foto de Perfil" hint="Opcional — você pode pular esta etapa" />
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500">
                             <HStack justify="center" gap={2}>
                                 <Text>Foto de Perfil</Text>
