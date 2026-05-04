@@ -28,7 +28,6 @@ import {
     HStack,
     Badge,
     Combobox,
-    Tooltip,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -413,14 +412,7 @@ export default function CompleteProfilePage() {
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cpfOrCnpj} required>
-                                <Field.Label>
-                                    <HStack gap={1}>
-                                        <Text>CPF ou CNPJ</Text>
-                                        <Tooltip content="Pessoa física: informe o CPF (11 dígitos). Empresa ou fundo: informe o CNPJ (14 dígitos). Ao preencher com CNPJ, os campos individuais como RG e data de nascimento ficam ocultos.">
-                                            <Text color="gray.400" cursor="help" fontSize="xs">ⓘ</Text>
-                                        </Tooltip>
-                                    </HStack>
-                                </Field.Label>
+                                <Field.Label>CPF ou CNPJ</Field.Label>
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
                                 )} />
