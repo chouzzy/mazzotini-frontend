@@ -26,9 +26,9 @@ import {
     Link,
     Box,
     HStack,
-    Progress,
     Badge,
     Combobox,
+    Tooltip,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -201,6 +201,23 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
     );
 }
 
+const TOTAL_STEPS = 6;
+
+function StepHeading({ step, title, hint }: { step: number; title: string; hint?: string }) {
+    return (
+        <HStack py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} gap={3} align="center">
+            <Flex w={8} h={8} borderRadius="full" bg="brand.600" align="center" justify="center" flexShrink={0}>
+                <Text fontWeight="bold" fontSize="sm" color="white">{step}</Text>
+            </Flex>
+            <VStack align="start" gap={0} flex={1}>
+                <Heading as="h2" size="md" color="brand.400">{title}</Heading>
+                {hint && <Text fontSize="xs" color="gray.500">{hint}</Text>}
+            </VStack>
+            <Text fontSize="xs" color="gray.600" flexShrink={0}>{step} de {TOTAL_STEPS}</Text>
+        </HStack>
+    );
+}
+
 export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -352,13 +369,19 @@ export default function CompleteProfilePage() {
         <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
-                    <VStack align="start">
+                    <VStack align="start" gap={2}>
                         <Heading as="h1" size="lg">Complete o seu Perfil</Heading>
-                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais.</Text>
+                        <Text color="gray.400">Para continuar, precisamos de algumas informações cadastrais. O preenchimento leva cerca de 3 minutos.</Text>
+                        <HStack gap={2} flexWrap="wrap" pt={1}>
+                            {["① Foto", "② Dados", "③ Contato", "④ Indicação", "⑤ Endereço", "⑥ Documentos"].map((s, i) => (
+                                <Badge key={i} colorPalette="gray" variant="outline" fontSize="xs">{s}</Badge>
+                            ))}
+                        </HStack>
                     </VStack>
 
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
+                        <StepHeading step={1} title="Foto de Perfil" hint="Opcional — você pode pular esta etapa" />
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500">
                             <HStack justify="center" gap={2}>
                                 <Text>Foto de Perfil</Text>
@@ -383,21 +406,37 @@ export default function CompleteProfilePage() {
 
                     {/* DADOS PESSOAIS */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Dados Pessoais</Heading>
+                        <StepHeading step={2} title="Dados Pessoais" hint="Nome, documento, nascimento e gênero" />
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>{isCnpj ? "Razão Social" : "Nome Completo"}</Field.Label>
                             <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cpfOrCnpj} required>
-                                <Field.Label>CPF ou CNPJ</Field.Label>
+                                <Field.Label>
+                                    <HStack gap={1}>
+                                        <Text>CPF ou CNPJ</Text>
+                                        <Tooltip content="Pessoa física: informe o CPF (11 dígitos). Empresa ou fundo: informe o CNPJ (14 dígitos). Ao preencher com CNPJ, os campos individuais como RG e data de nascimento ficam ocultos.">
+                                            <Text color="gray.400" cursor="help" fontSize="xs">ⓘ</Text>
+                                        </Tooltip>
+                                    </HStack>
+                                </Field.Label>
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
                                 )} />
+                                <Field.HelperText fontSize="xs" color="gray.500">
+                                    Pessoa física → CPF &nbsp;·&nbsp; Empresa / Fundo → CNPJ
+                                </Field.HelperText>
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
-                                <Field.Label>RG</Field.Label>
+                                <Field.Label>
+                                    <HStack gap={1}>
+                                        <Text>RG</Text>
+                                        <Badge colorPalette="gray" variant="outline" fontSize="2xs">Opcional</Badge>
+                                    </HStack>
+                                </Field.Label>
                                 <Input bgColor={'gray.700'} {...register("rg")} disabled={isCnpj} />
+                                <Field.HelperText fontSize="xs" color="gray.500">Documento de identidade nacional — apenas para pessoas físicas</Field.HelperText>
                             </Field.Root>
                             <Field.Root invalid={!!errors.birthDate} disabled={isCnpj} required={!isCnpj}>
                                 <Field.Label>Data de Nascimento</Field.Label>
@@ -445,7 +484,7 @@ export default function CompleteProfilePage() {
 
                     {/* CONTATO */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Contato</Heading>
+                        <StepHeading step={3} title="Contato" hint="Celular, e-mail e preferência de contato" />
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                             <Field.Root invalid={!!errors.cellPhone} required>
                                 <Field.Label>Celular</Field.Label>
@@ -482,7 +521,7 @@ export default function CompleteProfilePage() {
 
                     {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="lg" py={4} borderBottomWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Indicação</Heading>
+                        <StepHeading step={4} title="Indicação" hint="Quem lhe apresentou a Mazzotini?" />
                         <Controller name="unknownAssociate" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))} mb={2}>
                                 <Checkbox.HiddenInput />
@@ -559,11 +598,12 @@ export default function CompleteProfilePage() {
 
                     {/* ENDEREÇOS */}
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="lg" py={4} borderTopWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Endereço Residencial</Heading>
+                        <StepHeading step={5} title="Endereço" hint="Residencial obrigatório · Comercial opcional" />
+                        <Text fontSize="sm" color="brand.400" fontWeight="semibold">Endereço Residencial</Text>
                         <AddressBlock type="residential" {...{ control, register, errors, watch, setValue }} />
                     </VStack>
                     <VStack gap={4} align="stretch">
-                        <Heading as="h2" size="lg" py={4} borderTopWidth="1px" borderColor="gray.700" mt={4} color="brand.500">Endereço Comercial</Heading>
+                        <Text fontSize="sm" color="gray.400" fontWeight="semibold" mt={2}>Endereço Comercial</Text>
                         <Controller name="useCommercialAddress" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))}>
                                 <Checkbox.HiddenInput />
@@ -576,8 +616,8 @@ export default function CompleteProfilePage() {
 
                     {/* DOCUMENTAÇÃO */}
                     <VStack gap={4} pt={4} align="stretch" borderTopWidth="1px" borderColor={skipDocuments ? "yellow.600" : "gray.700"}>
-                        <Heading as="h2" size="lg" color="brand.500">Documentação (Opcional)</Heading>
-                        <Text color="gray.400">Documentos: RG e CPF (ou CNH), Comprovante de residência (opcional), e Última alteração do contrato social (se aplicável).</Text>
+                        <StepHeading step={6} title="Documentação" hint="Opcional — você pode enviar depois" />
+                        <Text color="gray.400">Documentos aceitos: RG + CPF (ou CNH), Comprovante de residência, Última alteração do contrato social (se empresa).</Text>
 
                         {!skipDocuments && (
                             <Field.Root border={'1px solid'} borderColor={'gray.700'} borderStyle={'dashed'} borderRadius="md">
