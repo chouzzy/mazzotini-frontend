@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Mazzotini',
-  description: 'Acompanhamento do seu crédito na palma da sua mão',
+  description: 'Acompanhamento do seu processo na palma da sua mão',
 };
 
 export default function RootLayout({
