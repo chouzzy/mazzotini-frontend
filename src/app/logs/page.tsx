@@ -60,8 +60,8 @@ function LogRow({ log }: { log: HealthLog }) {
     return (
         <Collapsible.Root>
             <Collapsible.Trigger asChild>
-                <Table.Row _hover={{ bg: 'whiteAlpha.50' }} cursor="pointer">
-                    <Table.Cell px={4} py={3}>
+                <Table.Row _hover={{ bg: 'whiteAlpha.50' }} cursor="pointer" w="100%">
+                    <Table.Cell px={4} py={3} w="100%">
                         <HStack gap={2} flexWrap="wrap">
                             <StatusBadge status={log.status} />
                             {problemChecks.length > 0 && (
@@ -71,13 +71,13 @@ function LogRow({ log }: { log: HealthLog }) {
                             )}
                         </HStack>
                     </Table.Cell>
-                    <Table.Cell px={4} py={3} fontSize="sm" color="gray.400">{date}</Table.Cell>
-                    <Table.Cell px={4} py={3}>
+                    <Table.Cell px={4} py={3} fontSize="sm" color="gray.400" whiteSpace="nowrap">{date}</Table.Cell>
+                    <Table.Cell px={4} py={3} whiteSpace="nowrap">
                         <Badge colorPalette={log.triggeredBy === 'manual' ? 'blue' : 'gray'} variant="outline" fontSize="xs">
                             {log.triggeredBy === 'manual' ? 'Manual' : 'Cron'}
                         </Badge>
                     </Table.Cell>
-                    <Table.Cell px={4} py={3} textAlign="right">
+                    <Table.Cell px={4} py={3} textAlign="right" w="40px">
                         <Icon as={PiCaretDown} color="gray.500" />
                     </Table.Cell>
                 </Table.Row>
@@ -199,13 +199,13 @@ function LogsContent() {
                         Nenhum log registrado. Clique em "Executar agora" para iniciar.
                     </Text>
                 ) : (
-                    <Table.Root variant="line" size="sm">
+                    <Table.Root variant="line" size="sm" w="100%">
                         <Table.Header>
                             <Table.Row borderBottom="1px solid" borderColor="gray.700" bg="gray.800">
-                                <Table.ColumnHeader px={4} color="brand.500">Status</Table.ColumnHeader>
-                                <Table.ColumnHeader px={4} color="brand.500">Data/Hora</Table.ColumnHeader>
-                                <Table.ColumnHeader px={4} color="brand.500">Origem</Table.ColumnHeader>
-                                <Table.ColumnHeader px={4} />
+                                <Table.ColumnHeader px={4} color="brand.500" w="100%">Status</Table.ColumnHeader>
+                                <Table.ColumnHeader px={4} color="brand.500" whiteSpace="nowrap">Data/Hora</Table.ColumnHeader>
+                                <Table.ColumnHeader px={4} color="brand.500" whiteSpace="nowrap">Origem</Table.ColumnHeader>
+                                <Table.ColumnHeader px={4} w="40px" />
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
