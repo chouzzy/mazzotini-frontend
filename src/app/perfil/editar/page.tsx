@@ -23,7 +23,8 @@ import {
     Avatar,
     CheckboxGroup,
     FileUpload,
-    Link
+    Link,
+    Alert,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -162,9 +163,10 @@ function AddressBlock({ userProfile, type, control, register, errors, watch, set
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Cep`]} required={isRequired}>
                     <Field.Label gap={2}>CEP {isCepLoading && <Spinner size="sm" />}</Field.Label>
-                    <Controller name={`${type}Cep`} control={control} rules={{ required: isRequired ? "O CEP é obrigatório" : false }} render={({ field }) => (
+                    <Controller name={`${type}Cep`} control={control} rules={{ required: isRequired ? "CEP é obrigatório" : false }} render={({ field }) => (
                         <Input disabled={isDisabled} bgColor={'gray.700'} value={field.value ? maskCEP(field.value) : ''} onChange={field.onChange} maxLength={10} />
                     )} />
+                    {errors[`${type}Cep` as keyof typeof errors] && <Field.ErrorText>{(errors[`${type}Cep` as keyof typeof errors] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
                     <Field.Label>Estado</Field.Label>
@@ -182,7 +184,8 @@ function AddressBlock({ userProfile, type, control, register, errors, watch, set
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
                     <Field.Label>Número</Field.Label>
-                    <Input defaultValue={type === 'residential' ? userProfile?.residentialNumber : userProfile?.commercialNumber} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Number`, { required: isRequired ? "O número é obrigatório" : false })} />
+                    <Input defaultValue={type === 'residential' ? userProfile?.residentialNumber : userProfile?.commercialNumber} disabled={isDisabled} bgColor={'gray.700'} {...register(`${type}Number`, { required: isRequired ? "Número é obrigatório" : false })} />
+                    {errors[`${type}Number` as keyof typeof errors] && <Field.ErrorText>{(errors[`${type}Number` as keyof typeof errors] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root>
                     <Field.Label>Complemento</Field.Label>
@@ -365,6 +368,16 @@ export default function CompleteProfilePage() {
                         <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipa.</Text>
                     </VStack>
 
+                    {Object.keys(errors).length > 0 && (
+                        <Alert.Root status="error" borderRadius="md">
+                            <Alert.Indicator />
+                            <Alert.Content>
+                                <Alert.Title>Campos obrigatórios não preenchidos</Alert.Title>
+                                <Alert.Description>Preencha os campos destacados em vermelho antes de salvar.</Alert.Description>
+                            </Alert.Content>
+                        </Alert.Root>
+                    )}
+
                     {/* FOTO DE PERFIL */}
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil</Text></Field.Label>
@@ -389,14 +402,16 @@ export default function CompleteProfilePage() {
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>Nome Completo</Field.Label>
-                            <Input bgColor={'gray.700'} {...register("name", { required: "Este campo é obrigatório" })} />
+                            <Input bgColor={'gray.700'} {...register("name", { required: "Nome completo é obrigatório" })} />
+                            {errors.name && <Field.ErrorText>{errors.name.message}</Field.ErrorText>}
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
-                                <Controller name="cpfOrCnpj" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
+                                <Controller name="cpfOrCnpj" control={control} rules={{ required: "CPF ou CNPJ é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
                                 )} />
+                                {errors.cpfOrCnpj && <Field.ErrorText>{errors.cpfOrCnpj.message}</Field.ErrorText>}
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
                                 <Field.Label>RG</Field.Label>
@@ -439,9 +454,10 @@ export default function CompleteProfilePage() {
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                             <Field.Root invalid={!!errors.cellPhone} required>
                                 <Field.Label>Celular</Field.Label>
-                                <Controller name="cellPhone" control={control} rules={{ required: "Este campo é obrigatório" }} render={({ field }) => (
+                                <Controller name="cellPhone" control={control} rules={{ required: "Celular é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskPhone(field.value) : ''} onChange={field.onChange} />
                                 )} />
+                                {errors.cellPhone && <Field.ErrorText>{errors.cellPhone.message}</Field.ErrorText>}
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Telefone Fixo</Field.Label>

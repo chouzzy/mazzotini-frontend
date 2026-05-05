@@ -52,29 +52,33 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
                     <Controller
                         name={`${type}Cep`}
                         control={control}
-                        rules={{ required: isRequired ? 'O CEP é obrigatório' : false }}
+                        rules={{ required: isRequired ? 'CEP é obrigatório' : false }}
                         render={({ field }) => (
                             <Input disabled={isDisabled} bgColor="gray.700" value={field.value ? maskCEP(field.value) : ''} onChange={field.onChange} maxLength={10} />
                         )}
                     />
+                    {errors[`${type}Cep`] && <Field.ErrorText>{(errors[`${type}Cep`] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
                     <Field.Label>Estado</Field.Label>
-                    <Input disabled bgColor="gray.700" {...register(`${type}State`, { required: isRequired })} readOnly />
+                    <Input disabled bgColor="gray.700" {...register(`${type}State`, { required: isRequired ? 'Estado é obrigatório' : false })} readOnly />
+                    {errors[`${type}State`] && <Field.ErrorText>Preencha o CEP para auto-completar</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}City`]} required={isRequired}>
                     <Field.Label>Cidade</Field.Label>
-                    <Input disabled bgColor="gray.700" {...register(`${type}City`, { required: isRequired })} readOnly />
+                    <Input disabled bgColor="gray.700" {...register(`${type}City`, { required: isRequired ? 'Cidade é obrigatória' : false })} readOnly />
                 </Field.Root>
             </SimpleGrid>
             <Field.Root invalid={!!errors[`${type}Street`]} required={isRequired}>
                 <Field.Label>Rua / Logradouro</Field.Label>
-                <Input disabled bgColor="gray.700" {...register(`${type}Street`, { required: isRequired })} readOnly />
+                <Input disabled bgColor="gray.700" {...register(`${type}Street`, { required: isRequired ? 'Rua é obrigatória' : false })} readOnly />
+                {errors[`${type}Street`] && <Field.ErrorText>Preencha o CEP para auto-completar</Field.ErrorText>}
             </Field.Root>
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
                     <Field.Label>Número</Field.Label>
-                    <Input disabled={isDisabled} bgColor="gray.700" {...register(`${type}Number`, { required: isRequired ? 'O número é obrigatório' : false })} />
+                    <Input disabled={isDisabled} bgColor="gray.700" {...register(`${type}Number`, { required: isRequired ? 'Número é obrigatório' : false })} />
+                    {errors[`${type}Number`] && <Field.ErrorText>{(errors[`${type}Number`] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root>
                     <Field.Label>Complemento</Field.Label>

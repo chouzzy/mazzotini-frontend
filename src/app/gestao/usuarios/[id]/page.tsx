@@ -377,19 +377,31 @@ export default function EditUserPage() {
                 <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                     <VStack gap={6} align="stretch">
                         <Heading as="h2" size="lg" color="brand.400">Dados Cadastrais</Heading>
+
+                        {Object.keys(errors).length > 0 && (
+                            <Alert.Root status="error" borderRadius="md">
+                                <Alert.Indicator />
+                                <Alert.Content>
+                                    <Alert.Title>Campos obrigatórios não preenchidos</Alert.Title>
+                                    <Alert.Description>Preencha os campos destacados em vermelho antes de salvar.</Alert.Description>
+                                </Alert.Content>
+                            </Alert.Root>
+                        )}
                         {/* ... Campos de Inputs Pessoais ... */}
 
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
                             <Field.Label>{isCnpj ? "Razão Social" : "Nome Completo"}</Field.Label>
-                            <Input bgColor={'gray.700'} {...register("name", { required: "Obrigatório" })} />
+                            <Input bgColor={'gray.700'} {...register("name", { required: "Nome é obrigatório" })} />
+                            {errors.name && <Field.ErrorText>{errors.name.message}</Field.ErrorText>}
                         </Field.Root>
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
-                                <Controller name="cpfOrCnpj" control={control} rules={{ required: "Obrigatório" }} render={({ field }) => (
+                                <Controller name="cpfOrCnpj" control={control} rules={{ required: "CPF ou CNPJ é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
                                 )} />
+                                {errors.cpfOrCnpj && <Field.ErrorText>{errors.cpfOrCnpj.message}</Field.ErrorText>}
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
                                 <Field.Label>RG</Field.Label>
@@ -444,9 +456,10 @@ export default function EditUserPage() {
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cellPhone} required>
                                 <Field.Label>Celular</Field.Label>
-                                <Controller name="cellPhone" control={control} rules={{ required: "Obrigatório" }} render={({ field }) => (
+                                <Controller name="cellPhone" control={control} rules={{ required: "Celular é obrigatório" }} render={({ field }) => (
                                     <Input bgColor={'gray.700'} value={field.value ? maskPhone(field.value) : ''} onChange={field.onChange} />
                                 )} />
+                                {errors.cellPhone && <Field.ErrorText>{errors.cellPhone.message}</Field.ErrorText>}
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Telefone Fixo</Field.Label>
