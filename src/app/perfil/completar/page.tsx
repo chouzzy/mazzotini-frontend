@@ -531,7 +531,8 @@ export default function CompleteProfilePage() {
                             <Controller name="referredById" control={control} render={({ field }) => {
                                 const [codeInput, setCodeInput] = useState("");
                                 const filteredCollection = useMemo(() => {
-                                    const filtered = codeInput
+                                    const isComplete = /^\d{3}$/.test(codeInput);
+                                    const filtered = isComplete
                                         ? associatesCollection.items.filter(i => i.label.startsWith(codeInput))
                                         : [];
                                     return createListCollection({ items: filtered });
@@ -541,7 +542,7 @@ export default function CompleteProfilePage() {
                                     <Field.Root>
                                         <Field.Label>Selecionar Associado</Field.Label>
                                         <Field.HelperText mb={1} color="gray.400" fontSize="xs">
-                                            Digite o código numérico do associado (ex: 002) para localizá-lo.
+                                            Digite o código completo de 3 dígitos do associado (ex: 002) para ver o nome.
                                         </Field.HelperText>
                                         <Combobox.Root
                                             width="100%"
@@ -559,7 +560,7 @@ export default function CompleteProfilePage() {
                                         >
                                             <Combobox.Control>
                                                 <Combobox.Input asChild autoComplete="off">
-                                                    <Input bgColor={'gray.700'} placeholder="Digite o código (ex: 002)..." />
+                                                    <Input bgColor={'gray.700'} placeholder="Digite os 3 dígitos (ex: 002)" maxLength={3} />
                                                 </Combobox.Input>
                                                 <Combobox.IndicatorGroup>
                                                     <Combobox.ClearTrigger />
@@ -570,7 +571,7 @@ export default function CompleteProfilePage() {
                                                 <Combobox.Positioner>
                                                     <Combobox.Content>
                                                         <Combobox.Empty key="__empty">
-                                                            {codeInput ? "Código não encontrado" : "Digite o código do associado"}
+                                                            {/^\d{3}$/.test(codeInput) ? "Código não encontrado" : "Digite os 3 dígitos completos"}
                                                         </Combobox.Empty>
                                                         {filteredCollection.items.map((i) => (
                                                             <Combobox.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
