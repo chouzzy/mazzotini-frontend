@@ -95,18 +95,17 @@ function LogRow({ log }: { log: HealthLog }) {
                                     {checks.map((check) => {
                                         const cfg = statusConfig[check.status] ?? statusConfig.error;
                                         return (
-                                            <HStack key={check.name} justify="space-between" p={2} bg="gray.900" borderRadius="md"
-                                                borderLeft="3px solid" borderLeftColor={`${cfg.color}.500`}>
-                                                <HStack gap={2}>
-                                                    <Icon as={cfg.icon} color={`${cfg.color}.400`} />
+                                            <HStack key={check.name} justify="space-between" p={3} bg="gray.900" borderRadius="md"
+                                                borderLeft="3px solid" borderLeftColor={`${cfg.color}.500`} w="100%">
+                                                <HStack gap={2} flex={1} minW={0}>
+                                                    <Icon as={cfg.icon} color={`${cfg.color}.400`} flexShrink={0} />
                                                     <Text fontSize="sm" fontWeight="medium">{check.name}</Text>
                                                 </HStack>
-                                                <HStack gap={4}>
-                                                    <Text fontSize="xs" color="gray.500">{check.duration}ms</Text>
-                                                    <Text fontSize="xs" color={check.status === 'ok' ? 'gray.400' : `${cfg.color}.300`}
-                                                        maxW="400px" textAlign="right">
+                                                <HStack gap={6} flexShrink={0}>
+                                                    <Text fontSize="xs" color={check.status === 'ok' ? 'gray.400' : `${cfg.color}.300`}>
                                                         {check.message}
                                                     </Text>
+                                                    <Text fontSize="xs" color="gray.600" minW="50px" textAlign="right">{check.duration}ms</Text>
                                                 </HStack>
                                             </HStack>
                                         );
@@ -156,7 +155,7 @@ function LogsContent() {
     };
 
     return (
-        <Flex w="100%" p={8} bgColor="bodyBg" maxW="breakpoint-xl" mx="auto" flexDir="column" gap={6}>
+        <Flex w="100%" p={8} bgColor="bodyBg" flexDir="column" gap={6}>
             <Toaster />
 
             <Flex justify="space-between" align="center">
