@@ -29,6 +29,8 @@ interface UserManagementInfo {
     roles: string[];
     status?: string;
     associateName?: string | null;
+    associateSequence?: number | null;
+    referredBySequence?: number | null;
     approvedAt?: string | null;
     createdAt?: string | null;
 }
@@ -349,10 +351,21 @@ export default function UserManagementPage() {
                                                         </VStack>
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}><Flex gap={2}>{u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}</Flex></Table.Cell>
+                                                <Table.Cell px={8} py={4}>
+                                                    <Flex gap={2} align="center" wrap="wrap">
+                                                        {u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}
+                                                        {u.associateSequence != null && (
+                                                            <Badge colorPalette="brand" variant="solid" fontSize="xs" fontFamily="mono">
+                                                                {String(u.associateSequence).padStart(3, '0')}
+                                                            </Badge>
+                                                        )}
+                                                    </Flex>
+                                                </Table.Cell>
                                                 <Table.Cell px={8} py={4}>
                                                     <Text fontSize="sm" color={u.associateName ? 'white' : 'gray.500'}>
-                                                        {u.associateName || '—'}
+                                                        {u.referredBySequence != null
+                                                            ? `${String(u.referredBySequence).padStart(3, '0')} — ${u.associateName}`
+                                                            : u.associateName || '—'}
                                                     </Text>
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}>
