@@ -344,7 +344,14 @@ export default function UserManagementPage() {
                                                     <Flex align="center" gap={3}>
                                                         <Avatar.Root size="sm"><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
                                                         <VStack align="start" gap={0}>
-                                                            <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" _hover={{ color: 'brand.400' }}>{u.name}</Text></Link>
+                                                            <HStack gap={2}>
+                                                                <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" _hover={{ color: 'brand.400' }}>{u.name}</Text></Link>
+                                                                {u.associateSequence != null && (
+                                                                    <Badge colorPalette="brand" variant="solid" fontSize="2xs" fontFamily="mono" px={1.5}>
+                                                                        {String(u.associateSequence).padStart(3, '0')}
+                                                                    </Badge>
+                                                                )}
+                                                            </HStack>
                                                             <Text fontSize="sm" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"}>
                                                                 {u.email}
                                                             </Text>
@@ -354,11 +361,6 @@ export default function UserManagementPage() {
                                                 <Table.Cell px={8} py={4}>
                                                     <Flex gap={2} align="center" wrap="wrap">
                                                         {u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}
-                                                        {u.associateSequence != null && (
-                                                            <Badge colorPalette="brand" variant="solid" fontSize="xs" fontFamily="mono">
-                                                                {String(u.associateSequence).padStart(3, '0')}
-                                                            </Badge>
-                                                        )}
                                                     </Flex>
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}>
