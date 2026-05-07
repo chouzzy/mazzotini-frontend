@@ -1,8 +1,10 @@
 'use client';
 
 import {
-    Box, Heading, VStack, Text, Flex, Icon, Spinner, Table, Tag, Avatar, Button, useDisclosure, Input, createListCollection, Select, Portal, Badge, Field, HStack
+    Box, Heading, VStack, Text, Flex, Icon, Spinner, Table, Tag, Avatar, Button, useDisclosure, Input, createListCollection, Select, Portal, Badge, Field, HStack, Dialog, CloseButton, IconButton
 } from '@chakra-ui/react';
+import axios from 'axios';
+import { Toaster, toaster } from '@/components/ui/toaster';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useApi } from '@/hooks/useApi';
 import { 
@@ -121,10 +123,43 @@ export default function UserManagementPage() {
     const { open: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
     const { open: isInviteOpen, onOpen: onInviteOpen, onClose: onInviteClose } = useDisclosure();
     const [selectedUser, setSelectedUser] = useState<UserManagementInfo | null>(null);
+    const [codeEditUser, setCodeEditUser] = useState<UserManagementInfo | null>(null);
+    const [codeInput, setCodeInput] = useState('');
+    const [isSavingCode, setIsSavingCode] = useState(false);
 
     const handleEditClick = (user: UserManagementInfo) => {
         setSelectedUser(user);
         onEditOpen();
+    };
+
+    const openCodeEdit = (user: UserManagementInfo) => {
+        setCodeEditUser(user);
+        setCodeInput(user.associateSequence != null ? String(user.associateSequence) : '');
+    };
+
+    const handleCodeSave = async () => {
+        if (!codeEditUser) return;
+        const num = parseInt(codeInput, 10);
+        if (!codeInput || isNaN(num) || num < 1 || num > 999) {
+            toaster.create({ title: 'Código inválido. Use um número entre 1 e 999.', type: 'error' });
+            return;
+        }
+        setIsSavingCode(true);
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            await axios.patch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${codeEditUser.id}/associate-code`,
+                { associateSequence: num },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toaster.create({ title: 'Código atualizado!', type: 'success' });
+            setCodeEditUser(null);
+            mutate();
+        } catch (err: any) {
+            toaster.create({ title: err.response?.data?.error || 'Erro ao atualizar código.', type: 'error' });
+        } finally {
+            setIsSavingCode(false);
+        }
     };
 
     const handleExportExcel = async () => {
@@ -346,10 +381,23 @@ export default function UserManagementPage() {
                                                         <VStack align="start" gap={0}>
                                                             <HStack gap={2}>
                                                                 <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" _hover={{ color: 'brand.400' }}>{u.name}</Text></Link>
-                                                                {u.associateSequence != null && (
-                                                                    <Badge colorPalette="brand" variant="solid" fontSize="2xs" fontFamily="mono" px={1.5}>
-                                                                        {String(u.associateSequence).padStart(3, '0')}
-                                                                    </Badge>
+                                                                {u.roles.includes('ASSOCIATE') && (
+                                                                    <HStack gap={1}>
+                                                                        {u.associateSequence != null && (
+                                                                            <Badge colorPalette="brand" variant="solid" fontSize="2xs" fontFamily="mono" px={1.5}>
+                                                                                {String(u.associateSequence).padStart(3, '0')}
+                                                                            </Badge>
+                                                                        )}
+                                                                        <IconButton
+                                                                            size="2xs"
+                                                                            variant="ghost"
+                                                                            colorPalette="gray"
+                                                                            aria-label="Editar código do associado"
+                                                                            onClick={(e) => { e.preventDefault(); openCodeEdit(u); }}
+                                                                        >
+                                                                            <Icon as={PiPencilSimple} />
+                                                                        </IconButton>
+                                                                    </HStack>
                                                                 )}
                                                             </HStack>
                                                             <Text fontSize="sm" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"}>
@@ -424,6 +472,46 @@ export default function UserManagementPage() {
 
                 <EditUserModal user={selectedUser} isOpen={isEditOpen} onClose={onEditClose} onUpdateSuccess={mutate} />
                 <InviteUserDialog isOpen={isInviteOpen} onClose={onInviteClose} onInviteSuccess={mutate} />
+
+                <Dialog.Root open={codeEditUser !== null} onOpenChange={(e) => { if (!e.open) setCodeEditUser(null); }}>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner>
+                        <Dialog.Content bg="gray.900" border="1px solid" borderColor="gray.700" maxW="400px">
+                            <Dialog.Header>
+                                <Dialog.Title>Editar Código do Associado</Dialog.Title>
+                            </Dialog.Header>
+                            <Dialog.Body>
+                                <VStack gap={4} align="stretch">
+                                    <Text color="gray.400" fontSize="sm">{codeEditUser?.name}</Text>
+                                    <Field.Root>
+                                        <Field.Label>Código (1–999)</Field.Label>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={999}
+                                            value={codeInput}
+                                            onChange={(e) => setCodeInput(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleCodeSave(); }}
+                                            placeholder="Ex: 8"
+                                            bgColor="gray.800"
+                                            autoFocus
+                                        />
+                                        <Field.HelperText>Exibido com 3 dígitos — ex: 008</Field.HelperText>
+                                    </Field.Root>
+                                </VStack>
+                            </Dialog.Body>
+                            <Dialog.Footer>
+                                <Button variant="solid" colorPalette="gray" onClick={() => setCodeEditUser(null)}>Cancelar</Button>
+                                <Button colorPalette="brand" loading={isSavingCode} onClick={handleCodeSave}>Salvar</Button>
+                            </Dialog.Footer>
+                            <Dialog.CloseTrigger asChild>
+                                <CloseButton size="sm" />
+                            </Dialog.CloseTrigger>
+                        </Dialog.Content>
+                    </Dialog.Positioner>
+                </Dialog.Root>
+
+                <Toaster />
             </RoleGuard>
         </AuthenticationGuard>
     );
