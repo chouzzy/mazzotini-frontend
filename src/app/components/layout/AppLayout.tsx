@@ -59,8 +59,9 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
     const userRole = myProfile?.role;
 
     const visibleItems = SideBarItems.filter(link => {
-        if (!link.roles) return true;
-        return userRole && link.roles.includes(userRole);
+        if (link.roles && (!userRole || !link.roles.includes(userRole))) return false;
+        if (link.hideForRoles && userRole && link.hideForRoles.includes(userRole)) return false;
+        return true;
     });
 
     return (
