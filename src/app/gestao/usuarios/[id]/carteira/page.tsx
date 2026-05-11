@@ -284,17 +284,22 @@ export default function UserCarteiraPage() {
     }, [userData, reset]);
 
     const onSubmit: SubmitHandler<InvestmentForm> = async (data) => {
+        // Filtra linhas sem processo selecionado antes de enviar
+        const validInvestments = data.investments.filter(inv => inv.assetId && inv.assetId.trim() !== '');
+        if (validInvestments.length < data.investments.length) {
+            toaster.create({ title: 'Linhas sem processo selecionado foram ignoradas.', type: 'warning' });
+        }
         setIsSaving(true);
         try {
             const token = await getAccessTokenSilently();
             await axios.patch(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userId}/investments`,
-                data,
+                { investments: validInvestments },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toaster.create({ title: "Carteira atualizada!", type: "success" });
-        } catch {
-            toaster.create({ title: "Erro ao salvar carteira.", type: "error" });
+        } catch (err: any) {
+            toaster.create({ title: err.response?.data?.error || "Erro ao salvar carteira.", type: "error" });
         } finally {
             setIsSaving(false);
         }
