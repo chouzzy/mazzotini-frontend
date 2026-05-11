@@ -159,7 +159,13 @@ function AssociateSection({
                 <Select.Positioner>
                   <Select.Content bg="gray.800">
                     {associatesCollection.items.map(i => (
-                      <Select.Item key={i.value} item={i}>{i.label}</Select.Item>
+                      <Select.Item
+                        key={i.value}
+                        item={i}
+                        _highlighted={{ bg: 'gray.700', cursor: 'pointer' }}
+                      >
+                        {i.label}
+                      </Select.Item>
                     ))}
                   </Select.Content>
                 </Select.Positioner>
