@@ -68,4 +68,7 @@ const extractFreeText = (description: string | null | undefined): string => {
 };
 
 
+export const formatCurrency = (value: number): string =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value ?? 0);
+
 export { scrollToSection, whatsappLink, whatsappNumber, mapsLink, instagramLink, mailLink, extractFreeText }
