@@ -14,6 +14,7 @@ import { AssetHeader } from '@/app/components/assets/AssetsHeader';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import axios from 'axios';
 import { useState, useMemo } from 'react';
+import { useViewMode } from '@/context/ViewModeContext';
 
 // ============================================================================
 //  TYPES
@@ -199,8 +200,11 @@ export default function AssetDetailsPage() {
   const { user } = useAuth0();
 
   const roles: string[] = user?.['https://mazzotini.awer.co/roles'] || [];
-  const isAssociate = roles.includes('ASSOCIATE');
-  const isInvestor = roles.includes('INVESTOR');
+  const { viewMode } = useViewMode();
+  const isRawAssociate = roles.includes('ASSOCIATE');
+  // Dual-role: quando ASSOCIATE está em "client view", comporta-se como INVESTOR
+  const isAssociate = isRawAssociate && viewMode === 'associate';
+  const isInvestor = roles.includes('INVESTOR') || (isRawAssociate && viewMode === 'client');
 
   const { data: myProfile } = useApi<{ id: string }>('/api/users/me');
 

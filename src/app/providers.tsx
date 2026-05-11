@@ -4,6 +4,7 @@ import system from "@/theme"
 import { ChakraProvider } from "@chakra-ui/react"
 import { ThemeProvider } from "next-themes"
 import { Auth0ProviderWithHistory } from "./components/providers/Auth0ProviderWithHistory"
+import { ViewModeProvider } from "@/context/ViewModeContext"
 
 export default function Providers(props: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,9 @@ export default function Providers(props: { children: React.ReactNode }) {
         forcedTheme="dark"
       >
         <Auth0ProviderWithHistory>
-            {props.children}
+            <ViewModeProvider>
+                {props.children}
+            </ViewModeProvider>
         </Auth0ProviderWithHistory>
       </ThemeProvider>
     </ChakraProvider>

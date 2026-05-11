@@ -16,7 +16,8 @@ import {
     VStack,
     Image,
     useBreakpointValue,
-    Tag,
+    HStack,
+    Badge,
 } from '@chakra-ui/react';
 import {
     PiChartPieSlice,
@@ -26,17 +27,21 @@ import {
     PiScales,
     PiHouseDuotone,
     PiX,
+    PiArrowsLeftRight,
+    PiUsersThree,
 } from 'react-icons/pi';
 import { IconType } from 'react-icons';
 import NextLink from 'next/link';
 import { useAuth0 } from '@auth0/auth0-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { UserAvatar } from './UserAvatar';
 import { headerData } from '@/app/data/header';
 import { SideBarItems } from '@/app/data/sideBar';
-import { on } from 'events';
 import { translateRole } from '@/utils/masks';
 import { NotificationsMenu } from '../notifications/NotificationsMenu';
+import { useApi } from '@/hooks/useApi';
+import { useViewMode, ViewMode } from '@/context/ViewModeContext';
+import { useEffect } from 'react';
 
 // ============================================================================
 //  DEFINIÇÃO DOS ITENS DA SIDEBAR
@@ -47,20 +52,20 @@ interface NavItemProps {
     href: string;
 }
 
-
-
 // ============================================================================
 //  COMPONENTE: Sidebar
 // ============================================================================
-import { useApi } from '@/hooks/useApi';
-
 const SidebarContent = ({ onClose }: { onClose: () => void }) => {
     const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const { viewMode } = useViewMode();
     const userRole = myProfile?.role;
 
+    // Papel efetivo considera o view mode para usuários dual-role
+    const effectiveRole = (userRole === 'ASSOCIATE' && viewMode === 'client') ? 'INVESTOR' : userRole;
+
     const visibleItems = SideBarItems.filter(link => {
-        if (link.roles && (!userRole || !link.roles.includes(userRole))) return false;
-        if (link.hideForRoles && userRole && link.hideForRoles.includes(userRole)) return false;
+        if (link.roles && (!effectiveRole || !link.roles.includes(effectiveRole))) return false;
+        if (link.hideForRoles && effectiveRole && link.hideForRoles.includes(effectiveRole)) return false;
         return true;
     });
 
@@ -99,7 +104,7 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
             </Flex>
             <VStack as="nav" gap={1} align="stretch" px={2} py={4}>
                 {visibleItems.map((link) => (
-                    <NavItem key={link.name} icon={link.icon} href={link.href} onClick={onClose}>
+                    <NavItem key={link.name + link.href} icon={link.icon} href={link.href} onClick={onClose}>
                         {link.name}
                     </NavItem>
                 ))}
@@ -112,32 +117,22 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
 //  COMPONENTE: Item de Navegação
 // ============================================================================
 const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: () => void }) => {
-
     const pathname = usePathname();
 
-    // LÓGICA CORRIGIDA E FINAL
-    let isActive = pathname === href; // Começamos com a comparação exata
+    let isActive = pathname === href;
 
-    // Adicionamos uma exceção para o link "pai"
-    // Se o href for '/processos' E a página atual for uma sub-página de detalhe...
     if (href === '/processos' && pathname.startsWith('/processos/')) {
-        // ... então ativamos o link "Meus processos".
         isActive = true;
     }
-
-    // Para evitar que os dois fiquem processos, a página mais específica (novo) anula a do pai.
     if (pathname.startsWith('/processos/novo') && href === '/processos') {
         isActive = false;
     }
-
     if (pathname.startsWith('/perfil') && href.startsWith('/perfil')) {
         isActive = true;
     }
-
     if (href.startsWith('/gestao') && pathname.startsWith('/gestao')) {
         isActive = true;
     }
-
     // /associado (Meus Clientes) ativa também em /associado/clientes/...
     if (href === '/associado' && pathname.startsWith('/associado/clientes')) {
         isActive = true;
@@ -163,11 +158,70 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
 };
 
 // ============================================================================
+//  COMPONENTE: Toggle de Área (dual-role)
+// ============================================================================
+function ViewModeToggle() {
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const { data: myInvestments } = useApi<any[]>(
+        myProfile?.role === 'ASSOCIATE' ? '/api/investments/me' : null
+    );
+    const { viewMode, toggleViewMode, isDualRole, markAsDualRole } = useViewMode();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (myProfile?.role === 'ASSOCIATE' && myInvestments && myInvestments.length > 0) {
+            markAsDualRole();
+        }
+    }, [myProfile, myInvestments, markAsDualRole]);
+
+    if (!isDualRole) return null;
+
+    const isClientView = viewMode === 'client';
+
+    const handleToggle = () => {
+        toggleViewMode();
+        // Redireciona para o início da área correspondente
+        router.push(isClientView ? '/associado/dashboard' : '/dashboard');
+    };
+
+    return (
+        <Button
+            size="sm"
+            variant="outline"
+            borderColor="brand.600"
+            color="brand.300"
+            _hover={{ bg: 'brand.900', borderColor: 'brand.400' }}
+            gap={2}
+            onClick={handleToggle}
+            title={isClientView ? 'Alternar para Área do Associado' : 'Alternar para Área do Cliente'}
+        >
+            <Icon as={PiArrowsLeftRight} />
+            <HStack gap={1} display={{ base: 'none', md: 'flex' }}>
+                <Text
+                    fontSize="xs"
+                    fontWeight={!isClientView ? 'bold' : 'normal'}
+                    color={!isClientView ? 'brand.200' : 'gray.400'}
+                >
+                    Associado
+                </Text>
+                <Text fontSize="xs" color="gray.600">/</Text>
+                <Text
+                    fontSize="xs"
+                    fontWeight={isClientView ? 'bold' : 'normal'}
+                    color={isClientView ? 'brand.200' : 'gray.400'}
+                >
+                    Cliente
+                </Text>
+            </HStack>
+        </Button>
+    );
+}
+
+// ============================================================================
 //  COMPONENTE: Barra de Navegação Superior (Header)
 // ============================================================================
 export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
     const { isAuthenticated, loginWithRedirect } = useAuth0();
-    const user = useAuth0().user;
     return (
         <Flex
             px={{ base: 4, md: 8 }}
@@ -177,6 +231,7 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             justifyContent={{ base: 'space-between', md: 'flex-end' }}
             borderBottom={'1px solid'}
             borderColor={'gray.600'}
+            gap={3}
             {...rest}
         >
             <IconButton
@@ -196,7 +251,8 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
 
             {isAuthenticated ? (
                 <>
-                    < NotificationsMenu />
+                    <ViewModeToggle />
+                    <NotificationsMenu />
                     <UserAvatar />
                 </>
             ) : (
@@ -220,10 +276,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <Flex w="100%" minH="100vh" bg="gray.800">
-            {/* Coluna da Esquerda: Sidebar visível apenas no desktop */}
             {showSidebar && shouldShowSidebar && <SidebarContent onClose={onClose} />}
 
-            {/* Drawer para a sidebar no mobile */}
             <Drawer.Root open={open} placement="start">
                 <Drawer.Backdrop />
                 <Drawer.Positioner>
@@ -233,7 +287,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </Drawer.Positioner>
             </Drawer.Root>
 
-            {/* Coluna da Direita: Header + Conteúdo da Página */}
             <Flex flexDir="column" flex="1">
                 <HeaderNav onOpen={onOpen} />
                 <Flex as="main" flexDir={'column'} p={{ base: 4, md: 6 }} flex="1">
