@@ -4,13 +4,12 @@ import {
     Flex, Heading, Text, VStack, HStack, Spinner, Box, Icon, Button,
 } from '@chakra-ui/react';
 import {
-    PiUsersThree, PiScales, PiCurrencyDollar, PiArrowRight, PiCheckCircle,
+    PiUsersThree, PiScales, PiArrowRight, PiCheckCircle,
 } from 'react-icons/pi';
 import { useApi } from '@/hooks/useApi';
 import { useAuth0 } from '@auth0/auth0-react';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import Link from 'next/link';
-import { formatCurrency } from '@/utils';
 import { useMemo } from 'react';
 
 interface AssociateProcessRow {
@@ -40,11 +39,10 @@ function AssociateDashboardContent() {
     const { data: rows, isLoading } = useApi<AssociateProcessRow[]>('/api/associate/processes');
 
     const stats = useMemo(() => {
-        if (!rows) return { clients: 0, processes: 0, active: 0, totalValue: 0 };
+        if (!rows) return { clients: 0, processes: 0, active: 0 };
         const clientIds = new Set(rows.map(r => r.clientId));
         const active = rows.filter(r => r.status === 'ACTIVE').length;
-        const totalValue = rows.reduce((acc, r) => acc + (r.currentValue || 0), 0);
-        return { clients: clientIds.size, processes: rows.length, active, totalValue };
+        return { clients: clientIds.size, processes: rows.length, active };
     }, [rows]);
 
     if (isLoading) {
@@ -64,7 +62,6 @@ function AssociateDashboardContent() {
                 <KPICard label="Clientes vinculados" value={stats.clients} icon={PiUsersThree} color="brand" />
                 <KPICard label="Total de processos" value={stats.processes} icon={PiScales} color="blue" />
                 <KPICard label="Processos ativos" value={stats.active} icon={PiCheckCircle} color="green" />
-                <KPICard label="Valor total em carteira" value={formatCurrency(stats.totalValue)} icon={PiCurrencyDollar} color="yellow" />
             </Flex>
 
             <Box p={6} bg="gray.900" borderRadius="lg" border="1px solid" borderColor="gray.700">
