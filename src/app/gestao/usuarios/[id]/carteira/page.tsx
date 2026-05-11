@@ -345,21 +345,28 @@ export default function UserCarteiraPage() {
                 <VStack gap={4} align="stretch" p={6} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
 
                     {/* Toolbar: busca + botão adicionar */}
-                    <Flex justify="space-between" align="center" gap={4} wrap="wrap">
-                        <Input
-                            placeholder="Filtrar por número do processo..."
-                            bgColor="gray.700"
-                            borderColor="gray.600"
-                            size="sm"
-                            maxW="340px"
-                            value={investmentSearch}
-                            onChange={e => setInvestmentSearch(e.target.value)}
-                        />
+                    <Flex justify="space-between" align="flex-end" gap={4} wrap="wrap">
+                        <Field.Root maxW="340px">
+                            <Field.Label fontSize="xs" color="gray.500">
+                                Filtrar processos já na carteira
+                            </Field.Label>
+                            <Input
+                                placeholder="Digite para filtrar a lista abaixo..."
+                                bgColor="gray.700"
+                                borderColor="gray.600"
+                                size="sm"
+                                value={investmentSearch}
+                                onChange={e => setInvestmentSearch(e.target.value)}
+                            />
+                        </Field.Root>
                         <Button
                             size="sm"
                             variant="solid"
                             colorPalette="blue"
-                            onClick={() => append({ assetId: "", share: 0, documents: [], associateId: "" })}
+                            onClick={() => {
+                                append({ assetId: "", share: 0, documents: [], associateId: "" });
+                                setInvestmentSearch(''); // limpa o filtro para o novo item aparecer
+                            }}
                             type="button"
                         >
                             <Icon as={PiPlusCircle} /> Adicionar Processo
@@ -368,9 +375,13 @@ export default function UserCarteiraPage() {
 
                     {/* Lista */}
                     {fields.length === 0 ? (
-                        <Text color="gray.500" fontSize="sm">Este usuário não possui investimentos vinculados.</Text>
+                        <Text color="gray.500" fontSize="sm" textAlign="center" py={4}>
+                            Nenhum processo na carteira. Clique em <b>Adicionar Processo</b> para incluir.
+                        </Text>
                     ) : visibleFields.length === 0 ? (
-                        <Text color="gray.500" fontSize="sm">Nenhum processo encontrado para "{investmentSearch}".</Text>
+                        <Text color="gray.500" fontSize="sm">
+                            Nenhum processo na carteira corresponde a "{investmentSearch}". O filtro não adiciona processos — use o botão acima.
+                        </Text>
                     ) : (
                         visibleFields.map(({ field, index }) => (
                             <Box key={field.id} p={4} bg="whiteAlpha.50" borderRadius="md">
