@@ -138,6 +138,10 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
         isActive = true;
     }
 
+    if (href.startsWith('/associado') && pathname.startsWith('/associado')) {
+        isActive = true;
+    }
+
     return (
         <Link as={NextLink} href={href} style={{ textDecoration: 'none' }} onClick={onClick}>
             <Flex
