@@ -144,7 +144,7 @@ function ClientProcessesContent() {
                                                     <Text fontSize="xs" color="gray.500">
                                                         {new Date(proc.lastUpdate.date).toLocaleDateString('pt-BR')}
                                                     </Text>
-                                                    <Text fontSize="xs" color="gray.300" noOfLines={2}>
+                                                    <Text fontSize="xs" color="gray.300" lineClamp={2}>
                                                         {proc.lastUpdate.description}
                                                     </Text>
                                                 </VStack>
