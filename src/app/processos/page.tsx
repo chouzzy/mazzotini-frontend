@@ -68,7 +68,6 @@ const getStatusColorScheme = (status: string) => {
 
 export default function OperatorAssetsPage() {
     const { user } = useAuth0();
-    const { data: myProfile } = useApi<{ name: string }>('/api/users/me');
     
     // Estados de paginação e filtros
     const [page, setPage] = useState(1);
@@ -92,7 +91,7 @@ export default function OperatorAssetsPage() {
         setPage(1);
     }, [filterStatus, filterType]);
 
-    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const { data: myProfile } = useApi<{ role: string; name: string }>('/api/users/me');
     const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
 
     // A URL consome debouncedSearch e filterType
