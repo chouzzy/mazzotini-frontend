@@ -636,6 +636,9 @@ export default function CompleteProfilePage() {
                                         <Checkbox.HiddenInput />
                                         <Checkbox.Control bgColor="gray.100" color="black" cursor={'pointer'}/>
                                         <Checkbox.Label fontSize="xsm" color={field.value ? "yellow.100" : "gray.300"} textAlign="justify" lineHeight="1.5" cursor="pointer" letterSpacing={0.1}>
+                                            <strong style={{color: field.value ? '#FFD700' : '#e2e8f0', fontSize: '0.9rem', display: 'block', marginBottom: '4px'}}>
+                                                ⚠️ NÃO QUERO ENVIAR OS DOCUMENTOS AGORA
+                                            </strong>
                                             Declaro estar ciente da facultatividade no envio dos documentos de identificação neste ato, assumindo integral responsabilidade pela veracidade e exatidão das informações cadastrais fornecidas. Por conseguinte, isento a <strong style={{color:'#B8A76E'}}>Mazzotini Advogados Associados</strong> de qualquer responsabilidade decorrente de eventuais inconsistências ou equívocos nos dados informados, os quais são de minha inteira responsabilidade sob as penas da lei.
                                         </Checkbox.Label>
                                     </Checkbox.Root>
