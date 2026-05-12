@@ -15,8 +15,12 @@ interface FoldersSectionProps {
     foldersData?: PaginatedFoldersResponse;
 }
 
+const MAX_VISIBLE = 3;
+
 export function FoldersSection({ foldersData }: FoldersSectionProps) {
     const folders = foldersData?.items || [];
+    const visibleFolders = folders.slice(0, MAX_VISIBLE);
+    const remaining = folders.length - MAX_VISIBLE;
 
     if (folders.length === 0) {
         return <Text color="gray.500">Nenhuma pasta encontrada.</Text>;
@@ -25,7 +29,7 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
     return (
         <VStack align="stretch" gap={3} w="100%">
             <Accordion.Root multiple collapsible variant="enclosed" spaceY={3} w="100%">
-                {folders.map((folder) => {
+                {visibleFolders.map((folder) => {
                     const lawsuits = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'lawsuit');
                     const appeals = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'appeal');
                     const incidents = folder.assets.filter(a => a.legalOneType?.toLowerCase() === 'proceduralissue');
@@ -118,10 +122,10 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
                 })}
             </Accordion.Root>
 
-            {folders.length > 3 && (
+            {remaining > 0 && (
                 <Link as={NextLink} href="/pastas" _hover={{ textDecoration: 'none' }}>
                     <Button variant="solid" colorPalette="gray" w="100%" size="sm" gap={2}>
-                        Ver mais {folders.length - 3} pasta{folders.length - 3 !== 1 ? 's' : ''} <Icon as={PiArrowRight} />
+                        Ver as outras {remaining} pasta{remaining !== 1 ? 's' : ''} restantes <Icon as={PiArrowRight} />
                     </Button>
                 </Link>
             )}
