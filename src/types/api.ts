@@ -38,6 +38,7 @@ export interface ProcessDocument {
     sourceType: DocumentSourceType;
     sourceStagingDocId?: string | null;
     uploadedByUserId?: string | null;
+    investorUserId?: string | null;
     assetId: string;
     legalOneDocumentId?: number | null;
     createdAt?: string | null;
