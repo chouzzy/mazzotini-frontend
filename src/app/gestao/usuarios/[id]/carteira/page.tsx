@@ -2,7 +2,7 @@
 
 import {
     Flex, Heading, VStack, Text, Button, Icon, Spinner, Field, Input,
-    HStack, IconButton, Stack, Box,
+    HStack, IconButton, Stack, Box, Badge, Separator, Collapsible,
     FileUpload,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, useFieldArray, useWatch, useController } from "react-hook-form";
@@ -10,7 +10,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import {
     PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye,
-    PiUploadSimple, PiChartLineUp, PiPlusCircle,
+    PiUploadSimple, PiScales, PiPlusCircle, PiCaretDown, PiPaperclip,
 } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect, useMemo } from "react";
@@ -150,36 +150,53 @@ function DocumentsList({ index, control, userId, getValues, setValue }: {
     };
 
     return (
-        <VStack align="start" w="100%" mt={2} pl={2} borderLeft="2px solid" borderColor="gray.600">
-            <Text fontSize="xs" fontWeight="bold" color="gray.400">Documentos do Investimento:</Text>
-            {docs.map((url: string, docIndex: number) => {
-                const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Doc ${docIndex + 1}`);
-                return (
-                    <HStack key={url} justify="space-between" w="100%" bg="gray.700" p={1} borderRadius="sm">
-                        <HStack>
-                            <Icon as={PiFilePdf} color="red.300" />
-                            <Text fontSize="xs" truncate maxW="200px">{fileName}</Text>
-                        </HStack>
-                        <HStack gap={1}>
-                            <IconButton size="xs" variant="solid" colorPalette="gray" aria-label="Ver" onClick={() => window.open(url, '_blank')} type="button">
-                                <Icon as={PiEye} />
-                            </IconButton>
-                            <IconButton size="xs" variant="solid" colorPalette="red" aria-label="Remover" onClick={() => handleRemove(url)} type="button">
-                                <Icon as={PiTrash} />
-                            </IconButton>
-                        </HStack>
-                    </HStack>
-                );
-            })}
-            <FileUpload.Root accept={[".pdf", ".jpg", ".png"]} maxFiles={1} onFileAccept={(e) => handleUpload(e.files)}>
-                <FileUpload.HiddenInput />
-                <FileUpload.Trigger asChild>
-                    <Button size="xs" variant="subtle" colorPalette="gray" type="button">
-                        <Icon as={PiUploadSimple} /> Anexar Documento
-                    </Button>
-                </FileUpload.Trigger>
-            </FileUpload.Root>
-        </VStack>
+        <Collapsible.Root>
+            <Collapsible.Trigger asChild>
+                <Button size="xs" variant="ghost" colorPalette="gray" type="button" gap={1.5} mt={2}>
+                    <Icon as={PiPaperclip} />
+                    <Text fontSize="xs" color="gray.400">
+                        {docs.length > 0 ? `${docs.length} documento${docs.length > 1 ? 's' : ''}` : 'Documentos'}
+                    </Text>
+                    {docs.length > 0 && (
+                        <Badge colorPalette="brand" variant="solid" fontSize="2xs" borderRadius="full" px={1.5}>
+                            {docs.length}
+                        </Badge>
+                    )}
+                    <Icon as={PiCaretDown} boxSize={3} color="gray.500" />
+                </Button>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+                <VStack align="start" w="100%" mt={2} pl={2} borderLeft="2px solid" borderColor="gray.700" gap={1.5}>
+                    {docs.map((url: string, docIndex: number) => {
+                        const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `Doc ${docIndex + 1}`);
+                        return (
+                            <HStack key={url} justify="space-between" w="100%" bg="gray.700" p={2} borderRadius="sm">
+                                <HStack gap={2}>
+                                    <Icon as={PiFilePdf} color="red.300" boxSize={4} />
+                                    <Text fontSize="xs" truncate maxW="220px">{fileName}</Text>
+                                </HStack>
+                                <HStack gap={1}>
+                                    <IconButton size="xs" variant="solid" colorPalette="gray" aria-label="Ver" onClick={() => window.open(url, '_blank')} type="button">
+                                        <Icon as={PiEye} />
+                                    </IconButton>
+                                    <IconButton size="xs" variant="solid" colorPalette="red" aria-label="Remover" onClick={() => handleRemove(url)} type="button">
+                                        <Icon as={PiTrash} />
+                                    </IconButton>
+                                </HStack>
+                            </HStack>
+                        );
+                    })}
+                    <FileUpload.Root accept={[".pdf", ".jpg", ".png"]} maxFiles={1} onFileAccept={(e) => handleUpload(e.files)}>
+                        <FileUpload.HiddenInput />
+                        <FileUpload.Trigger asChild>
+                            <Button size="xs" variant="outline" colorPalette="gray" type="button" gap={1}>
+                                <Icon as={PiUploadSimple} /> Anexar Documento
+                            </Button>
+                        </FileUpload.Trigger>
+                    </FileUpload.Root>
+                </VStack>
+            </Collapsible.Content>
+        </Collapsible.Root>
     );
 }
 
@@ -204,7 +221,6 @@ function AssociateCombobox({ index, control, associateOptions }: {
 
     return (
         <Field.Root w="100%">
-            <Text fontSize="xs" mb={1} color="gray.400">Associado (opcional)</Text>
             <Combobox.Root
                 collection={collection}
                 value={field.value ? [field.value] : []}
@@ -319,40 +335,60 @@ export default function UserCarteiraPage() {
         });
 
     return (
-        <Flex w="100%" p={8} bgColor="bodyBg" maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" mx="auto">
+        <Flex w="100%" flexDir="column" gap={0} maxW="900px" mx="auto">
             <Toaster />
 
-            {/* Cabeçalho */}
-            <Flex w="100%" mb={6} justify="space-between" align="center">
+            {/* ── Header ── */}
+            <Flex align="center" gap={3} mb={6}>
                 <Link href={`/gestao/usuarios/${userId}`} passHref>
-                    <Button variant="solid" colorPalette="gray" size="sm" gap={2} pl={0}>
-                        <Icon as={PiArrowLeft} /> Voltar para o Cadastro
-                    </Button>
+                    <IconButton aria-label="Voltar" variant="solid" colorPalette="gray" size="sm">
+                        <Icon as={PiArrowLeft} />
+                    </IconButton>
                 </Link>
+                <Box>
+                    <Heading size="lg" display="flex" align="center" gap={2}>
+                        <Icon as={PiScales} color="brand.400" mr={1} />
+                        Carteira de Processos
+                    </Heading>
+                    {userData?.name && (
+                        <Text color="gray.400" fontSize="sm" mt={0.5}>{userData.name}</Text>
+                    )}
+                </Box>
+                <Badge
+                    ml="auto"
+                    colorPalette="brand"
+                    variant="outline"
+                    fontSize="sm"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                >
+                    {fields.length} processo{fields.length !== 1 ? 's' : ''}
+                </Badge>
             </Flex>
 
-            <VStack gap={2} align="start" mb={8}>
-                <Heading as="h1" size="xl" display="flex" gap={2} alignItems="center">
-                    <Icon as={PiChartLineUp} color="brand.400" />
-                    Carteira de Investimentos
-                </Heading>
-                {userData?.name && (
-                    <Text color="gray.400">{userData.name}</Text>
-                )}
-            </VStack>
-
             <form onSubmit={handleSubmit(onSubmit)}>
-                <VStack gap={4} align="stretch" p={6} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                <VStack gap={3} align="stretch">
 
-                    {/* Toolbar: busca + botão adicionar */}
-                    <Flex justify="space-between" align="flex-end" gap={4} wrap="wrap">
-                        <Field.Root maxW="340px">
-                            <Field.Label fontSize="xs" color="gray.500">
+                    {/* ── Toolbar ── */}
+                    <Flex
+                        p={4}
+                        bg="gray.900"
+                        borderRadius="lg"
+                        border="1px solid"
+                        borderColor="gray.700"
+                        justify="space-between"
+                        align="flex-end"
+                        gap={4}
+                        wrap="wrap"
+                    >
+                        <Field.Root maxW="360px">
+                            <Field.Label fontSize="xs" color="gray.500" mb={1}>
                                 Filtrar processos já na carteira
                             </Field.Label>
                             <Input
-                                placeholder="Digite para filtrar a lista abaixo..."
-                                bgColor="gray.700"
+                                placeholder="Buscar pelo número ou nome..."
+                                bgColor="gray.800"
                                 borderColor="gray.600"
                                 size="sm"
                                 value={investmentSearch}
@@ -360,34 +396,97 @@ export default function UserCarteiraPage() {
                             />
                         </Field.Root>
                         <Button
-                            size="sm"
-                            variant="solid"
                             colorPalette="blue"
+                            variant="solid"
                             onClick={() => {
                                 append({ assetId: "", share: 0, documents: [], associateId: "" });
-                                setInvestmentSearch(''); // limpa o filtro para o novo item aparecer
+                                setInvestmentSearch('');
                             }}
                             type="button"
+                            gap={2}
                         >
-                            <Icon as={PiPlusCircle} /> Adicionar Processo
+                            <Icon as={PiPlusCircle} boxSize={5} />
+                            Adicionar Processo
                         </Button>
                     </Flex>
 
-                    {/* Lista */}
-                    {fields.length === 0 ? (
-                        <Text color="gray.500" fontSize="sm" textAlign="center" py={4}>
-                            Nenhum processo na carteira. Clique em <b>Adicionar Processo</b> para incluir.
+                    {/* ── Lista vazia ── */}
+                    {fields.length === 0 && (
+                        <Flex
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            py={16}
+                            gap={3}
+                            bg="gray.900"
+                            borderRadius="lg"
+                            border="1px dashed"
+                            borderColor="gray.700"
+                        >
+                            <Icon as={PiScales} boxSize={10} color="gray.600" />
+                            <Text color="gray.500" fontSize="sm">Nenhum processo na carteira.</Text>
+                            <Text color="gray.600" fontSize="xs">Clique em <b>Adicionar Processo</b> para incluir o primeiro.</Text>
+                        </Flex>
+                    )}
+
+                    {/* ── Filtro sem resultado ── */}
+                    {fields.length > 0 && visibleFields.length === 0 && (
+                        <Text color="gray.500" fontSize="sm" p={4} bg="gray.900" borderRadius="lg">
+                            Nenhum processo corresponde a "{investmentSearch}". O campo acima filtra a lista — use o botão para adicionar novos.
                         </Text>
-                    ) : visibleFields.length === 0 ? (
-                        <Text color="gray.500" fontSize="sm">
-                            Nenhum processo na carteira corresponde a "{investmentSearch}". O filtro não adiciona processos — use o botão acima.
-                        </Text>
-                    ) : (
-                        visibleFields.map(({ field, index }) => (
-                            <Box key={field.id} p={4} bg="whiteAlpha.50" borderRadius="md">
-                                <Stack direction={{ base: 'column', md: 'row' }} gap={4} align="flex-end">
-                                    <Box flex={1}>
-                                        <Text fontSize="xs" mb={1} color="gray.400">Processo</Text>
+                    )}
+
+                    {/* ── Cards de investimento ── */}
+                    {visibleFields.map(({ field, index }) => (
+                        <Box
+                            key={field.id}
+                            bg="gray.900"
+                            borderRadius="lg"
+                            border="1px solid"
+                            borderColor="gray.700"
+                            overflow="hidden"
+                            _hover={{ borderColor: 'gray.600' }}
+                            transition="border-color 0.15s"
+                        >
+                            {/* Card header */}
+                            <Flex
+                                px={5}
+                                py={3}
+                                bg="gray.800"
+                                align="center"
+                                justify="space-between"
+                                borderBottom="1px solid"
+                                borderColor="gray.700"
+                            >
+                                <Badge
+                                    colorPalette="brand"
+                                    variant="solid"
+                                    fontSize="xs"
+                                    fontFamily="mono"
+                                    px={2}
+                                    borderRadius="sm"
+                                >
+                                    {String(index + 1).padStart(2, '0')}
+                                </Badge>
+                                <IconButton
+                                    aria-label="Remover processo"
+                                    colorPalette="red"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => remove(index)}
+                                    type="button"
+                                >
+                                    <Icon as={PiTrash} />
+                                </IconButton>
+                            </Flex>
+
+                            {/* Card body */}
+                            <VStack align="stretch" gap={4} p={5}>
+                                <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
+                                    <Box flex={2}>
+                                        <Text fontSize="xs" fontWeight="medium" color="gray.400" mb={1.5} textTransform="uppercase" letterSpacing="wider">
+                                            Processo
+                                        </Text>
                                         <AssetCombobox
                                             index={index}
                                             control={control}
@@ -396,22 +495,19 @@ export default function UserCarteiraPage() {
                                         />
                                     </Box>
                                     <Box flex={1}>
+                                        <Text fontSize="xs" fontWeight="medium" color="gray.400" mb={1.5} textTransform="uppercase" letterSpacing="wider">
+                                            Associado
+                                        </Text>
                                         <AssociateCombobox
                                             index={index}
                                             control={control}
                                             associateOptions={associateOptions}
                                         />
                                     </Box>
-                                    <IconButton
-                                        aria-label="Remover"
-                                        colorPalette="red"
-                                        variant="solid"
-                                        onClick={() => remove(index)}
-                                        type="button"
-                                    >
-                                        <Icon as={PiTrash} />
-                                    </IconButton>
                                 </Stack>
+
+                                <Separator borderColor="gray.700" />
+
                                 <DocumentsList
                                     index={index}
                                     control={control}
@@ -419,19 +515,23 @@ export default function UserCarteiraPage() {
                                     getValues={getValues}
                                     setValue={setValue}
                                 />
-                            </Box>
-                        ))
-                    )}
+                            </VStack>
+                        </Box>
+                    ))}
 
-                    <Flex justify="space-between" align="center" pt={4} borderTopWidth="1px" borderColor="gray.700">
-                        <Text fontSize="sm" color="gray.500">
-                            {fields.length} processo{fields.length !== 1 ? 's' : ''} na carteira
-                            {searchTerm && visibleFields.length !== fields.length && ` · ${visibleFields.length} exibido${visibleFields.length !== 1 ? 's' : ''}`}
-                        </Text>
-                        <Button type="submit" loading={isSaving} colorPalette="green" size="sm">
-                            <Icon as={PiFloppyDisk} /> Salvar Carteira
-                        </Button>
-                    </Flex>
+                    {/* ── Barra de salvar ── */}
+                    {fields.length > 0 && (
+                        <Flex
+                            justify="flex-end"
+                            pt={2}
+                            pb={4}
+                        >
+                            <Button type="submit" loading={isSaving} colorPalette="green" size="lg" gap={2} px={8}>
+                                <Icon as={PiFloppyDisk} boxSize={5} />
+                                Salvar Carteira
+                            </Button>
+                        </Flex>
+                    )}
                 </VStack>
             </form>
         </Flex>
