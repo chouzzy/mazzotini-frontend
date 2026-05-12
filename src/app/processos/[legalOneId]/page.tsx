@@ -49,7 +49,7 @@ export interface DetailedCreditAsset {
     associate?: { id: string; name: string; email: string } | null;
   }[];
   updates: { id: string; date: string; updatedValue: number; description?: string; type?: string; read?: boolean; fullDescription?: string }[];
-  documents: { id: string; legalOneDocumentId: number; name: string; url: string; category: string }[];
+  documents: import('@/types/api').ProcessDocument[];
 }
 
 interface Associate { value: string; label: string; }
@@ -239,7 +239,7 @@ export default function AssetDetailsPage() {
       {isInvestor && myProfile?.id && (
         <AssociateSection asset={asset} myUserId={myProfile.id} onUpdate={mutate} />
       )}
-      <AssetTabs asset={asset} hideDocuments={isAssociate} />
+      <AssetTabs asset={asset} hideDocuments={isAssociate} onRefresh={mutate} />
     </VStack>
   );
 }

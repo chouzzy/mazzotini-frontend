@@ -18,7 +18,9 @@ import {
     Badge
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
+import { useRef } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import axios from 'axios';
 import { useApi } from '@/hooks/useApi';
 import {
     PiWarningCircle,
@@ -36,8 +38,15 @@ import {
     PiFile,
     PiDownloadDuotone,
     PiFilePdf,
-    PiFolderOpen
+    PiFolderOpen,
+    PiUploadSimple,
+    PiTrash,
+    PiClock,
+    PiCheckCircle,
+    PiCurrencyCircleDollar,
 } from 'react-icons/pi';
+import { Toaster, toaster } from '@/components/ui/toaster';
+import { UserStagingDocument } from '@/types/api';
 import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
 import { maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
 import { UserProfile } from '@/types';
@@ -87,6 +96,100 @@ const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, ind
     );
 };
 
+function StagingDocumentsSection() {
+    const { getAccessTokenSilently } = useAuth0();
+    const { data: docs, isLoading, mutate } = useApi<UserStagingDocument[]>('/api/users/me/staging-documents');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            const form = new FormData();
+            form.append('document', file);
+            await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/staging-documents`, form, { headers: { Authorization: `Bearer ${token}` } });
+            toaster.create({ title: 'Comprovante enviado com sucesso!', type: 'success' });
+            mutate();
+        } catch {
+            toaster.create({ title: 'Erro ao enviar comprovante.', type: 'error' });
+        }
+        e.target.value = '';
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/staging-documents/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            toaster.create({ title: 'Comprovante removido.', type: 'success' });
+            mutate();
+        } catch (err: any) {
+            toaster.create({ title: err?.response?.data?.error || 'Erro ao remover.', type: 'error' });
+        }
+    };
+
+    return (
+        <Box>
+            <HStack mb={3} justify="space-between" align="center">
+                <Heading size="md" color="gray.300" display="flex" alignItems="center" gap={2}>
+                    <Icon as={PiCurrencyCircleDollar} color="yellow.400" />
+                    Documentos Transitórios Financeiros
+                </Heading>
+                <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
+                <Button size="sm" colorPalette="brand" variant="solid" gap={2} onClick={() => inputRef.current?.click()}>
+                    <Icon as={PiUploadSimple} /> Enviar comprovante
+                </Button>
+            </HStack>
+
+            <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
+                <Card.Body>
+                    <Text fontSize="xs" color="gray.500" mb={4}>
+                        Aqui você envia seus comprovantes de pagamento. Após o envio, avise a Mazzotini — eles vinculam esses documentos ao seu processo. Documentos já vinculados não podem ser excluídos.
+                    </Text>
+
+                    {isLoading && <Flex justify="center" py={4}><Spinner size="sm" /></Flex>}
+
+                    {!isLoading && (!docs || docs.length === 0) && (
+                        <Text color="gray.500" fontSize="sm">Nenhum comprovante enviado ainda.</Text>
+                    )}
+
+                    {!isLoading && docs && docs.length > 0 && (
+                        <VStack align="stretch" gap={2}>
+                            {docs.map(doc => (
+                                <Flex key={doc.id} align="center" gap={3} p={3} borderRadius="md" bg="whiteAlpha.50" _hover={{ bg: 'whiteAlpha.100' }}>
+                                    <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
+                                    <Text fontSize="sm" flex={1} truncate color="gray.200">{doc.fileName}</Text>
+                                    <HStack gap={2} flexShrink={0}>
+                                        {doc.status === 'PENDING' ? (
+                                            <Badge colorPalette="orange" variant="subtle" gap={1}>
+                                                <Icon as={PiClock} boxSize={3} /> Aguardando vinculação
+                                            </Badge>
+                                        ) : (
+                                            <Badge colorPalette="green" variant="subtle" gap={1}>
+                                                <Icon as={PiCheckCircle} boxSize={3} /> Vinculado: {doc.attachedToAssetName || 'Processo'}
+                                            </Badge>
+                                        )}
+                                        <Link href={doc.fileUrl} target="_blank" _hover={{ textDecoration: 'none' }}>
+                                            <Button size="xs" variant="ghost" colorPalette="brand">
+                                                <Icon as={PiDownloadDuotone} />
+                                            </Button>
+                                        </Link>
+                                        {doc.status === 'PENDING' && (
+                                            <Button size="xs" variant="ghost" colorPalette="red" onClick={() => handleDelete(doc.id)}>
+                                                <Icon as={PiTrash} />
+                                            </Button>
+                                        )}
+                                    </HStack>
+                                </Flex>
+                            ))}
+                        </VStack>
+                    )}
+                </Card.Body>
+            </Card.Root>
+        </Box>
+    );
+}
+
 export default function ProfilePage() {
     const { user: auth0User } = useAuth0();
     const { data: userProfile, isLoading, error } = useApi<ExtendedUserProfile>('/api/users/me');
@@ -127,6 +230,7 @@ export default function ProfilePage() {
 
     return (
         <AuthenticationGuard>
+            <Toaster />
             <VStack gap={8} align="stretch" w="100%">
                 <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                     <Flex align="center" gap={4}>
@@ -264,6 +368,9 @@ export default function ProfilePage() {
                             </VStack>
                         </Box>
                     )}
+
+                    {/* 3. DOCUMENTOS TRANSITÓRIOS FINANCEIROS (STAGING) */}
+                    <StagingDocumentsSection />
                 </VStack>
 
             </VStack>

@@ -11,9 +11,10 @@ import { StrategyTab } from './tabs/StrategyTab';
 interface AssetTabsProps {
   asset: DetailedCreditAsset;
   hideDocuments?: boolean;
+  onRefresh?: () => void;
 }
 
-export function AssetTabs({ asset, hideDocuments = false }: AssetTabsProps) {
+export function AssetTabs({ asset, hideDocuments = false, onRefresh = () => {} }: AssetTabsProps) {
   return (
     <Tabs.Root defaultValue="overview" variant={'enclosed'}>
       <Tabs.List overflowX="auto" whiteSpace="nowrap">
@@ -40,7 +41,7 @@ export function AssetTabs({ asset, hideDocuments = false }: AssetTabsProps) {
       </Tabs.Content>
       {!hideDocuments && (
         <Tabs.Content value="documents" pt={6}>
-          <DocumentsTab asset={asset} />
+          <DocumentsTab asset={asset} onRefresh={onRefresh} />
         </Tabs.Content>
       )}
     </Tabs.Root>

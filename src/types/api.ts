@@ -18,6 +18,47 @@ export interface AssetSummary {
     updateIndexType: string | null;
 }
 
+export type DocumentSection = 'JURIDICO' | 'PRIVADO_FINANCEIRO' | 'PROCESSUAL';
+
+export type DocumentCategory =
+    | 'TERMO_CESSAO' | 'PROCURACAO' | 'OUTRO_JURIDICO'
+    | 'CESSAO' | 'HONORARIOS' | 'ORIENTACAO_FINANCEIRA' | 'ORIENTACAO_FISCAL' | 'COMPROVANTE' | 'NOTA_FISCAL'
+    | 'SENTENCA' | 'DESPACHO' | 'OUTRO_PROCESSUAL';
+
+export type DocumentSourceType = 'LEGAL_ONE' | 'MANUAL' | 'CLIENTE';
+
+export interface ProcessDocument {
+    id: string;
+    name: string;
+    url: string;
+    fileKey?: string | null;
+    mimeType?: string | null;
+    section: DocumentSection;
+    category: DocumentCategory | string;
+    sourceType: DocumentSourceType;
+    sourceStagingDocId?: string | null;
+    uploadedByUserId?: string | null;
+    assetId: string;
+    legalOneDocumentId?: number | null;
+    createdAt?: string | null;
+}
+
+export interface UserStagingDocument {
+    id: string;
+    userId: string;
+    fileName: string;
+    fileUrl: string;
+    fileKey: string;
+    mimeType: string;
+    status: 'PENDING' | 'ATTACHED';
+    attachedToAssetId?: string | null;
+    attachedToAssetName?: string | null;
+    attachedCategory?: string | null;
+    attachedAt?: string | null;
+    attachedByUserId?: string | null;
+    createdAt?: string | null;
+}
+
 // Já crie e exporte a interface paginada para usar no sistema todo!
 export interface PaginatedAssetsResponse {
     items: AssetSummary[];

@@ -2,18 +2,19 @@
 
 import {
     Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, createListCollection, Select, Portal, Checkbox, Stack, RadioGroup, Box,
-    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset, Dialog, CloseButton, Card,
+    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset, Dialog, CloseButton, Card, Badge, Accordion,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, useController } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiWarningCircle, PiKey, PiEnvelope } from "react-icons/pi";
+import { PiArrowLeft, PiFloppyDisk, PiFilePdf, PiTrash, PiEye, PiUploadSimple, PiWarningCircle, PiKey, PiEnvelope, PiCurrencyCircleDollar, PiClock, PiCheckCircle, PiDownloadSimple, PiLinkSimple, PiCaretDownBold } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask } from "@/utils/masks";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
+import { UserStagingDocument } from '@/types/api';
 import { AddressBlock } from "@/app/components/management/AddressBlock";
 import { InvestmentsSummary } from "@/app/components/management/InvestmentsSummary";
 
@@ -81,6 +82,207 @@ const nacionalidadesCollection = createListCollection({
         { label: "Outra", value: "Outra" },
     ],
 });
+
+// ============================================================================
+//  SEÇÃO: DOCUMENTOS TRANSITÓRIOS DO CLIENTE (ADMIN VIEW)
+// ============================================================================
+const SECTION_CATEGORIES = createListCollection({
+    items: [
+        { label: 'Jurídico — Termo de Cessão', value: 'JURIDICO|TERMO_CESSAO' },
+        { label: 'Jurídico — Procuração', value: 'JURIDICO|PROCURACAO' },
+        { label: 'Jurídico — Outro', value: 'JURIDICO|OUTRO_JURIDICO' },
+        { label: 'Privado/Financeiro — Cessão', value: 'PRIVADO_FINANCEIRO|CESSAO' },
+        { label: 'Privado/Financeiro — Honorários', value: 'PRIVADO_FINANCEIRO|HONORARIOS' },
+        { label: 'Privado/Financeiro — Orientação Financeira', value: 'PRIVADO_FINANCEIRO|ORIENTACAO_FINANCEIRA' },
+        { label: 'Privado/Financeiro — Orientação Fiscal', value: 'PRIVADO_FINANCEIRO|ORIENTACAO_FISCAL' },
+        { label: 'Privado/Financeiro — Comprovantes', value: 'PRIVADO_FINANCEIRO|COMPROVANTE' },
+        { label: 'Privado/Financeiro — Notas Fiscais', value: 'PRIVADO_FINANCEIRO|NOTA_FISCAL' },
+        { label: 'Processual — Sentença', value: 'PROCESSUAL|SENTENCA' },
+        { label: 'Processual — Despacho', value: 'PROCESSUAL|DESPACHO' },
+        { label: 'Processual — Outro', value: 'PROCESSUAL|OUTRO_PROCESSUAL' },
+    ],
+});
+
+function AdminStagingDocumentsSection({ userId }: { userId: string }) {
+    const { getAccessTokenSilently } = useAuth0();
+    const { data, isLoading, mutate } = useApi<{ user: any; docs: UserStagingDocument[] }>(`/api/management/users/${userId}/staging-documents`);
+    const { data: userAssets } = useApi<{ items: { legalOneId: number; processNumber: string }[] }>(`/api/assets?limit=100&page=1`);
+
+    const [selectedDoc, setSelectedDoc] = useState<UserStagingDocument | null>(null);
+    const [selectedAsset, setSelectedAsset] = useState<string>('');
+    const [selectedSectionCat, setSelectedSectionCat] = useState<string>('');
+    const [isAttaching, setIsAttaching] = useState(false);
+
+    const assetsCollection = createListCollection({
+        items: (userAssets?.items || []).map(a => ({ label: a.processNumber, value: String(a.legalOneId) })),
+    });
+
+    const handleAttach = async () => {
+        if (!selectedDoc || !selectedAsset || !selectedSectionCat) return;
+        const [section, category] = selectedSectionCat.split('|');
+        setIsAttaching(true);
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/staging-documents/${selectedDoc.id}/attach`,
+                { assetLegalOneId: parseInt(selectedAsset, 10), section, category },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toaster.create({ title: `Documento vinculado ao processo!`, type: 'success' });
+            setSelectedDoc(null);
+            setSelectedAsset('');
+            setSelectedSectionCat('');
+            mutate();
+        } catch (err: any) {
+            toaster.create({ title: err?.response?.data?.error || 'Erro ao vincular.', type: 'error' });
+        } finally {
+            setIsAttaching(false);
+        }
+    };
+
+    const docs = data?.docs || [];
+    const pending = docs.filter(d => d.status === 'PENDING');
+    const attached = docs.filter(d => d.status === 'ATTACHED');
+
+    return (
+        <Box mt={8}>
+            <Separator borderColor="gray.700" mb={6} />
+            <HStack gap={2} mb={4}>
+                <Icon as={PiCurrencyCircleDollar} color="yellow.400" boxSize={5} />
+                <Heading size="md">Documentos Transitórios do Cliente</Heading>
+                {pending.length > 0 && <Badge colorPalette="orange">{pending.length} aguardando vinculação</Badge>}
+            </HStack>
+
+            {isLoading && <Spinner size="sm" />}
+
+            {!isLoading && docs.length === 0 && (
+                <Text color="gray.500" fontSize="sm">Este cliente ainda não enviou nenhum documento transitório.</Text>
+            )}
+
+            {!isLoading && docs.length > 0 && (
+                <VStack align="stretch" gap={2}>
+                    {docs.map(doc => (
+                        <Flex
+                            key={doc.id} align="center" gap={3} p={3} borderRadius="md"
+                            bg={doc.status === 'PENDING' ? 'orange.900/20' : 'green.900/10'}
+                            border="1px solid"
+                            borderColor={doc.status === 'PENDING' ? 'orange.800/40' : 'green.800/30'}
+                        >
+                            <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
+                            <VStack align="start" gap={0} flex={1} minW={0}>
+                                <Text fontSize="sm" fontWeight="medium" truncate>{doc.fileName}</Text>
+                                {doc.status === 'ATTACHED' && (
+                                    <Text fontSize="xs" color="green.400">
+                                        Vinculado: {doc.attachedToAssetName} · {doc.attachedCategory}
+                                    </Text>
+                                )}
+                            </VStack>
+                            <HStack gap={2} flexShrink={0}>
+                                {doc.status === 'PENDING' ? (
+                                    <Badge colorPalette="orange" gap={1} variant="subtle">
+                                        <Icon as={PiClock} boxSize={3} /> Pendente
+                                    </Badge>
+                                ) : (
+                                    <Badge colorPalette="green" gap={1} variant="subtle">
+                                        <Icon as={PiCheckCircle} boxSize={3} /> Vinculado
+                                    </Badge>
+                                )}
+                                <Link href={doc.fileUrl} target="_blank">
+                                    <Button size="xs" variant="ghost" colorPalette="brand"><Icon as={PiDownloadSimple} /></Button>
+                                </Link>
+                                {doc.status === 'PENDING' && (
+                                    <Button
+                                        size="xs" colorPalette="orange" variant="outline" gap={1}
+                                        onClick={() => setSelectedDoc(doc)}
+                                    >
+                                        <Icon as={PiLinkSimple} /> Vincular ao Processo
+                                    </Button>
+                                )}
+                            </HStack>
+                        </Flex>
+                    ))}
+                </VStack>
+            )}
+
+            {/* Modal de vinculação */}
+            {selectedDoc && (
+                <Box mt={4} p={4} bg="gray.800" borderRadius="lg" border="1px solid" borderColor="orange.700/50">
+                    <Text fontWeight="bold" mb={3} color="orange.300">
+                        Vincular "{selectedDoc.fileName}" a um processo
+                    </Text>
+                    <VStack align="stretch" gap={3}>
+                        <Select.Root
+                            collection={assetsCollection}
+                            value={selectedAsset ? [selectedAsset] : []}
+                            onValueChange={e => setSelectedAsset(e.value[0])}
+                            size="sm"
+                        >
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="gray.900" borderColor="gray.600">
+                                    <Select.ValueText placeholder="Selecionar processo..." />
+                                </Select.Trigger>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content bg="gray.800" borderColor="gray.600">
+                                        {assetsCollection.items.map(item => (
+                                            <Select.Item key={item.value} item={item}>
+                                                <Select.ItemText>{item.label}</Select.ItemText>
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root
+                            collection={SECTION_CATEGORIES}
+                            value={selectedSectionCat ? [selectedSectionCat] : []}
+                            onValueChange={e => setSelectedSectionCat(e.value[0])}
+                            size="sm"
+                        >
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="gray.900" borderColor="gray.600">
+                                    <Select.ValueText placeholder="Selecionar categoria do documento..." />
+                                </Select.Trigger>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content bg="gray.800" borderColor="gray.600">
+                                        {SECTION_CATEGORIES.items.map(item => (
+                                            <Select.Item key={item.value} item={item}>
+                                                <Select.ItemText>{item.label}</Select.ItemText>
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <HStack justify="flex-end" gap={2}>
+                            <Button size="sm" variant="ghost" colorPalette="gray" onClick={() => { setSelectedDoc(null); setSelectedAsset(''); setSelectedSectionCat(''); }}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                size="sm" colorPalette="orange" variant="solid"
+                                loading={isAttaching}
+                                disabled={!selectedAsset || !selectedSectionCat}
+                                onClick={handleAttach}
+                                gap={1}
+                            >
+                                <Icon as={PiLinkSimple} /> Confirmar Vinculação
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+            )}
+        </Box>
+    );
+}
 
 // ============================================================================
 //  PÁGINA PRINCIPAL
@@ -606,6 +808,8 @@ export default function EditUserPage() {
                         Solicitar Alteração (Pendente de Aprovação)
                     </Button>
                 </form>
+
+                <AdminStagingDocumentsSection userId={userId} />
             </VStack>
         </Flex>
     );
