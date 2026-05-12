@@ -63,7 +63,7 @@ export function OverviewTab({ asset }: TabProps) {
                     <VStack align="stretch" gap={3}>
                         <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
                             <Text color="gray.400" fontSize="sm">Cliente Principal</Text>
-                            <Text fontWeight="medium" textAlign="right">{asset.originalCreditor}</Text>
+                            <Text fontWeight="medium" textAlign="right">{myProfile?.name || asset.originalCreditor}</Text>
                         </Flex>
                         <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
                             <Text color="gray.400" fontSize="sm">Parte Contrária / Apelido</Text>

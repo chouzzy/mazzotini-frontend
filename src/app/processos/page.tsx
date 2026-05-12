@@ -68,6 +68,7 @@ const getStatusColorScheme = (status: string) => {
 
 export default function OperatorAssetsPage() {
     const { user } = useAuth0();
+    const { data: myProfile } = useApi<{ name: string }>('/api/users/me');
     
     // Estados de paginação e filtros
     const [page, setPage] = useState(1);
@@ -198,7 +199,7 @@ export default function OperatorAssetsPage() {
                                                     </VStack>
                                                 </Table.Cell>
                                                 <Table.Cell px={8} py={4}>{asset.nickname || '—'}</Table.Cell>
-                                                <Table.Cell px={8} py={4}>{asset.mainInvestorName}</Table.Cell>
+                                                <Table.Cell px={8} py={4}>{myProfile?.name || user?.name || '—'}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>{asset.originalCreditor}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>{formatCurrency(asset.currentValue)}</Table.Cell>
                                                 <Table.Cell px={8} py={4}>
