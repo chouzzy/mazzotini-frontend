@@ -346,7 +346,7 @@ export default function UserCarteiraPage() {
                     </IconButton>
                 </Link>
                 <Box>
-                    <Heading size="lg" display="flex" align="center" gap={2}>
+                    <Heading size="lg" display="flex" alignItems="center" gap={2}>
                         <Icon as={PiScales} color="brand.400" mr={1} />
                         Carteira de Processos
                     </Heading>
