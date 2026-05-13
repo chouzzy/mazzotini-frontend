@@ -20,11 +20,10 @@ import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 // ── constantes ────────────────────────────────────────────────────────────────
 
 const INDEX_OPTIONS = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (IPCA-15 até 12/2023, IPCA-E de 01/2024)', value: 'TJSP_LEI14905' },
-    { label: 'IPCA-E',  value: 'IPCA_E'  },
-    { label: 'IPCA-15', value: 'IPCA15'  },
-    { label: 'INPC',    value: 'INPC'    },
-    { label: 'IPCA',    value: 'IPCA'    },
+    { label: 'TJSP — Lei 14.905 (INPC até 12/2023, IPCA-E de 01/2024)', value: 'TJSP_LEI14905' },
+    { label: 'IPCA-E', value: 'IPCA_E' },
+    { label: 'INPC',   value: 'INPC'   },
+    { label: 'IPCA',   value: 'IPCA'   },
 ]});
 
 const TYPE_OPTIONS = createListCollection({ items: [

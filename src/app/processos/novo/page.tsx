@@ -79,11 +79,10 @@ interface UserSelectItem {
 const indexTypesCollection = createListCollection({ items: [{ label: "SELIC", value: "SELIC" }, { label: "IPCA", value: "IPCA" }, { label: "CDI", value: "CDI" }, { label: "IGP-M", value: "IGP-M" }, { label: "Outro", value: "OUTRO" }] });
 
 const CALC_INDEX_COLLECTION = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (IPCA-15 até 12/2023, IPCA-E de 01/2024)', value: 'TJSP_LEI14905' },
-    { label: 'IPCA-E',  value: 'IPCA_E'  },
-    { label: 'IPCA-15', value: 'IPCA15'  },
-    { label: 'INPC',    value: 'INPC'    },
-    { label: 'IPCA',    value: 'IPCA'    },
+    { label: 'TJSP — Lei 14.905 (INPC até 12/2023, IPCA-E de 01/2024)', value: 'TJSP_LEI14905' },
+    { label: 'IPCA-E', value: 'IPCA_E' },
+    { label: 'INPC',   value: 'INPC'   },
+    { label: 'IPCA',   value: 'IPCA'   },
 ]});
 
 const CALC_TYPE_COLLECTION = createListCollection({ items: [
