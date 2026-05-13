@@ -126,7 +126,15 @@ function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
                     <Select.Positioner>
                         <Select.Content bg="gray.800" borderColor="gray.600">
                             {categoryCollection.items.map(item => (
-                                <Select.Item key={item.value} item={item}><Select.ItemText>{item.label}</Select.ItemText><Select.ItemIndicator /></Select.Item>
+                                <Select.Item key={item.value} item={item}
+                                    px={3} py={2} cursor="pointer"
+                                    _hover={{ bg: 'gray.600' }}
+                                    _highlighted={{ bg: 'gray.600' }}
+                                    _selected={{ bg: 'brand.800/60', color: 'brand.200' }}
+                                >
+                                    <Select.ItemText>{item.label}</Select.ItemText>
+                                    <Select.ItemIndicator />
+                                </Select.Item>
                             ))}
                         </Select.Content>
                     </Select.Positioner>
@@ -208,7 +216,12 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
                                 <Select.Positioner>
                                     <Select.Content bg="gray.800" borderColor="gray.600">
                                         {investorsCollection.items.map(item => (
-                                            <Select.Item key={item.value} item={item}>
+                                            <Select.Item key={item.value} item={item}
+                                                px={3} py={2} cursor="pointer"
+                                                _hover={{ bg: 'gray.600' }}
+                                                _highlighted={{ bg: 'gray.600' }}
+                                                _selected={{ bg: 'brand.800/60', color: 'brand.200' }}
+                                            >
                                                 <Select.ItemText>{item.label}</Select.ItemText>
                                                 <Select.ItemIndicator />
                                             </Select.Item>
