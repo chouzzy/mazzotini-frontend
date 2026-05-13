@@ -7,6 +7,7 @@ import { UpdatesTab } from './tabs/UpdatesTab';
 import { ChartsTab } from './tabs/ChartsTab';
 import { DocumentsTab } from './tabs/DocumentsTab';
 import { StrategyTab } from './tabs/StrategyTab';
+import { CalculatorTab } from './tabs/CalculatorTab';
 
 interface AssetTabsProps {
   asset: DetailedCreditAsset;
@@ -25,6 +26,7 @@ export function AssetTabs({ asset, hideDocuments = false, onRefresh = () => {} }
         {!hideDocuments && (
           <Tabs.Trigger _selected={{ bgColor: 'brand.800', color: 'white' }} value="documents">Documentos</Tabs.Trigger>
         )}
+        <Tabs.Trigger _selected={{ bgColor: 'brand.800', color: 'white' }} value="calculator">Cálculo Judicial</Tabs.Trigger>
       </Tabs.List>
 
       <Tabs.Content value="overview" pt={6}>
@@ -44,6 +46,9 @@ export function AssetTabs({ asset, hideDocuments = false, onRefresh = () => {} }
           <DocumentsTab asset={asset} onRefresh={onRefresh} />
         </Tabs.Content>
       )}
+      <Tabs.Content value="calculator" pt={6}>
+        <CalculatorTab asset={asset} onRefresh={onRefresh} />
+      </Tabs.Content>
     </Tabs.Root>
   );
 }

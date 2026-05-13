@@ -9,7 +9,7 @@ import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control, u
 import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiWarning, PiFolderOpen, PiHash } from "react-icons/pi";
+import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiWarning, PiFolderOpen, PiHash, PiCalculator } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
@@ -25,21 +25,30 @@ interface InvestorFormInput {
 
 interface AssociateSelectItem { value: string; label: string; }
 
+interface CalcInstallmentInput { baseValue: string; baseDate: string; description: string; }
+
 interface FormValues {
     processNumber: string;
     originalCreditor: string;
-    otherParty: string; 
-    nickname?: string;  
+    otherParty: string;
+    nickname?: string;
     origemProcesso: string;
     acquisitionValue: number;
     originalValue: number;
-    acquisitionDate: string; 
-    updateIndexType: string;  
-    contractualIndexRate: number; 
+    acquisitionDate: string;
+    updateIndexType: string;
+    contractualIndexRate: number;
     legalOneId: number;
     legalOneType: 'Lawsuit' | 'Appeal' | 'ProceduralIssue';
-    folderId?: string; 
+    folderId?: string;
     investors: InvestorFormInput[];
+    // Parâmetros de cálculo judicial
+    calcCorrectionIndex:   string;
+    calcMoratoryRate:      string;
+    calcMoratoryType:      string;
+    calcFeesPercentage:    string;
+    calcPenaltyPercentage: string;
+    calcInstallments:      CalcInstallmentInput[];
 }
 
 interface LegalOneMatch {
@@ -68,6 +77,19 @@ interface UserSelectItem {
     referredByName?: string | null;
 }
 const indexTypesCollection = createListCollection({ items: [{ label: "SELIC", value: "SELIC" }, { label: "IPCA", value: "IPCA" }, { label: "CDI", value: "CDI" }, { label: "IGP-M", value: "IGP-M" }, { label: "Outro", value: "OUTRO" }] });
+
+const CALC_INDEX_COLLECTION = createListCollection({ items: [
+    { label: 'TJSP — Lei 14.905 (IPCA-15 até 12/2023, IPCA-E de 01/2024)', value: 'TJSP_LEI14905' },
+    { label: 'IPCA-E',  value: 'IPCA_E'  },
+    { label: 'IPCA-15', value: 'IPCA15'  },
+    { label: 'INPC',    value: 'INPC'    },
+    { label: 'IPCA',    value: 'IPCA'    },
+]});
+
+const CALC_TYPE_COLLECTION = createListCollection({ items: [
+    { label: 'Simples', value: 'SIMPLES' },
+    { label: 'Composto', value: 'COMPOSTO' },
+]});
 
 function InvestorCombobox(props: any) {
     const { control, index, allInvestors } = props;
@@ -228,11 +250,18 @@ export default function CreateAssetPage() {
             legalOneId: 0,
             legalOneType: "Lawsuit",
             folderId: "",
-            investors: [{ userId: "", share: 0, acquisitionDate: "" }]
+            investors: [{ userId: "", share: 0, acquisitionDate: "" }],
+            calcCorrectionIndex:   "TJSP_LEI14905",
+            calcMoratoryRate:      "1",
+            calcMoratoryType:      "SIMPLES",
+            calcFeesPercentage:    "10",
+            calcPenaltyPercentage: "10",
+            calcInstallments:      [{ baseValue: "", baseDate: "", description: "" }],
         }
     });
 
     const { fields, append, remove, replace } = useFieldArray({ control, name: "investors" });
+    const { fields: calcFields, append: calcAppend, remove: calcRemove } = useFieldArray({ control, name: "calcInstallments" });
     const processNumberValue = useWatch({ control, name: 'processNumber' });
 
     const applyLookupResponse = async (data: LookupResponse) => {
@@ -324,6 +353,43 @@ export default function CreateAssetPage() {
             };
 
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
+
+            // Salva parâmetros de cálculo e dispara primeiro cálculo
+            const calcInstallments = data.calcInstallments
+                .filter(i => i.baseValue && i.baseDate)
+                .map(i => ({
+                    baseValue:   parseFloat(i.baseValue.replace(',', '.')),
+                    baseDate:    new Date(i.baseDate).toISOString(),
+                    description: i.description || undefined,
+                }));
+
+            if (calcInstallments.length > 0) {
+                try {
+                    await axios.put(
+                        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${data.legalOneId}/params`,
+                        {
+                            correctionIndex:   data.calcCorrectionIndex,
+                            moratoryRate:      parseFloat(data.calcMoratoryRate || '0'),
+                            moratoryType:      data.calcMoratoryType,
+                            compensatoryRate:  0,
+                            compensatoryType:  'SIMPLES',
+                            feesPercentage:    parseFloat(data.calcFeesPercentage || '0'),
+                            penaltyPercentage: parseFloat(data.calcPenaltyPercentage || '0'),
+                            feesOnPenalty:     false,
+                            installments:      calcInstallments,
+                        },
+                        { headers: { Authorization: `Bearer ${token}` } },
+                    );
+                    await axios.post(
+                        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${data.legalOneId}/calculate`,
+                        {},
+                        { headers: { Authorization: `Bearer ${token}` } },
+                    );
+                } catch {
+                    toaster.create({ title: 'Processo criado, mas houve um erro ao salvar os parâmetros de cálculo. Configure na aba Cálculo Judicial.', type: 'warning' });
+                }
+            }
+
             toaster.create({ title: "Processo Registrado!", type: "success" });
             window.location.href = `/processos/${data.legalOneId}`;
         } catch (error: any) {
@@ -511,6 +577,87 @@ export default function CreateAssetPage() {
                                 <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("contractualIndexRate", { valueAsNumber: true })} />
                             </Field.Root>
                         </SimpleGrid>
+
+                        {/* ── SEÇÃO 4: CÁLCULO JUDICIAL ── */}
+                        <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4} display="flex" alignItems="center" gap={2}>
+                            <Icon as={PiCalculator} color="brand.400" /> 4. Cálculo Judicial
+                        </Heading>
+                        <Text fontSize="sm" color="gray.400" mb={2}>
+                            Configure os parâmetros para que o sistema calcule automaticamente o valor atualizado do processo.
+                            Pode ser configurado depois na aba <strong style={{color:'#d2be82'}}>Cálculo Judicial</strong>.
+                        </Text>
+
+                        <Field.Root>
+                            <Field.Label>Índice de Correção Monetária</Field.Label>
+                            <Controller name="calcCorrectionIndex" control={control} render={({ field }) => (
+                                <Select.Root collection={CALC_INDEX_COLLECTION} value={field.value ? [field.value] : []} onValueChange={e => field.onChange(e.value[0])}>
+                                    <Select.HiddenSelect />
+                                    <Select.Control>
+                                        <Select.Trigger bgColor="gray.700" borderColor="gray.600">
+                                            <Select.ValueText placeholder="Selecione o índice..." />
+                                        </Select.Trigger>
+                                    </Select.Control>
+                                    <Portal>
+                                        <Select.Positioner>
+                                            <Select.Content bg="gray.800" borderColor="gray.600">
+                                                {CALC_INDEX_COLLECTION.items.map(i => (
+                                                    <Select.Item key={i.value} item={i}><Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator /></Select.Item>
+                                                ))}
+                                            </Select.Content>
+                                        </Select.Positioner>
+                                    </Portal>
+                                </Select.Root>
+                            )} />
+                        </Field.Root>
+
+                        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+                            <Field.Root>
+                                <Field.Label>Juros Moratórios (% a.m.)</Field.Label>
+                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
+                            </Field.Root>
+                            <Field.Root>
+                                <Field.Label>Honorários (%)</Field.Label>
+                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcFeesPercentage")} />
+                            </Field.Root>
+                            <Field.Root>
+                                <Field.Label>Multa Art. 523 (%)</Field.Label>
+                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcPenaltyPercentage")} />
+                            </Field.Root>
+                        </SimpleGrid>
+
+                        {/* Parcelas */}
+                        <Box>
+                            <HStack justify="space-between" align="center" mb={3}>
+                                <Text fontSize="sm" fontWeight="semibold" color="gray.300">Parcelas do Valor Base</Text>
+                                <Button size="xs" variant="outline" colorPalette="brand" type="button"
+                                    onClick={() => calcAppend({ baseValue: '', baseDate: '', description: '' })} gap={1}>
+                                    <Icon as={PiPlusCircle} /> Adicionar Parcela
+                                </Button>
+                            </HStack>
+                            <VStack align="stretch" gap={2}>
+                                {calcFields.map((field, idx) => (
+                                    <Flex key={field.id} gap={2} align="flex-end" wrap="wrap" p={3} bg="gray.800" borderRadius="md">
+                                        <Field.Root flex={2} minW="140px">
+                                            <Field.Label fontSize="xs" color="gray.400">Valor Base (R$)</Field.Label>
+                                            <Input {...register(`calcInstallments.${idx}.baseValue`)} size="sm" bg="gray.900" borderColor="gray.600" placeholder="1.150.972,30" />
+                                        </Field.Root>
+                                        <Field.Root flex={1} minW="130px">
+                                            <Field.Label fontSize="xs" color="gray.400">Data Base</Field.Label>
+                                            <Input {...register(`calcInstallments.${idx}.baseDate`)} type="date" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        </Field.Root>
+                                        <Field.Root flex={2} minW="140px">
+                                            <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
+                                            <Input {...register(`calcInstallments.${idx}.description`)} size="sm" bg="gray.900" borderColor="gray.600" />
+                                        </Field.Root>
+                                        {calcFields.length > 1 && (
+                                            <Button size="sm" variant="ghost" colorPalette="red" type="button" onClick={() => calcRemove(idx)}>
+                                                <Icon as={PiTrash} />
+                                            </Button>
+                                        )}
+                                    </Flex>
+                                ))}
+                            </VStack>
+                        </Box>
 
                         <Button type="submit" color={'white'} bgColor={'brand.700'} size="lg" w={{ base: '100%', md: 'auto' }} alignSelf="flex-end" loading={isSubmitting} gap={2} mt={4}>
                             <Icon as={PiPlusCircle} /> Registrar Processo
