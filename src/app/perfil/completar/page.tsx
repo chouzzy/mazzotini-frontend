@@ -324,7 +324,7 @@ export default function CompleteProfilePage() {
                 contactPreference: data.contactPreference?.join(','),
                 infoEmail: data.infoEmail,
 
-                referredById: data.unknownAssociate ? null : data.referredById,
+                referredById: data.unknownAssociate ? null : (data.referredById || null),
                 indication: data.unknownAssociate ? data.manualReferral : null,
 
                 profilePictureUrl: profilePictureUrl,
