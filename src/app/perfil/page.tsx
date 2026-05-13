@@ -18,7 +18,7 @@ import {
     Badge
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { useApi } from '@/hooks/useApi';
@@ -96,32 +96,53 @@ const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, ind
     );
 };
 
+const STAGING_CATEGORIES = [
+    { value: 'CESSAO',                label: 'Cessão',                  desc: 'Contrato de cessão de crédito' },
+    { value: 'HONORARIOS',            label: 'Honorários',              desc: 'Recibo ou nota de honorários advocatícios' },
+    { value: 'ORIENTACAO_FINANCEIRA', label: 'Orientação Financeira',   desc: 'Documento de orientação financeira recebido' },
+    { value: 'ORIENTACAO_FISCAL',     label: 'Orientação Fiscal',       desc: 'Documento de orientação fiscal recebido' },
+    { value: 'COMPROVANTE',           label: 'Comprovante de Pagamento', desc: 'Comprovante de transferência ou depósito' },
+    { value: 'NOTA_FISCAL',           label: 'Nota Fiscal',             desc: 'NF referente à operação' },
+];
+
+const CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
+    STAGING_CATEGORIES.map(c => [c.value, c.label])
+);
+
 function StagingDocumentsSection() {
     const { getAccessTokenSilently } = useAuth0();
     const { data: docs, isLoading, mutate } = useApi<UserStagingDocument[]>('/api/users/me/staging-documents');
+    const [pendingCategory, setPendingCategory] = useState<string>('');
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const triggerUpload = (category: string) => {
+        setPendingCategory(category);
+        setTimeout(() => inputRef.current?.click(), 50);
+    };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file || !pendingCategory) return;
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
             const form = new FormData();
             form.append('document', file);
+            form.append('category', pendingCategory);
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/staging-documents`, form, { headers: { Authorization: `Bearer ${token}` } });
-            toaster.create({ title: 'Comprovante enviado com sucesso!', type: 'success' });
+            toaster.create({ title: `Documento enviado em "${CATEGORY_LABEL_MAP[pendingCategory]}"!`, type: 'success' });
             mutate();
         } catch {
-            toaster.create({ title: 'Erro ao enviar comprovante.', type: 'error' });
+            toaster.create({ title: 'Erro ao enviar documento.', type: 'error' });
         }
         e.target.value = '';
+        setPendingCategory('');
     };
 
     const handleDelete = async (id: string) => {
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
             await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/staging-documents/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-            toaster.create({ title: 'Comprovante removido.', type: 'success' });
+            toaster.create({ title: 'Documento removido.', type: 'success' });
             mutate();
         } catch (err: any) {
             toaster.create({ title: err?.response?.data?.error || 'Erro ao remover.', type: 'error' });
@@ -130,35 +151,69 @@ function StagingDocumentsSection() {
 
     return (
         <Box>
-            <HStack mb={3} justify="space-between" align="center">
-                <Heading size="md" color="gray.300" display="flex" alignItems="center" gap={2}>
-                    <Icon as={PiCurrencyCircleDollar} color="yellow.400" />
-                    Documentos Transitórios Financeiros
-                </Heading>
-                <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
-                <Button size="sm" colorPalette="brand" variant="solid" gap={2} onClick={() => inputRef.current?.click()}>
-                    <Icon as={PiUploadSimple} /> Enviar comprovante
-                </Button>
+            <HStack mb={1} align="center" gap={2}>
+                <Icon as={PiCurrencyCircleDollar} color="yellow.400" boxSize={5} />
+                <Heading size="md" color="gray.300">Documentos Financeiros Privados</Heading>
             </HStack>
+            <Text fontSize="xs" color="gray.500" mb={4}>
+                Envie aqui os documentos financeiros referentes à sua operação. Selecione o tipo correto antes de enviar.
+                Após o envio, a equipe Mazzotini irá vinculá-los ao seu processo.
+            </Text>
 
-            <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
-                <Card.Body>
-                    <Text fontSize="xs" color="gray.500" mb={4}>
-                        Aqui você envia seus comprovantes de pagamento. Após o envio, avise a Mazzotini — eles vinculam esses documentos ao seu processo. Documentos já vinculados não podem ser excluídos.
-                    </Text>
+            <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
 
-                    {isLoading && <Flex justify="center" py={4}><Spinner size="sm" /></Flex>}
+            {/* Grade de categorias */}
+            <SimpleGrid columns={{ base: 2, md: 3 }} gap={3} mb={6}>
+                {STAGING_CATEGORIES.map(cat => {
+                    const catDocs = docs?.filter(d => d.category === cat.value) || [];
+                    return (
+                        <Card.Root
+                            key={cat.value}
+                            variant="outline"
+                            bg="gray.800"
+                            borderColor={catDocs.length > 0 ? 'brand.700' : 'gray.700'}
+                            cursor="pointer"
+                            _hover={{ borderColor: 'brand.500', bg: 'gray.750' }}
+                            transition="all 0.15s"
+                            onClick={() => triggerUpload(cat.value)}
+                        >
+                            <Card.Body py={3} px={4}>
+                                <Flex justify="space-between" align="start" mb={1}>
+                                    <Text fontSize="sm" fontWeight="semibold" color="white">{cat.label}</Text>
+                                    {catDocs.length > 0 && (
+                                        <Badge colorPalette="brand" size="sm">{catDocs.length}</Badge>
+                                    )}
+                                </Flex>
+                                <Text fontSize="xs" color="gray.500" mb={2}>{cat.desc}</Text>
+                                <Flex align="center" gap={1} color="brand.400">
+                                    <Icon as={PiUploadSimple} boxSize={3} />
+                                    <Text fontSize="xs">Clique para enviar</Text>
+                                </Flex>
+                            </Card.Body>
+                        </Card.Root>
+                    );
+                })}
+            </SimpleGrid>
 
-                    {!isLoading && (!docs || docs.length === 0) && (
-                        <Text color="gray.500" fontSize="sm">Nenhum comprovante enviado ainda.</Text>
-                    )}
+            {/* Lista de documentos enviados */}
+            {isLoading && <Flex justify="center" py={4}><Spinner size="sm" /></Flex>}
 
-                    {!isLoading && docs && docs.length > 0 && (
+            {!isLoading && docs && docs.length > 0 && (
+                <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
+                    <Card.Body>
+                        <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={3}>
+                            Documentos Enviados
+                        </Text>
                         <VStack align="stretch" gap={2}>
                             {docs.map(doc => (
                                 <Flex key={doc.id} align="center" gap={3} p={3} borderRadius="md" bg="whiteAlpha.50" _hover={{ bg: 'whiteAlpha.100' }}>
                                     <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
-                                    <Text fontSize="sm" flex={1} truncate color="gray.200">{doc.fileName}</Text>
+                                    <VStack align="start" gap={0} flex={1} minW={0}>
+                                        <Text fontSize="sm" truncate color="gray.200">{doc.fileName}</Text>
+                                        {doc.category && (
+                                            <Text fontSize="xs" color="brand.400">{CATEGORY_LABEL_MAP[doc.category] || doc.category}</Text>
+                                        )}
+                                    </VStack>
                                     <HStack gap={2} flexShrink={0}>
                                         {doc.status === 'PENDING' ? (
                                             <Badge colorPalette="orange" variant="subtle" gap={1}>
@@ -166,7 +221,7 @@ function StagingDocumentsSection() {
                                             </Badge>
                                         ) : (
                                             <Badge colorPalette="green" variant="subtle" gap={1}>
-                                                <Icon as={PiCheckCircle} boxSize={3} /> Vinculado: {doc.attachedToAssetName || 'Processo'}
+                                                <Icon as={PiCheckCircle} boxSize={3} /> {doc.attachedToAssetName || 'Vinculado'}
                                             </Badge>
                                         )}
                                         <Link href={doc.fileUrl} target="_blank" _hover={{ textDecoration: 'none' }}>
@@ -183,9 +238,15 @@ function StagingDocumentsSection() {
                                 </Flex>
                             ))}
                         </VStack>
-                    )}
-                </Card.Body>
-            </Card.Root>
+                    </Card.Body>
+                </Card.Root>
+            )}
+
+            {!isLoading && (!docs || docs.length === 0) && (
+                <Text color="gray.600" fontSize="sm" textAlign="center" py={4}>
+                    Nenhum documento enviado ainda. Clique em uma categoria acima para começar.
+                </Text>
+            )}
         </Box>
     );
 }

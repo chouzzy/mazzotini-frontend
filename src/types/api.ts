@@ -51,6 +51,7 @@ export interface UserStagingDocument {
     fileUrl: string;
     fileKey: string;
     mimeType: string;
+    category?: string | null;
     status: 'PENDING' | 'ATTACHED';
     attachedToAssetId?: string | null;
     attachedToAssetName?: string | null;
