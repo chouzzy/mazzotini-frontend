@@ -9,7 +9,7 @@ import { useForm, SubmitHandler, Controller, useWatch, useFieldArray, Control, u
 import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import { PiCaretDownDuotone, PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiWarning, PiFolderOpen, PiHash, PiCalculator } from "react-icons/pi";
+import { PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiFolderOpen, PiHash, PiCalculator } from "react-icons/pi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
@@ -76,8 +76,6 @@ interface UserSelectItem {
     indication?: string | null;
     referredByName?: string | null;
 }
-const indexTypesCollection = createListCollection({ items: [{ label: "SELIC", value: "SELIC" }, { label: "IPCA", value: "IPCA" }, { label: "CDI", value: "CDI" }, { label: "IGP-M", value: "IGP-M" }, { label: "Outro", value: "OUTRO" }] });
-
 const CALC_INDEX_COLLECTION = createListCollection({ items: [
     { label: 'TJSP — Lei 14.905 (INPC até 08/2024, IPCA de 09/2024)', value: 'TJSP_LEI14905' },
     { label: 'IPCA-E', value: 'IPCA_E' },
@@ -244,7 +242,7 @@ export default function CreateAssetPage() {
             acquisitionValue: 0,
             originalValue: 0,
             acquisitionDate: "",
-            updateIndexType: "",
+            updateIndexType: "TJSP_LEI14905",
             contractualIndexRate: 0,
             legalOneId: 0,
             legalOneType: "Lawsuit",
@@ -342,6 +340,8 @@ export default function CreateAssetPage() {
             const token = await getAccessTokenSilently();
             const payload = {
                 ...data,
+                // updateIndexType espelha o índice da calculadora judicial
+                updateIndexType: data.calcCorrectionIndex || 'TJSP_LEI14905',
                 acquisitionDate: new Date(data.acquisitionDate + 'T00:00:00Z'),
                 investors: data.investors.map(inv => ({
                     userId: inv.userId,
@@ -354,11 +354,17 @@ export default function CreateAssetPage() {
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             // Salva parâmetros de cálculo e dispara primeiro cálculo
+            const parseBRNumber = (s: string): number => {
+                // Suporta formato BR "1.150.972,30" e americano "1150972.30"
+                if (s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+                return parseFloat(s.replace(/,/g, ''));
+            };
+
             const calcInstallments = data.calcInstallments
                 .filter(i => i.baseValue && i.baseDate)
                 .map(i => ({
-                    baseValue:   parseFloat(i.baseValue.replace(',', '.')),
-                    baseDate:    new Date(i.baseDate).toISOString(),
+                    baseValue:   parseBRNumber(i.baseValue),
+                    baseDate:    new Date(i.baseDate + 'T00:00:00Z').toISOString(),
                     description: i.description || undefined,
                 }));
 
@@ -560,26 +566,9 @@ export default function CreateAssetPage() {
                             </Field.Root>
                         </SimpleGrid>
 
-                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4}>3. Correção</Heading>
-                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                            <Controller name="updateIndexType" control={control} rules={{ required: "Selecione um índice" }} render={({ field }) => (
-                                <Field.Root invalid={!!errors.updateIndexType} required>
-                                    <Field.Label>Índice</Field.Label>
-                                    <Select.Root collection={indexTypesCollection} value={field.value ? [field.value] : []} onValueChange={(d) => field.onChange(d.value[0])}>
-                                        <Select.Control><Select.Trigger ref={field.ref} color={'white'} cursor={'pointer'} bgColor={'gray.700'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
-                                        <Portal><Select.Positioner><Select.Content>{indexTypesCollection.items.map((i) => (<Select.Item key={i.value} item={i}>{i.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
-                                    </Select.Root>
-                                </Field.Root>
-                            )} />
-                            <Field.Root>
-                                <Field.Label>Taxa Adicional (% a.m.)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("contractualIndexRate", { valueAsNumber: true })} />
-                            </Field.Root>
-                        </SimpleGrid>
-
-                        {/* ── SEÇÃO 4: CÁLCULO JUDICIAL ── */}
+                        {/* ── SEÇÃO 3: CÁLCULO JUDICIAL ── */}
                         <Heading as="h2" size="md" borderBottomWidth="1px" borderColor="gray.700" pb={2} pt={4} display="flex" alignItems="center" gap={2}>
-                            <Icon as={PiCalculator} color="brand.400" /> 4. Cálculo Judicial
+                            <Icon as={PiCalculator} color="brand.400" /> 3. Cálculo Judicial
                         </Heading>
                         <Text fontSize="sm" color="gray.400" mb={2}>
                             Configure os parâmetros para que o sistema calcule automaticamente o valor atualizado do processo.
