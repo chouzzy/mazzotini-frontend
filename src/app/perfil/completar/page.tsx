@@ -30,6 +30,7 @@ import {
     Combobox,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, UseFormRegister, FieldErrors, Control, UseFormSetValue, useController, useWatch } from "react-hook-form";
+import { useRef } from "react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { PiEnvelope, PiFloppyDisk, PiUploadSimple, PiWhatsappLogoDuotone, PiCheckCircle, PiCircleNotch } from "react-icons/pi";
@@ -530,6 +531,7 @@ export default function CompleteProfilePage() {
                         ) : (
                             <Controller name="referredById" control={control} render={({ field }) => {
                                 const [codeInput, setCodeInput] = useState("");
+                                const justSelectedRef = useRef(false);
                                 const filteredCollection = useMemo(() => {
                                     const isComplete = /^\d{3}$/.test(codeInput);
                                     const filtered = isComplete
@@ -550,10 +552,15 @@ export default function CompleteProfilePage() {
                                             value={field.value ? [field.value] : []}
                                             inputValue={field.value ? selectedLabel : codeInput}
                                             onValueChange={(d) => {
+                                                justSelectedRef.current = true;
                                                 field.onChange(d.value[0] ?? "");
-                                                setCodeInput(d.items[0]?.label ?? "");
                                             }}
                                             onInputValueChange={(d) => {
+                                                // Se acabamos de selecionar, ignoramos o disparo automático de limpeza
+                                                if (justSelectedRef.current) {
+                                                    justSelectedRef.current = false;
+                                                    return;
+                                                }
                                                 setCodeInput(d.inputValue);
                                                 if (!d.inputValue) field.onChange("");
                                             }}
