@@ -261,10 +261,10 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
                                 {moratoryMode === 'TAXA_LEGAL' ? (
                                     <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50">
-                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática piecewise:</Text>
-                                        <Text fontSize="xs" color="gray.400">• Até jan/2003 — 6% a.a. (0,5%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Fev/2003 a ago/2024 — 12% a.a. (1%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Set/2024 em diante — SELIC − IPCA mensal</Text>
+                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período:</Text>
+                                        <Text fontSize="xs" color="gray.400">• Até dez/2002 — 6% a.a. (0,5%/mês)</Text>
+                                        <Text fontSize="xs" color="gray.400">• Jan/2003 a jul/2024 — 12% a.a. (1%/mês)</Text>
+                                        <Text fontSize="xs" color="gray.400">• Ago/2024 em diante — SELIC − IPCA mensal (Lei 14.905)</Text>
                                     </Box>
                                 ) : (
                                     <HStack gap={4} wrap="wrap">
