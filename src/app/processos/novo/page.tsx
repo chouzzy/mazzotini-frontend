@@ -77,7 +77,7 @@ interface UserSelectItem {
     referredByName?: string | null;
 }
 const CALC_INDEX_COLLECTION = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (INPC até 08/2024, IPCA de 09/2024)', value: 'TJSP_LEI14905' },
+    { label: 'TJSP — Lei 14.905 (INPC/IPCA-15)', value: 'TJSP_LEI14905' },
     { label: 'IPCA-E', value: 'IPCA_E' },
     { label: 'INPC',   value: 'INPC'   },
     { label: 'IPCA',   value: 'IPCA'   },

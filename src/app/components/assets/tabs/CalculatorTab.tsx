@@ -3,7 +3,7 @@
 import {
     VStack, HStack, Flex, Box, Text, Heading, Button, Icon, Badge,
     Card, Input, Field, Select, Portal, createListCollection,
-    Spinner, Table, Accordion,
+    Spinner, Table, Accordion, RadioGroup,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -20,7 +20,7 @@ import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 // ── constantes ────────────────────────────────────────────────────────────────
 
 const INDEX_OPTIONS = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (INPC até 08/2024, IPCA de 09/2024)', value: 'TJSP_LEI14905' },
+    { label: 'TJSP — Lei 14.905 (INPC/IPCA-15)', value: 'TJSP_LEI14905' },
     { label: 'IPCA-E', value: 'IPCA_E' },
     { label: 'INPC',   value: 'INPC'   },
     { label: 'IPCA',   value: 'IPCA'   },
@@ -43,6 +43,7 @@ interface Installment { baseValue: string; baseDate: string; description: string
 
 interface FormValues {
     correctionIndex:   string;
+    moratoryMode:      string;  // "TAXA_LEGAL" | "PERSONALIZADO"
     moratoryRate:      string;
     moratoryType:      string;
     moratoryStartDate: string;
@@ -101,6 +102,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     const { register, control, handleSubmit, reset, watch } = useForm<FormValues>({
         defaultValues: {
             correctionIndex:   savedParams?.correctionIndex   ?? 'TJSP_LEI14905',
+            moratoryMode:      (savedParams as any)?.moratoryMode ?? 'TAXA_LEGAL',
             moratoryRate:      String(savedParams?.moratoryRate      ?? 1),
             moratoryType:      savedParams?.moratoryType      ?? 'SIMPLES',
             moratoryStartDate: savedParams?.moratoryStartDate ? savedParams.moratoryStartDate.substring(0, 10) : '',
@@ -120,6 +122,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     });
 
     const { fields, append, remove } = useFieldArray({ control, name: 'installments' });
+    const moratoryMode = watch('moratoryMode');
 
     const getToken = () => getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
@@ -139,6 +142,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
         const payload = {
             correctionIndex:   data.correctionIndex,
+            moratoryMode:      data.moratoryMode,
             moratoryRate:      parseFloat(data.moratoryRate || '0'),
             moratoryType:      data.moratoryType,
             moratoryStartDate: data.moratoryStartDate || null,
@@ -233,32 +237,70 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 )} />
                             </Field.Root>
 
-                            {/* Juros + Honorários */}
-                            <Flex gap={4} wrap="wrap">
-                                <Field.Root flex={1} minW="160px">
-                                    <Field.Label fontSize="sm">Juros Moratórios (% a.m.)</Field.Label>
-                                    <Input {...register('moratoryRate')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
-                                </Field.Root>
-                                <Field.Root flex={1} minW="140px">
-                                    <Field.Label fontSize="sm">Tipo</Field.Label>
-                                    <Controller name="moratoryType" control={control} render={({ field }) => (
-                                        <Select.Root collection={TYPE_OPTIONS} value={[field.value]} onValueChange={e => field.onChange(e.value[0])} size="sm">
-                                            <Select.HiddenSelect />
-                                            <Select.Control>
-                                                <Select.Trigger bg="gray.800" borderColor="gray.600"><Select.ValueText /></Select.Trigger>
-                                            </Select.Control>
-                                            <Portal>
-                                                <Select.Positioner>
-                                                    <Select.Content bg="gray.800" borderColor="gray.600">
-                                                        {TYPE_OPTIONS.items.map(i => (
-                                                            <Select.Item key={i.value} item={i}><Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator /></Select.Item>
-                                                        ))}
-                                                    </Select.Content>
-                                                </Select.Positioner>
-                                            </Portal>
-                                        </Select.Root>
-                                    )} />
-                                </Field.Root>
+                            {/* Juros Moratórios / Remuneratórios */}
+                            <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={3}>
+                                    Juros Moratórios / Remuneratórios
+                                </Text>
+                                <Controller name="moratoryMode" control={control} render={({ field }) => (
+                                    <RadioGroup.Root value={field.value} onValueChange={d => field.onChange(d.value)} mb={3}>
+                                        <HStack gap={6}>
+                                            <RadioGroup.Item value="TAXA_LEGAL">
+                                                <RadioGroup.ItemHiddenInput />
+                                                <RadioGroup.ItemIndicator />
+                                                <RadioGroup.ItemText fontSize="sm">Taxa Legal (art. 406/CC)</RadioGroup.ItemText>
+                                            </RadioGroup.Item>
+                                            <RadioGroup.Item value="PERSONALIZADO">
+                                                <RadioGroup.ItemHiddenInput />
+                                                <RadioGroup.ItemIndicator />
+                                                <RadioGroup.ItemText fontSize="sm">Personalizado</RadioGroup.ItemText>
+                                            </RadioGroup.Item>
+                                        </HStack>
+                                    </RadioGroup.Root>
+                                )} />
+
+                                {moratoryMode === 'TAXA_LEGAL' ? (
+                                    <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50">
+                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática piecewise:</Text>
+                                        <Text fontSize="xs" color="gray.400">• Até jan/2003 — 6% a.a. (0,5%/mês)</Text>
+                                        <Text fontSize="xs" color="gray.400">• Fev/2003 a ago/2024 — 12% a.a. (1%/mês)</Text>
+                                        <Text fontSize="xs" color="gray.400">• Set/2024 em diante — SELIC − IPCA mensal</Text>
+                                    </Box>
+                                ) : (
+                                    <HStack gap={4} wrap="wrap">
+                                        <Field.Root flex={1} minW="160px">
+                                            <Field.Label fontSize="sm">Taxa (% a.m.)</Field.Label>
+                                            <Input {...register('moratoryRate')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        </Field.Root>
+                                        <Field.Root flex={1} minW="140px">
+                                            <Field.Label fontSize="sm">Tipo</Field.Label>
+                                            <Controller name="moratoryType" control={control} render={({ field }) => (
+                                                <Select.Root collection={TYPE_OPTIONS} value={[field.value]} onValueChange={e => field.onChange(e.value[0])} size="sm">
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="gray.900" borderColor="gray.600"><Select.ValueText /></Select.Trigger>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content bg="gray.800" borderColor="gray.600">
+                                                                {TYPE_OPTIONS.items.map(i => (
+                                                                    <Select.Item key={i.value} item={i}
+                                                                        _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}>
+                                                                        <Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+                                            )} />
+                                        </Field.Root>
+                                    </HStack>
+                                )}
+                            </Box>
+
+                            {/* Honorários e Multa */}
+                            <HStack gap={4} wrap="wrap">
                                 <Field.Root flex={1} minW="160px">
                                     <Field.Label fontSize="sm">Honorários Advocatícios (%)</Field.Label>
                                     <Input {...register('feesPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
@@ -267,7 +309,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Field.Label fontSize="sm">Multa Art. 523 (%)</Field.Label>
                                     <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
                                 </Field.Root>
-                            </Flex>
+                            </HStack>
 
                             {/* Parcelas */}
                             <Box>
