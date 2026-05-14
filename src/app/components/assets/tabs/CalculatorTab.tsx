@@ -53,6 +53,7 @@ interface FormValues {
     penaltyPercentage: string;
     feesOnPenalty:     boolean;
     installments:      Installment[];
+    referenceMonth:    string;  // "YYYY-MM" ou "" (mês atual)
 }
 
 interface CalcLog {
@@ -79,6 +80,8 @@ interface CalcResult {
     feesValue: number;
     penaltyValue: number;
     baseTotal: number;
+    referenceMonth: number;
+    referenceYear: number;
     installmentResults: any[];
 }
 
@@ -111,6 +114,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             feesPercentage:    String(savedParams?.feesPercentage    ?? 10),
             penaltyPercentage: String(savedParams?.penaltyPercentage ?? 10),
             feesOnPenalty:     savedParams?.feesOnPenalty     ?? false,
+            referenceMonth:    '',
             installments: savedParams?.installments?.length
                 ? savedParams.installments.map((i: any) => ({
                     baseValue:   String(i.baseValue),
@@ -170,7 +174,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         setIsCalculating(true);
         try {
             const token = await getToken();
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${asset.legalOneId}/calculate`, {}, {
+            const refBody: Record<string, number> = {};
+            if (data.referenceMonth) {
+                const [ry, rm] = data.referenceMonth.split('-').map(Number);
+                refBody.referenceYear  = ry;
+                refBody.referenceMonth = rm;
+            }
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${asset.legalOneId}/calculate`, refBody, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setCalcResult(res.data);
@@ -348,6 +358,24 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 </VStack>
                             </Box>
 
+                            {/* Mês de referência */}
+                            <HStack gap={3} align="flex-end" p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                <Field.Root flex={1}>
+                                    <Field.Label fontSize="sm">Mês de Referência</Field.Label>
+                                    <Input
+                                        {...register('referenceMonth')}
+                                        type="month"
+                                        size="sm"
+                                        bg="gray.900"
+                                        borderColor="gray.600"
+                                        max={new Date().toISOString().substring(0, 7)}
+                                    />
+                                </Field.Root>
+                                <Text fontSize="xs" color="gray.500" pb={1}>
+                                    Vazio = mês atual. Use o último mês fechado para máxima precisão.
+                                </Text>
+                            </HStack>
+
                             <Button type="submit" colorPalette="brand" size="md" loading={isSaving || isCalculating} gap={2}>
                                 <Icon as={PiPlay} />
                                 {isSaving ? 'Salvando parâmetros...' : isCalculating ? 'Calculando...' : 'Salvar e Calcular'}
@@ -361,9 +389,16 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             {calcResult && (
                 <Card.Root bg="gray.900" border="1px solid" borderColor="brand.700">
                     <Card.Body>
-                        <Heading size="sm" color="brand.300" mb={4} textTransform="uppercase" letterSpacing="wider">
-                            Resultado do Cálculo
-                        </Heading>
+                        <HStack mb={4} justify="space-between" align="center">
+                            <Heading size="sm" color="brand.300" textTransform="uppercase" letterSpacing="wider">
+                                Resultado do Cálculo
+                            </Heading>
+                            {calcResult.referenceMonth && calcResult.referenceYear && (
+                                <Badge colorPalette="brand" variant="outline" fontSize="xs">
+                                    Referência: {String(calcResult.referenceMonth).padStart(2, '0')}/{calcResult.referenceYear}
+                                </Badge>
+                            )}
+                        </HStack>
                         <Flex gap={4} wrap="wrap" mb={4}>
                             {[
                                 { label: 'Valor Base',          value: calcResult.baseTotal },
