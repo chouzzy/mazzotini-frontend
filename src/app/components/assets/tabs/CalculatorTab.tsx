@@ -57,18 +57,20 @@ const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
 ]});
 
 interface FormValues {
-    correctionIndex:   string;
-    moratoryMode:      string;
-    moratoryRate:      string;
-    moratoryType:      string;
-    moratoryStartDate: string;
-    compensatoryRate:  string;
-    compensatoryType:  string;
-    feesPercentage:    string;
-    penaltyPercentage: string;
-    feesOnPenalty:     boolean;
-    installments:      Installment[];
-    referenceMonth:    string;
+    correctionIndex:        string;
+    moratoryMode:           string;
+    moratoryRate:           string;
+    moratoryType:           string;
+    moratoryStartDate:      string;
+    compensatoryRate:       string;
+    compensatoryType:       string;
+    compensatoryStartDate:  string;
+    feesPercentage:         string;
+    penaltyPercentage:      string;
+    penaltyStartDate:       string;
+    feesOnPenalty:          boolean;
+    installments:           Installment[];
+    referenceMonth:         string;
 }
 
 interface CalcLog {
@@ -137,11 +139,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             moratoryMode:      (savedParams as any)?.moratoryMode ?? 'TAXA_LEGAL',
             moratoryRate:      String(savedParams?.moratoryRate      ?? 1),
             moratoryType:      savedParams?.moratoryType      ?? 'SIMPLES',
-            moratoryStartDate: savedParams?.moratoryStartDate ? savedParams.moratoryStartDate.substring(0, 10) : '',
-            compensatoryRate:  String(savedParams?.compensatoryRate  ?? 0),
-            compensatoryType:  savedParams?.compensatoryType  ?? 'SIMPLES',
-            feesPercentage:    String(savedParams?.feesPercentage    ?? 10),
-            penaltyPercentage: String(savedParams?.penaltyPercentage ?? 10),
+            moratoryStartDate:      savedParams?.moratoryStartDate      ? savedParams.moratoryStartDate.substring(0, 10)      : '',
+            compensatoryRate:       String(savedParams?.compensatoryRate  ?? 0),
+            compensatoryType:       savedParams?.compensatoryType  ?? 'SIMPLES',
+            compensatoryStartDate:  (savedParams as any)?.compensatoryStartDate ? (savedParams as any).compensatoryStartDate.substring(0, 10) : '',
+            feesPercentage:         String(savedParams?.feesPercentage    ?? 10),
+            penaltyPercentage:      String(savedParams?.penaltyPercentage ?? 10),
+            penaltyStartDate:       (savedParams as any)?.penaltyStartDate ? (savedParams as any).penaltyStartDate.substring(0, 10) : '',
             feesOnPenalty:     savedParams?.feesOnPenalty     ?? false,
             referenceMonth:    '',
             installments: savedParams?.installments?.length
@@ -185,11 +189,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             moratoryMode:      data.moratoryMode,
             moratoryRate:      parseFloat(data.moratoryRate   || '0'),
             moratoryType:      data.moratoryType,
-            moratoryStartDate: data.moratoryStartDate || null,
-            compensatoryRate:  parseFloat(data.compensatoryRate || '0'),
-            compensatoryType:  data.compensatoryType   || 'SIMPLES',
-            feesPercentage:    parseFloat(data.feesPercentage || '0'),
-            penaltyPercentage: parseFloat(data.penaltyPercentage || '0'),
+            moratoryStartDate:     data.moratoryStartDate     || null,
+            compensatoryRate:      parseFloat(data.compensatoryRate || '0'),
+            compensatoryType:      data.compensatoryType   || 'SIMPLES',
+            compensatoryStartDate: data.compensatoryStartDate || null,
+            feesPercentage:        parseFloat(data.feesPercentage || '0'),
+            penaltyPercentage:     parseFloat(data.penaltyPercentage || '0'),
+            penaltyStartDate:      data.penaltyStartDate || null,
             feesOnPenalty:     data.feesOnPenalty,
             installments,
         };
@@ -307,14 +313,14 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     </HStack>
                                 )} />
                                 {moratoryMode === 'TAXA_LEGAL' ? (
-                                    <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50">
+                                    <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50" mb={3}>
                                         <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC):</Text>
                                         <Text fontSize="xs" color="gray.400">• Até jan/2003 — 6% a.a. (0,5%/mês)</Text>
                                         <Text fontSize="xs" color="gray.400">• Fev/2003 a ago/2024 — 12% a.a. (1%/mês)</Text>
                                         <Text fontSize="xs" color="gray.400">• Set/2024 em diante — SELIC − IPCA mensal (Lei 14.905)</Text>
                                     </Box>
                                 ) : (
-                                    <HStack gap={4} wrap="wrap">
+                                    <HStack gap={4} wrap="wrap" mb={3}>
                                         <Field.Root flex={1} minW="160px">
                                             <Field.Label fontSize="sm">Taxa (% a.m.)</Field.Label>
                                             <Input {...register('moratoryRate')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
@@ -333,6 +339,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         </Field.Root>
                                     </HStack>
                                 )}
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        Calcular juros a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = data base de cada parcela)</Text>
+                                    </Field.Label>
+                                    <Input {...register('moratoryStartDate')} type="date" size="sm" bg="gray.900" borderColor="gray.600"
+                                        max={new Date().toISOString().substring(0, 10)} />
+                                </Field.Root>
                             </Box>
 
                             {/* Juros Remuneratórios */}
@@ -340,7 +353,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 <Text fontSize="xs" fontWeight="semibold" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={3}>
                                     Juros Remuneratórios
                                 </Text>
-                                <HStack gap={4} wrap="wrap">
+                                <HStack gap={4} wrap="wrap" mb={3}>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Taxa (% a.m.) — 0 = não aplicar</Field.Label>
                                         <Input {...register('compensatoryRate')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
@@ -358,6 +371,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         )} />
                                     </Field.Root>
                                 </HStack>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        Calcular a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = data base de cada parcela)</Text>
+                                    </Field.Label>
+                                    <Input {...register('compensatoryStartDate')} type="date" size="sm" bg="gray.900" borderColor="gray.600"
+                                        max={new Date().toISOString().substring(0, 10)} />
+                                </Field.Root>
                             </Box>
 
                             {/* Honorários e Multa */}
@@ -369,6 +389,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 <Field.Root flex={1} minW="160px">
                                     <Field.Label fontSize="sm">Multa Art. 523 (%)</Field.Label>
                                     <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
+                                </Field.Root>
+                                <Field.Root flex={1} minW="160px">
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        Multa a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = sempre)</Text>
+                                    </Field.Label>
+                                    <Input {...register('penaltyStartDate')} type="date" size="sm" bg="gray.800" borderColor="gray.600"
+                                        max={new Date().toISOString().substring(0, 10)} />
                                 </Field.Root>
                             </HStack>
 
