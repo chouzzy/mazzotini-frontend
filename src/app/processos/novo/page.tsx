@@ -374,6 +374,7 @@ export default function CreateAssetPage() {
                         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${data.legalOneId}/params`,
                         {
                             correctionIndex:   data.calcCorrectionIndex,
+                            moratoryMode:      'TAXA_LEGAL',
                             moratoryRate:      parseFloat(data.calcMoratoryRate || '0'),
                             moratoryType:      data.calcMoratoryType,
                             compensatoryRate:  0,

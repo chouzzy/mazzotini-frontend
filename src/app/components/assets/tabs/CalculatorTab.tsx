@@ -39,11 +39,26 @@ const formatPct = (v: number) =>
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
-interface Installment { baseValue: string; baseDate: string; description: string; }
+type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MULTA' | 'APOS_TUDO';
+
+interface Installment {
+    baseValue:      string;
+    baseDate:       string;
+    description:    string;
+    type:           'DEBITO' | 'ABATIMENTO';
+    deductionPoint: DeductionPoint;
+}
+
+const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
+    { label: 'Do valor corrigido (antes dos honorários)', value: 'DO_VALOR_CORRIGIDO' },
+    { label: 'Após os honorários advocatícios',           value: 'APOS_HONORARIOS'   },
+    { label: 'Após a multa Art. 523',                     value: 'APOS_MULTA'        },
+    { label: 'Após tudo (total final)',                   value: 'APOS_TUDO'         },
+]});
 
 interface FormValues {
     correctionIndex:   string;
-    moratoryMode:      string;  // "TAXA_LEGAL" | "PERSONALIZADO"
+    moratoryMode:      string;
     moratoryRate:      string;
     moratoryType:      string;
     moratoryStartDate: string;
@@ -53,7 +68,7 @@ interface FormValues {
     penaltyPercentage: string;
     feesOnPenalty:     boolean;
     installments:      Installment[];
-    referenceMonth:    string;  // "YYYY-MM" ou "" (mês atual)
+    referenceMonth:    string;
 }
 
 interface CalcLog {
@@ -72,17 +87,31 @@ interface CalcLog {
     breakdown: any[];
 }
 
+interface AbatimentoResult {
+    description:      string;
+    baseDate:         string;
+    baseValue:        number;
+    correctionFactor: number;
+    correctedValue:   number;
+    deductionPoint:   DeductionPoint;
+}
+
 interface CalcResult {
-    totalValue: number;
-    correctedValue: number;
-    moratoryInterest: number;
+    totalValue:           number;
+    correctedValue:       number;
+    moratoryInterest:     number;
     compensatoryInterest: number;
-    feesValue: number;
-    penaltyValue: number;
-    baseTotal: number;
-    referenceMonth: number;
-    referenceYear: number;
-    installmentResults: any[];
+    subtotalA:            number;
+    feesValue:            number;
+    subtotalB:            number;
+    penaltyValue:         number;
+    grossTotal:           number;
+    abatimentoResults:    AbatimentoResult[];
+    abatimentoTotal:      number;
+    baseTotal:            number;
+    referenceMonth:       number;
+    referenceYear:        number;
+    installmentResults:   any[];
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -117,26 +146,33 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             referenceMonth:    '',
             installments: savedParams?.installments?.length
                 ? savedParams.installments.map((i: any) => ({
-                    baseValue:   String(i.baseValue),
-                    baseDate:    i.baseDate?.substring(0, 10) ?? '',
-                    description: i.description ?? '',
+                    baseValue:      String(i.baseValue),
+                    baseDate:       i.baseDate?.substring(0, 10) ?? '',
+                    description:    i.description ?? '',
+                    type:           i.type ?? 'DEBITO',
+                    deductionPoint: i.deductionPoint ?? 'APOS_TUDO',
                 }))
-                : [{ baseValue: '', baseDate: '', description: '' }],
+                : [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
         },
     });
 
     const { fields, append, remove } = useFieldArray({ control, name: 'installments' });
-    const moratoryMode = watch('moratoryMode');
+    const moratoryMode        = watch('moratoryMode');
+    const watchedInstallments = watch('installments');
 
     const getToken = () => getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
     const onSaveAndCalculate = async (data: FormValues) => {
+        const parseBR = (s: string) => s.includes(',') ? parseFloat(s.replace(/\./g, '').replace(',', '.')) : parseFloat(s);
+
         const installments = data.installments
             .filter(i => i.baseValue && i.baseDate)
             .map(i => ({
-                baseValue:   parseFloat(i.baseValue.replace(',', '.')),
-                baseDate:    new Date(i.baseDate).toISOString(),
-                description: i.description || undefined,
+                baseValue:      parseBR(i.baseValue),
+                baseDate:       new Date(i.baseDate + 'T00:00:00Z').toISOString(),
+                description:    i.description || undefined,
+                type:           i.type,
+                deductionPoint: i.type === 'ABATIMENTO' ? i.deductionPoint : undefined,
             }));
 
         if (installments.length === 0) {
@@ -147,11 +183,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         const payload = {
             correctionIndex:   data.correctionIndex,
             moratoryMode:      data.moratoryMode,
-            moratoryRate:      parseFloat(data.moratoryRate || '0'),
+            moratoryRate:      parseFloat(data.moratoryRate   || '0'),
             moratoryType:      data.moratoryType,
             moratoryStartDate: data.moratoryStartDate || null,
             compensatoryRate:  parseFloat(data.compensatoryRate || '0'),
-            compensatoryType:  data.compensatoryType,
+            compensatoryType:  data.compensatoryType   || 'SIMPLES',
             feesPercentage:    parseFloat(data.feesPercentage || '0'),
             penaltyPercentage: parseFloat(data.penaltyPercentage || '0'),
             feesOnPenalty:     data.feesOnPenalty,
@@ -247,28 +283,25 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 )} />
                             </Field.Root>
 
-                            {/* Juros Moratórios / Remuneratórios */}
+                            {/* Juros Moratórios */}
                             <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
                                 <Text fontSize="xs" fontWeight="semibold" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={3}>
-                                    Juros Moratórios / Remuneratórios
+                                    Juros Moratórios
                                 </Text>
                                 <Controller name="moratoryMode" control={control} render={({ field }) => (
                                     <RadioGroup.Root value={field.value} onValueChange={d => field.onChange(d.value)} mb={3}>
                                         <HStack gap={6}>
                                             <RadioGroup.Item value="TAXA_LEGAL">
-                                                <RadioGroup.ItemHiddenInput />
-                                                <RadioGroup.ItemIndicator />
+                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
                                                 <RadioGroup.ItemText fontSize="sm">Taxa Legal (art. 406/CC)</RadioGroup.ItemText>
                                             </RadioGroup.Item>
                                             <RadioGroup.Item value="PERSONALIZADO">
-                                                <RadioGroup.ItemHiddenInput />
-                                                <RadioGroup.ItemIndicator />
+                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
                                                 <RadioGroup.ItemText fontSize="sm">Personalizado</RadioGroup.ItemText>
                                             </RadioGroup.Item>
                                         </HStack>
                                     </RadioGroup.Root>
                                 )} />
-
                                 {moratoryMode === 'TAXA_LEGAL' ? (
                                     <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50">
                                         <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC):</Text>
@@ -287,26 +320,40 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             <Controller name="moratoryType" control={control} render={({ field }) => (
                                                 <Select.Root collection={TYPE_OPTIONS} value={[field.value]} onValueChange={e => field.onChange(e.value[0])} size="sm">
                                                     <Select.HiddenSelect />
-                                                    <Select.Control>
-                                                        <Select.Trigger bg="gray.900" borderColor="gray.600"><Select.ValueText /></Select.Trigger>
-                                                    </Select.Control>
-                                                    <Portal>
-                                                        <Select.Positioner>
-                                                            <Select.Content bg="gray.800" borderColor="gray.600">
-                                                                {TYPE_OPTIONS.items.map(i => (
-                                                                    <Select.Item key={i.value} item={i}
-                                                                        _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}>
-                                                                        <Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator />
-                                                                    </Select.Item>
-                                                                ))}
-                                                            </Select.Content>
-                                                        </Select.Positioner>
-                                                    </Portal>
+                                                    <Select.Control><Select.Trigger bg="gray.900" borderColor="gray.600"><Select.ValueText /></Select.Trigger></Select.Control>
+                                                    <Portal><Select.Positioner><Select.Content bg="gray.800" borderColor="gray.600">
+                                                        {TYPE_OPTIONS.items.map(i => (<Select.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}><Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator /></Select.Item>))}
+                                                    </Select.Content></Select.Positioner></Portal>
                                                 </Select.Root>
                                             )} />
                                         </Field.Root>
                                     </HStack>
                                 )}
+                            </Box>
+
+                            {/* Juros Remuneratórios */}
+                            <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={3}>
+                                    Juros Remuneratórios
+                                </Text>
+                                <HStack gap={4} wrap="wrap">
+                                    <Field.Root flex={1} minW="160px">
+                                        <Field.Label fontSize="sm">Taxa (% a.m.) — 0 = não aplicar</Field.Label>
+                                        <Input {...register('compensatoryRate')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                    </Field.Root>
+                                    <Field.Root flex={1} minW="140px">
+                                        <Field.Label fontSize="sm">Tipo</Field.Label>
+                                        <Controller name="compensatoryType" control={control} render={({ field }) => (
+                                            <Select.Root collection={TYPE_OPTIONS} value={field.value ? [field.value] : ['SIMPLES']} onValueChange={e => field.onChange(e.value[0])} size="sm">
+                                                <Select.HiddenSelect />
+                                                <Select.Control><Select.Trigger bg="gray.900" borderColor="gray.600"><Select.ValueText /></Select.Trigger></Select.Control>
+                                                <Portal><Select.Positioner><Select.Content bg="gray.800" borderColor="gray.600">
+                                                    {TYPE_OPTIONS.items.map(i => (<Select.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}><Select.ItemText>{i.label}</Select.ItemText><Select.ItemIndicator /></Select.Item>))}
+                                                </Select.Content></Select.Positioner></Portal>
+                                            </Select.Root>
+                                        )} />
+                                    </Field.Root>
+                                </HStack>
                             </Box>
 
                             {/* Honorários e Multa */}
@@ -329,32 +376,104 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     </Text>
                                     <Button size="xs" variant="outline" colorPalette="brand" gap={1}
                                         type="button"
-                                        onClick={() => append({ baseValue: '', baseDate: '', description: '' })}>
+                                        onClick={() => append({ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' })}>
                                         <Icon as={PiPlus} /> Adicionar Parcela
                                     </Button>
                                 </Flex>
                                 <VStack align="stretch" gap={2}>
-                                    {fields.map((field, idx) => (
-                                        <Flex key={field.id} gap={2} align="flex-end" wrap="wrap" p={3} bg="gray.800" borderRadius="md">
-                                            <Field.Root flex={2} minW="140px">
-                                                <Field.Label fontSize="xs" color="gray.400">Valor Base (R$)</Field.Label>
-                                                <Input {...register(`installments.${idx}.baseValue`)} size="sm" bg="gray.900" borderColor="gray.600" placeholder="1.150.972,30" />
-                                            </Field.Root>
-                                            <Field.Root flex={1} minW="130px">
-                                                <Field.Label fontSize="xs" color="gray.400">Data Base</Field.Label>
-                                                <Input {...register(`installments.${idx}.baseDate`)} type="date" size="sm" bg="gray.900" borderColor="gray.600" />
-                                            </Field.Root>
-                                            <Field.Root flex={2} minW="140px">
-                                                <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
-                                                <Input {...register(`installments.${idx}.description`)} size="sm" bg="gray.900" borderColor="gray.600" placeholder="Ex: Condenação principal" />
-                                            </Field.Root>
-                                            {fields.length > 1 && (
-                                                <Button size="sm" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}>
-                                                    <Icon as={PiTrash} />
-                                                </Button>
-                                            )}
-                                        </Flex>
-                                    ))}
+                                    {fields.map((field, idx) => {
+                                        const isAbatimento = watchedInstallments[idx]?.type === 'ABATIMENTO';
+                                        return (
+                                            <Box
+                                                key={field.id}
+                                                p={3} borderRadius="md"
+                                                bg={isAbatimento ? 'orange.950' : 'gray.800'}
+                                                border="1px solid"
+                                                borderColor={isAbatimento ? 'orange.700' : 'gray.700'}
+                                            >
+                                                {/* Tipo toggle */}
+                                                <Controller name={`installments.${idx}.type`} control={control} render={({ field: f }) => (
+                                                    <RadioGroup.Root value={f.value} onValueChange={d => f.onChange(d.value)} mb={3} size="sm">
+                                                        <HStack gap={5}>
+                                                            <RadioGroup.Item value="DEBITO">
+                                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
+                                                                <RadioGroup.ItemText fontSize="xs" color="gray.300">Débito</RadioGroup.ItemText>
+                                                            </RadioGroup.Item>
+                                                            <RadioGroup.Item value="ABATIMENTO">
+                                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
+                                                                <RadioGroup.ItemText fontSize="xs" color="orange.300">Abatimento / Desconto</RadioGroup.ItemText>
+                                                            </RadioGroup.Item>
+                                                        </HStack>
+                                                    </RadioGroup.Root>
+                                                )} />
+
+                                                <Flex gap={2} align="flex-end" wrap="wrap">
+                                                    <Field.Root flex={2} minW="140px">
+                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
+                                                            {isAbatimento ? 'Valor do Abatimento (R$)' : 'Valor Base (R$)'}
+                                                        </Field.Label>
+                                                        <Input {...register(`installments.${idx}.baseValue`)} size="sm"
+                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
+                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'}
+                                                            placeholder="1.150.972,30" />
+                                                    </Field.Root>
+                                                    <Field.Root flex={1} minW="130px">
+                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
+                                                            {isAbatimento ? 'Data do Abatimento' : 'Data Base'}
+                                                        </Field.Label>
+                                                        <Input {...register(`installments.${idx}.baseDate`)} type="date" size="sm"
+                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
+                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'} />
+                                                    </Field.Root>
+                                                    <Field.Root flex={2} minW="140px">
+                                                        <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
+                                                        <Input {...register(`installments.${idx}.description`)} size="sm"
+                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
+                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'}
+                                                            placeholder={isAbatimento ? 'Ex: Depósito em cartório' : 'Ex: Condenação principal'} />
+                                                    </Field.Root>
+                                                    {fields.length > 1 && (
+                                                        <Button size="sm" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}>
+                                                            <Icon as={PiTrash} />
+                                                        </Button>
+                                                    )}
+                                                </Flex>
+
+                                                {isAbatimento && (
+                                                    <Field.Root mt={3}>
+                                                        <Field.Label fontSize="xs" color="orange.300">Ponto de Dedução</Field.Label>
+                                                        <Controller name={`installments.${idx}.deductionPoint`} control={control} render={({ field: f }) => (
+                                                            <Select.Root
+                                                                collection={DEDUCTION_POINT_OPTIONS}
+                                                                value={f.value ? [f.value] : ['APOS_TUDO']}
+                                                                onValueChange={e => f.onChange(e.value[0])}
+                                                                size="sm"
+                                                            >
+                                                                <Select.HiddenSelect />
+                                                                <Select.Control>
+                                                                    <Select.Trigger bg="orange.900" borderColor="orange.700">
+                                                                        <Select.ValueText />
+                                                                    </Select.Trigger>
+                                                                </Select.Control>
+                                                                <Portal>
+                                                                    <Select.Positioner>
+                                                                        <Select.Content bg="gray.800" borderColor="gray.600">
+                                                                            {DEDUCTION_POINT_OPTIONS.items.map(i => (
+                                                                                <Select.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}>
+                                                                                    <Select.ItemText>{i.label}</Select.ItemText>
+                                                                                    <Select.ItemIndicator />
+                                                                                </Select.Item>
+                                                                            ))}
+                                                                        </Select.Content>
+                                                                    </Select.Positioner>
+                                                                </Portal>
+                                                            </Select.Root>
+                                                        )} />
+                                                    </Field.Root>
+                                                )}
+                                            </Box>
+                                        );
+                                    })}
                                 </VStack>
                             </Box>
 
@@ -401,11 +520,14 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                         </HStack>
                         <Flex gap={4} wrap="wrap" mb={4}>
                             {[
-                                { label: 'Valor Base',          value: calcResult.baseTotal },
-                                { label: 'Valor Corrigido',     value: calcResult.correctedValue },
-                                { label: 'Juros Moratórios',    value: calcResult.moratoryInterest },
-                                { label: 'Honorários',          value: calcResult.feesValue },
-                                { label: 'Multa Art. 523',      value: calcResult.penaltyValue },
+                                { label: 'Valor Base',             value: calcResult.baseTotal },
+                                { label: 'Valor Corrigido',        value: calcResult.correctedValue },
+                                { label: 'Juros Moratórios',       value: calcResult.moratoryInterest },
+                                ...(calcResult.compensatoryInterest > 0
+                                    ? [{ label: 'Juros Remuneratórios', value: calcResult.compensatoryInterest }]
+                                    : []),
+                                { label: 'Honorários',             value: calcResult.feesValue },
+                                { label: 'Multa Art. 523',         value: calcResult.penaltyValue },
                             ].map(item => (
                                 <Box key={item.label} flex={1} minW="140px" p={3} bg="gray.800" borderRadius="md">
                                     <Text fontSize="xs" color="gray.500" mb={1}>{item.label}</Text>
@@ -413,6 +535,51 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 </Box>
                             ))}
                         </Flex>
+
+                        {/* Abatimentos */}
+                        {calcResult.abatimentoResults?.length > 0 && (
+                            <Box mb={4} p={3} bg="orange.950" borderRadius="md" border="1px solid" borderColor="orange.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="orange.300" textTransform="uppercase" letterSpacing="wider" mb={2}>
+                                    Abatimentos / Descontos
+                                </Text>
+                                <VStack align="stretch" gap={1} mb={2}>
+                                    {calcResult.abatimentoResults.map((ab, i) => (
+                                        <Flex key={i} justify="space-between" align="center" py={1}
+                                            borderBottom="1px solid" borderColor="orange.900/60">
+                                            <Box>
+                                                <Text fontSize="sm" color="orange.100">{ab.description}</Text>
+                                                <Text fontSize="xs" color="orange.400">
+                                                    Base: {formatBRL(ab.baseValue)} — {new Date(ab.baseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                                                    {' · '}×{ab.correctionFactor.toFixed(6)}
+                                                    {' · '}{DEDUCTION_POINT_OPTIONS.items.find(o => o.value === ab.deductionPoint)?.label}
+                                                </Text>
+                                            </Box>
+                                            <Text fontSize="sm" fontWeight="bold" color="orange.300">
+                                                − {formatBRL(ab.correctedValue)}
+                                            </Text>
+                                        </Flex>
+                                    ))}
+                                </VStack>
+                                <Flex justify="space-between">
+                                    <Text fontSize="xs" color="orange.400">Total deduzido (atualizado)</Text>
+                                    <Text fontSize="sm" fontWeight="bold" color="orange.300">− {formatBRL(calcResult.abatimentoTotal)}</Text>
+                                </Flex>
+                            </Box>
+                        )}
+
+                        {calcResult.abatimentoResults?.length > 0 && (
+                            <Flex gap={4} mb={4} wrap="wrap">
+                                <Box flex={1} minW="160px" p={3} bg="gray.800" borderRadius="md">
+                                    <Text fontSize="xs" color="gray.500" mb={1}>Subtotal bruto (antes deduções)</Text>
+                                    <Text fontWeight="bold" fontSize="sm">{formatBRL(calcResult.grossTotal)}</Text>
+                                </Box>
+                                <Box flex={1} minW="160px" p={3} bg="orange.950" borderRadius="md" border="1px solid" borderColor="orange.700">
+                                    <Text fontSize="xs" color="orange.400" mb={1}>Total abatimentos (atualizado)</Text>
+                                    <Text fontWeight="bold" fontSize="sm" color="orange.300">− {formatBRL(calcResult.abatimentoTotal)}</Text>
+                                </Box>
+                            </Flex>
+                        )}
+
                         <Box p={4} bg="brand.900/30" borderRadius="md" border="1px solid" borderColor="brand.700">
                             <Text fontSize="xs" color="brand.400" mb={1}>TOTAL GERAL</Text>
                             <Text fontSize="2xl" fontWeight="black" color="brand.300">{formatBRL(calcResult.totalValue)}</Text>
