@@ -3,7 +3,7 @@
 import {
     VStack, HStack, Flex, Box, Text, Heading, Button, Icon, Badge,
     Card, Input, Field, Select, Portal, createListCollection,
-    Spinner, Table, Accordion, RadioGroup,
+    Spinner, Table, Accordion,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -289,18 +289,22 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     Juros Moratórios
                                 </Text>
                                 <Controller name="moratoryMode" control={control} render={({ field }) => (
-                                    <RadioGroup.Root value={field.value} onValueChange={d => field.onChange(d.value)} mb={3}>
-                                        <HStack gap={6}>
-                                            <RadioGroup.Item value="TAXA_LEGAL">
-                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
-                                                <RadioGroup.ItemText fontSize="sm">Taxa Legal (art. 406/CC)</RadioGroup.ItemText>
-                                            </RadioGroup.Item>
-                                            <RadioGroup.Item value="PERSONALIZADO">
-                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
-                                                <RadioGroup.ItemText fontSize="sm">Personalizado</RadioGroup.ItemText>
-                                            </RadioGroup.Item>
-                                        </HStack>
-                                    </RadioGroup.Root>
+                                    <HStack gap={1} mb={3}>
+                                        <Button size="sm" type="button"
+                                            variant={field.value === 'TAXA_LEGAL' ? 'solid' : 'ghost'}
+                                            colorPalette="brand"
+                                            onClick={() => field.onChange('TAXA_LEGAL')}
+                                        >
+                                            Taxa Legal (art. 406/CC)
+                                        </Button>
+                                        <Button size="sm" type="button"
+                                            variant={field.value === 'PERSONALIZADO' ? 'solid' : 'ghost'}
+                                            colorPalette="gray"
+                                            onClick={() => field.onChange('PERSONALIZADO')}
+                                        >
+                                            Personalizado
+                                        </Button>
+                                    </HStack>
                                 )} />
                                 {moratoryMode === 'TAXA_LEGAL' ? (
                                     <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50">
