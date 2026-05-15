@@ -387,12 +387,12 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Input {...register('feesPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
                                 </Field.Root>
                                 <Field.Root flex={1} minW="160px">
-                                    <Field.Label fontSize="sm">Multa Art. 523 (%)</Field.Label>
+                                    <Field.Label fontSize="sm">HO e multa Art. 523 (%)</Field.Label>
                                     <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
                                 </Field.Root>
                                 <Field.Root flex={1} minW="160px">
                                     <Field.Label fontSize="sm" color="gray.400">
-                                        Multa a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = sempre)</Text>
+                                        Art. 523 vigente a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = sempre)</Text>
                                     </Field.Label>
                                     <Input {...register('penaltyStartDate')} type="date" size="sm" bg="gray.800" borderColor="gray.600"
                                         max={new Date().toISOString().substring(0, 10)} />
