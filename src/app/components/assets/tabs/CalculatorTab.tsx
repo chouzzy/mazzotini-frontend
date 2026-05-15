@@ -386,91 +386,103 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         return (
                                             <Box
                                                 key={field.id}
-                                                p={3} borderRadius="md"
-                                                bg={isAbatimento ? 'orange.950' : 'gray.800'}
+                                                borderRadius="md"
                                                 border="1px solid"
                                                 borderColor={isAbatimento ? 'orange.700' : 'gray.700'}
+                                                overflow="hidden"
                                             >
-                                                {/* Tipo toggle */}
-                                                <Controller name={`installments.${idx}.type`} control={control} render={({ field: f }) => (
-                                                    <RadioGroup.Root value={f.value} onValueChange={d => f.onChange(d.value)} mb={3} size="sm">
-                                                        <HStack gap={5}>
-                                                            <RadioGroup.Item value="DEBITO">
-                                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
-                                                                <RadioGroup.ItemText fontSize="xs" color="gray.300">Débito</RadioGroup.ItemText>
-                                                            </RadioGroup.Item>
-                                                            <RadioGroup.Item value="ABATIMENTO">
-                                                                <RadioGroup.ItemHiddenInput /><RadioGroup.ItemIndicator />
-                                                                <RadioGroup.ItemText fontSize="xs" color="orange.300">Abatimento / Desconto</RadioGroup.ItemText>
-                                                            </RadioGroup.Item>
+                                                {/* Header com toggle e botão remover */}
+                                                <Flex
+                                                    align="center" justify="space-between"
+                                                    px={3} py={2}
+                                                    bg={isAbatimento ? 'orange.900' : 'gray.750'}
+                                                    borderBottom="1px solid"
+                                                    borderColor={isAbatimento ? 'orange.700' : 'gray.700'}
+                                                >
+                                                    <Controller name={`installments.${idx}.type`} control={control} render={({ field: f }) => (
+                                                        <HStack gap={1}>
+                                                            <Button
+                                                                size="xs" type="button"
+                                                                variant={f.value === 'DEBITO' ? 'solid' : 'ghost'}
+                                                                colorPalette="gray"
+                                                                onClick={() => f.onChange('DEBITO')}
+                                                            >
+                                                                Débito
+                                                            </Button>
+                                                            <Button
+                                                                size="xs" type="button"
+                                                                variant={f.value === 'ABATIMENTO' ? 'solid' : 'ghost'}
+                                                                colorPalette={f.value === 'ABATIMENTO' ? 'orange' : 'gray'}
+                                                                onClick={() => f.onChange('ABATIMENTO')}
+                                                            >
+                                                                − Abatimento
+                                                            </Button>
                                                         </HStack>
-                                                    </RadioGroup.Root>
-                                                )} />
-
-                                                <Flex gap={2} align="flex-end" wrap="wrap">
-                                                    <Field.Root flex={2} minW="140px">
-                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
-                                                            {isAbatimento ? 'Valor do Abatimento (R$)' : 'Valor Base (R$)'}
-                                                        </Field.Label>
-                                                        <Input {...register(`installments.${idx}.baseValue`)} size="sm"
-                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
-                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'}
-                                                            placeholder="1.150.972,30" />
-                                                    </Field.Root>
-                                                    <Field.Root flex={1} minW="130px">
-                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
-                                                            {isAbatimento ? 'Data do Abatimento' : 'Data Base'}
-                                                        </Field.Label>
-                                                        <Input {...register(`installments.${idx}.baseDate`)} type="date" size="sm"
-                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
-                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'} />
-                                                    </Field.Root>
-                                                    <Field.Root flex={2} minW="140px">
-                                                        <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
-                                                        <Input {...register(`installments.${idx}.description`)} size="sm"
-                                                            bg={isAbatimento ? 'orange.900' : 'gray.900'}
-                                                            borderColor={isAbatimento ? 'orange.700' : 'gray.600'}
-                                                            placeholder={isAbatimento ? 'Ex: Depósito em cartório' : 'Ex: Condenação principal'} />
-                                                    </Field.Root>
+                                                    )} />
                                                     {fields.length > 1 && (
-                                                        <Button size="sm" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}>
+                                                        <Button size="xs" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}>
                                                             <Icon as={PiTrash} />
                                                         </Button>
                                                     )}
                                                 </Flex>
 
-                                                {isAbatimento && (
-                                                    <Field.Root mt={3}>
-                                                        <Field.Label fontSize="xs" color="orange.300">Ponto de Dedução</Field.Label>
-                                                        <Controller name={`installments.${idx}.deductionPoint`} control={control} render={({ field: f }) => (
-                                                            <Select.Root
-                                                                collection={DEDUCTION_POINT_OPTIONS}
-                                                                value={f.value ? [f.value] : ['APOS_TUDO']}
-                                                                onValueChange={e => f.onChange(e.value[0])}
-                                                                size="sm"
-                                                            >
-                                                                <Select.HiddenSelect />
-                                                                <Select.Control>
-                                                                    <Select.Trigger bg="orange.900" borderColor="orange.700">
-                                                                        <Select.ValueText />
-                                                                    </Select.Trigger>
-                                                                </Select.Control>
-                                                                <Portal>
-                                                                    <Select.Positioner>
-                                                                        <Select.Content bg="gray.800" borderColor="gray.600">
-                                                                            {DEDUCTION_POINT_OPTIONS.items.map(i => (
-                                                                                <Select.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}>
-                                                                                    <Select.ItemText>{i.label}</Select.ItemText>
-                                                                                    <Select.ItemIndicator />
-                                                                                </Select.Item>
-                                                                            ))}
-                                                                        </Select.Content>
-                                                                    </Select.Positioner>
-                                                                </Portal>
-                                                            </Select.Root>
-                                                        )} />
+                                                {/* Campos */}
+                                                <Flex gap={2} align="flex-end" wrap="wrap" p={3}
+                                                    bg={isAbatimento ? 'orange.950' : 'gray.800'}>
+                                                    <Field.Root flex={2} minW="140px">
+                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
+                                                            {isAbatimento ? 'Valor (R$)' : 'Valor Base (R$)'}
+                                                        </Field.Label>
+                                                        <Input {...register(`installments.${idx}.baseValue`)} size="sm"
+                                                            bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'}
+                                                            placeholder="1.150.972,30" />
                                                     </Field.Root>
-                                                )}
+                                                    <Field.Root flex={1} minW="130px">
+                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
+                                                            {isAbatimento ? 'Data' : 'Data Base'}
+                                                        </Field.Label>
+                                                        <Input {...register(`installments.${idx}.baseDate`)} type="date" size="sm"
+                                                            bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'} />
+                                                    </Field.Root>
+                                                    <Field.Root flex={2} minW="140px">
+                                                        <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
+                                                        <Input {...register(`installments.${idx}.description`)} size="sm"
+                                                            bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'}
+                                                            placeholder={isAbatimento ? 'Ex: Depósito em cartório' : 'Ex: Condenação principal'} />
+                                                    </Field.Root>
+                                                    {isAbatimento && (
+                                                        <Field.Root flex={2} minW="180px">
+                                                            <Field.Label fontSize="xs" color="orange.300">Ponto de Dedução</Field.Label>
+                                                            <Controller name={`installments.${idx}.deductionPoint`} control={control} render={({ field: f }) => (
+                                                                <Select.Root
+                                                                    collection={DEDUCTION_POINT_OPTIONS}
+                                                                    value={f.value ? [f.value] : ['APOS_TUDO']}
+                                                                    onValueChange={e => f.onChange(e.value[0])}
+                                                                    size="sm"
+                                                                >
+                                                                    <Select.HiddenSelect />
+                                                                    <Select.Control>
+                                                                        <Select.Trigger bg="gray.900" borderColor="orange.800">
+                                                                            <Select.ValueText />
+                                                                        </Select.Trigger>
+                                                                    </Select.Control>
+                                                                    <Portal>
+                                                                        <Select.Positioner>
+                                                                            <Select.Content bg="gray.800" borderColor="gray.600">
+                                                                                {DEDUCTION_POINT_OPTIONS.items.map(i => (
+                                                                                    <Select.Item key={i.value} item={i} _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}>
+                                                                                        <Select.ItemText>{i.label}</Select.ItemText>
+                                                                                        <Select.ItemIndicator />
+                                                                                    </Select.Item>
+                                                                                ))}
+                                                                            </Select.Content>
+                                                                        </Select.Positioner>
+                                                                    </Portal>
+                                                                </Select.Root>
+                                                            )} />
+                                                        </Field.Root>
+                                                    )}
+                                                </Flex>
                                             </Box>
                                         );
                                     })}
