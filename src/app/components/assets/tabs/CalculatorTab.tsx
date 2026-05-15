@@ -415,7 +415,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                                 colorPalette={f.value === 'ABATIMENTO' ? 'orange' : 'gray'}
                                                                 onClick={() => f.onChange('ABATIMENTO')}
                                                             >
-                                                                − Abatimento
+                                                                Abatimento
                                                             </Button>
                                                         </HStack>
                                                     )} />
