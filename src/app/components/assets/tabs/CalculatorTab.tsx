@@ -65,9 +65,9 @@ interface FormValues {
     compensatoryRate:       string;
     compensatoryType:       string;
     compensatoryStartDate:  string;
+    multaPercentage:        string;
     feesPercentage:         string;
     penaltyPercentage:      string;
-    penaltyStartDate:       string;
     feesOnPenalty:          boolean;
     installments:           Installment[];
     referenceMonth:         string;
@@ -103,6 +103,7 @@ interface CalcResult {
     correctedValue:       number;
     moratoryInterest:     number;
     compensatoryInterest: number;
+    multaValue:           number;
     subtotalA:            number;
     feesValue:            number;
     subtotalB:            number;
@@ -143,9 +144,9 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             compensatoryRate:       String(savedParams?.compensatoryRate  ?? 0),
             compensatoryType:       savedParams?.compensatoryType  ?? 'SIMPLES',
             compensatoryStartDate:  (savedParams as any)?.compensatoryStartDate ? (savedParams as any).compensatoryStartDate.substring(0, 10) : '',
+            multaPercentage:        String((savedParams as any)?.multaPercentage ?? 0),
             feesPercentage:         String(savedParams?.feesPercentage    ?? 10),
             penaltyPercentage:      String(savedParams?.penaltyPercentage ?? 10),
-            penaltyStartDate:       (savedParams as any)?.penaltyStartDate ? (savedParams as any).penaltyStartDate.substring(0, 10) : '',
             feesOnPenalty:     savedParams?.feesOnPenalty     ?? false,
             referenceMonth:    '',
             installments: savedParams?.installments?.length
@@ -193,9 +194,9 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             compensatoryRate:      parseFloat(data.compensatoryRate || '0'),
             compensatoryType:      data.compensatoryType   || 'SIMPLES',
             compensatoryStartDate: data.compensatoryStartDate || null,
+            multaPercentage:       parseFloat(data.multaPercentage || '0'),
             feesPercentage:        parseFloat(data.feesPercentage || '0'),
             penaltyPercentage:     parseFloat(data.penaltyPercentage || '0'),
-            penaltyStartDate:      data.penaltyStartDate || null,
             feesOnPenalty:     data.feesOnPenalty,
             installments,
         };
@@ -391,11 +392,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" />
                                 </Field.Root>
                                 <Field.Root flex={1} minW="160px">
-                                    <Field.Label fontSize="sm" color="gray.400">
-                                        Art. 523 vigente a partir de <Text as="span" color="gray.500" fontSize="xs">(vazio = sempre)</Text>
-                                    </Field.Label>
-                                    <Input {...register('penaltyStartDate')} type="date" size="sm" bg="gray.800" borderColor="gray.600"
-                                        max={new Date().toISOString().substring(0, 10)} />
+                                    <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
+                                    <Input {...register('multaPercentage')} type="number" step="0.01" size="sm" bg="gray.800" borderColor="gray.600" placeholder="0" />
                                 </Field.Root>
                             </HStack>
 
@@ -569,8 +567,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 ...(calcResult.compensatoryInterest > 0
                                     ? [{ label: 'Juros Remuneratórios', value: calcResult.compensatoryInterest }]
                                     : []),
+                                ...(calcResult.multaValue > 0
+                                    ? [{ label: 'Multa s/ valor corrigido', value: calcResult.multaValue }]
+                                    : []),
                                 { label: 'Honorários',             value: calcResult.feesValue },
-                                { label: 'Multa Art. 523',         value: calcResult.penaltyValue },
+                                { label: 'HO e Multa Art. 523',    value: calcResult.penaltyValue },
                             ].map(item => (
                                 <Box key={item.label} flex={1} minW="140px" p={3} bg="gray.800" borderRadius="md">
                                     <Text fontSize="xs" color="gray.500" mb={1}>{item.label}</Text>
