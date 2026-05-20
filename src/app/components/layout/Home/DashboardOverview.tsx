@@ -168,12 +168,12 @@ export function DashboardOverview() {
                                                     <Text flexGrow={1} flexShrink={1} flexBasis={0} minW={0} fontWeight="semibold" fontSize="sm" color="white" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
                                                         {client.clientName}
                                                     </Text>
-                                                    <Badge colorPalette={st.color} size="sm" variant="subtle" flexShrink={0}>
-                                                        {st.label}
-                                                    </Badge>
                                                     <Text flexShrink={0} fontSize="sm" fontWeight="bold" color="brand.300" whiteSpace="nowrap" ml="auto">
                                                         {formatCurrency(client.currentValue)}
                                                     </Text>
+                                                    <Badge colorPalette={st.color} size="sm" variant="subtle" flexShrink={0}>
+                                                        {st.label}
+                                                    </Badge>
                                                     <Icon as={PiArrowRight} color="gray.500" boxSize={4} flexShrink={0} />
                                                 </Flex>
                                             </Link>
