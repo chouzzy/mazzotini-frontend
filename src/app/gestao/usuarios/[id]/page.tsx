@@ -556,7 +556,7 @@ export default function EditUserPage() {
             <VStack gap={8} align="stretch" w="100%">
                 <VStack align="start">
                     <Heading as="h1" size="xl">Editar Usuário</Heading>
-                    <Text color="gray.400">Gerencie os dados cadastrais do investidor.</Text>
+                    <Text color="gray.400">Gerencie os dados cadastrais do cliente.</Text>
                 </VStack>
 
                 {/* 1. RESUMO DA CARTEIRA (read-only) */}

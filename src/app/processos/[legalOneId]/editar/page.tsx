@@ -72,7 +72,7 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
     const { field: controllerField, fieldState: { error } } = useController({
         name: `investors.${index}.userId`,
         control,
-        rules: { required: "Selecione um investidor" }
+        rules: { required: "Selecione um cliente" }
     });
 
     const defaultLabel = useMemo(() => {
@@ -108,7 +108,7 @@ function InvestorCombobox(props: { control: Control<FormValues>, index: number, 
                 <Portal>
                     <Combobox.Positioner>
                         <Combobox.Content>
-                            <Combobox.Empty key="__empty">Nenhum investidor encontrado</Combobox.Empty>
+                            <Combobox.Empty key="__empty">Nenhum cliente encontrado</Combobox.Empty>
                             {collection.items.filter(item => item.value).map((item) => (
                                 <Combobox.Item item={item} key={item.value} _hover={{ bg: 'gray.600' }} _selected={{ bg: 'blue.600' }}>
                                     {item.label}

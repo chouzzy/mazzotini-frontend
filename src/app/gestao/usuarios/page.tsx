@@ -50,7 +50,7 @@ interface PaginatedUsersResponse {
 const roleOptions = createListCollection({
     items: [
         { label: "Todos os Cargos", value: "ALL" },
-        { label: "Investidor", value: "INVESTOR" },
+        { label: "Cliente", value: "INVESTOR" },
         { label: "Associado", value: "ASSOCIATE" },
         { label: "Operador", value: "OPERATOR" },
         { label: "Administrador", value: "ADMIN" },

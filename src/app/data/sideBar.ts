@@ -7,7 +7,7 @@ const SideBarItems = [
     // Visível para todos
     { name: 'Home',             icon: PiHouseDuotone,   href: '/' },
 
-    // Dashboard: investidores/admin/operator veem o padrão, associado vê o próprio
+    // Dashboard: clientes/admin/operator veem o padrão, associado vê o próprio
     { name: 'Dashboard',        icon: PiChartPieSlice,  href: '/dashboard',               hideForRoles: ['ASSOCIATE'] },
     { name: 'Dashboard',        icon: PiChartPieSlice,  href: '/associado/dashboard',     roles: ['ASSOCIATE'] },
 

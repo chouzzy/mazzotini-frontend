@@ -102,7 +102,7 @@ export function DashboardOverview() {
                     <Flex align="center" gap={2} mb={2}>
                         <PiHandWavingDuotone size={28} color="#B8A76E" />
                         <Heading as="h1" size={{ base: 'lg', md: 'xl' }}>
-                            Olá, {userProfile?.name || (isAssociate ? 'Associado' : 'Investidor')}!
+                            Olá, {userProfile?.name || (isAssociate ? 'Associado' : 'Cliente')}!
                         </Heading>
                     </Flex>
                     <Text fontSize="lg" color="gray.400">Este é o resumo da sua carteira de processos.</Text>

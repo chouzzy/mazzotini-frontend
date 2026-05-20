@@ -6,7 +6,7 @@ import { Flex, VStack, Heading, Accordion, Span } from "@chakra-ui/react";
 const faqData = [
     {
         question: "O que é um processo de crédito judicial?",
-        answer: "É um direito de receber um valor determinado em uma ação judicial, que pode ser vendido a um investidor. A pessoa que tem o direito vende por um valor menor para receber o dinheiro imediatamente (liquidez), e o investidor assume o direito de receber o valor total no futuro, lucrando com a valorização."
+        answer: "É um direito de receber um valor determinado em uma ação judicial, que pode ser vendido a um cliente. A pessoa que tem o direito vende por um valor menor para receber o dinheiro imediatamente (liquidez), e o cliente assume o direito de receber o valor total no futuro, lucrando com a valorização."
     },
     {
         question: "Qual a rentabilidade esperada?",
@@ -14,7 +14,7 @@ const faqData = [
     },
     {
         question: "Como posso acompanhar meus investimentos?",
-        answer: "Nossa plataforma SGI (Sistema de Gestão de Investimentos) permite que você, investidor, acesse sua carteira a qualquer momento, visualize o valor atualizado de cada processo, o status do processo e a rentabilidade acumulada."
+        answer: "Nossa plataforma SGI (Sistema de Gestão de Investimentos) permite que você, cliente, acesse sua carteira a qualquer momento, visualize o valor atualizado de cada processo, o status do processo e a rentabilidade acumulada."
     }
 ];
 

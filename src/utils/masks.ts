@@ -110,7 +110,7 @@ export const getRoleColorScheme = (role: string): string => {
         case 'ASSOCIATE':
             return 'blue'; // Associado (Equipa)
         case 'INVESTOR':
-            return 'green'; // Investidor (Cliente)
+            return 'green'; // Cliente (Cliente)
         default:
             return 'gray'; // Padrão
     }

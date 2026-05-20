@@ -33,7 +33,7 @@ const advantagesData = [
         icon: PiHandshake,
         title: 'Liquidez e Oportunidade',
         description:
-            'Nosso sistema conecta quem precisa de liquidez imediata a investidores, transformando direitos judiciais em oportunidades de investimento sólidas e com propósito.',
+            'Nosso sistema conecta quem precisa de liquidez imediata a clientes, transformando direitos judiciais em oportunidades de investimento sólidas e com propósito.',
     },
 ];
 

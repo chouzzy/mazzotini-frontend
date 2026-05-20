@@ -13,7 +13,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
     quote:
       'Eu buscava uma alternativa de investimento que fosse segura e ao mesmo tempo oferecesse uma rentabilidade real, acima da inflação. Na Mazzotini, encontrei exatamente isso. A correção pelo IPCA me dá a tranquilidade de que meu capital está protegido, e a plataforma online torna todo o processo de acompanhamento incrivelmente transparente e simples. Recomendo fortemente.',
     authorName: 'Carlos Almeida',
-    authorTitle: 'Investidor Particular',
+    authorTitle: 'Cliente Particular',
     authorImage: 'https://randomuser.me/api/portraits/men/44.jpg',
     rating: 5,
   },
@@ -29,7 +29,7 @@ export const mazzotiniTestimonials: Testimonial[] = [
   {
     id: '3',
     quote:
-      'Como empresário, entendo a importância da liquidez. O modelo de negócio da Mazzotini é brilhante porque gera valor para todas as partes: oferece uma solução para quem precisa do dinheiro agora e cria uma oportunidade de investimento sólida e com propósito para nós, investidores. É um investimento inteligente e com impacto positivo.',
+      'Como empresário, entendo a importância da liquidez. O modelo de negócio da Mazzotini é brilhante porque gera valor para todas as partes: oferece uma solução para quem precisa do dinheiro agora e cria uma oportunidade de investimento sólida e com propósito para nós, clientes. É um investimento inteligente e com impacto positivo.',
     authorName: 'Ricardo Borges',
     authorTitle: 'Empresário',
     authorImage: 'https://randomuser.me/api/portraits/men/50.jpg',

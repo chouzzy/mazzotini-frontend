@@ -213,10 +213,10 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
         <SectionCard
             icon={PiLockKey} iconColor="yellow.400"
             title="Documentos Privados e Financeiros" titleColor="yellow.300"
-            description="Cessão, honorários, orientações e comprovantes. Cada documento é privado por investidor."
+            description="Cessão, honorários, orientações e comprovantes. Cada documento é privado por cliente."
             count={docs.length}
         >
-            {/* Seletor de investidor */}
+            {/* Seletor de cliente */}
             {isAdminOrOperator && (
                 <Box px={4} py={3} borderBottom="1px solid" borderColor="gray.800">
                     <Flex align="center" gap={3}>
@@ -228,7 +228,7 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
                             <Select.Control>
                                 <Select.Trigger bg="gray.800" borderColor="gray.700" cursor="pointer"
                                     _hover={{ borderColor: 'gray.500' }}>
-                                    <Select.ValueText placeholder="Selecionar investidor..." />
+                                    <Select.ValueText placeholder="Selecionar cliente..." />
                                 </Select.Trigger>
                             </Select.Control>
                             <Portal>
@@ -256,11 +256,11 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
                 </Box>
             )}
 
-            {/* Prompt para selecionar investidor */}
+            {/* Prompt para selecionar cliente */}
             {isAdminOrOperator && !selectedInvestorId ? (
                 <Flex justify="center" align="center" py={10} px={4}>
                     <Text fontSize="sm" color="gray.600" textAlign="center">
-                        Selecione um investidor acima para visualizar os documentos privados.
+                        Selecione um cliente acima para visualizar os documentos privados.
                     </Text>
                 </Flex>
             ) : (
@@ -380,7 +380,7 @@ export function DocumentsTab({ asset, onRefresh }: TabProps) {
 
             {/* Jurídicos */}
             <SectionCard icon={PiScales} iconColor="brand.400" title="Documentos Jurídicos"
-                titleColor="brand.300" description="Termo de cessão e procuração. Visíveis para todos os investidores do processo."
+                titleColor="brand.300" description="Termo de cessão e procuração. Visíveis para todos os clientes do processo."
                 count={juridicoDocs.length}>
                 {juridicoDocs.length === 0 && !isAdminOrOperator && (
                     <Text fontSize="sm" color="gray.600" px={4} py={4}>Nenhum documento jurídico anexado.</Text>
@@ -402,7 +402,7 @@ export function DocumentsTab({ asset, onRefresh }: TabProps) {
 
             {/* Processuais */}
             <SectionCard icon={PiGavel} iconColor="purple.400" title="Documentos Processuais"
-                titleColor="purple.300" description="Sentenças, despachos e peças. Visíveis para todos os investidores do processo."
+                titleColor="purple.300" description="Sentenças, despachos e peças. Visíveis para todos os clientes do processo."
                 count={processualDocs.length}>
                 {processualDocs.length === 0 && !isAdminOrOperator && (
                     <Text fontSize="sm" color="gray.600" px={4} py={4}>Nenhum documento processual anexado.</Text>
