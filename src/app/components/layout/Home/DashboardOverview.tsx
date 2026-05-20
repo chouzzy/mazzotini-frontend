@@ -81,7 +81,7 @@ export function DashboardOverview() {
 
     const totalAssets = isAssociate
         ? uniqueClients.length
-        : (foldersData?.meta?.total ?? assets?.length ?? 0);
+        : (assets?.length ?? 0);
 
     const totalActiveAssets = isAssociate
         ? (associateRows?.filter(a => a.status === 'ACTIVE').length ?? 0)
@@ -161,14 +161,28 @@ export function DashboardOverview() {
                             </Flex>
                         ) : (
                             <Flex
-                                w="100%" px={4} py={3} borderRadius="md" gap={2} align="center"
-                                bg="gray.800" border="1px solid" borderColor="gray.700"
-                                _hover={{ borderColor: 'brand.600', bg: 'gray.750' }} transition="all 0.15s"
+                                w="100%" p={4} borderRadius="lg" gap={4} align="center"
+                                bg="brand.800"
+                                _hover={{ bg: 'brand.700' }} transition="all 0.15s"
                             >
-                                <Icon as={PiCurrencyCircleDollar} color="brand.400" boxSize={4} flexShrink={0} />
-                                <Text fontSize="sm" color="gray.400">Adquiriu um novo processo?</Text>
-                                <Text fontSize="sm" color="brand.300" fontWeight="medium">Envie seus documentos financeiros</Text>
-                                <Icon as={PiArrowRight} color="brand.400" boxSize={4} ml="auto" flexShrink={0} />
+                                <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
+                                <Box flex={1}>
+                                    <Text fontWeight="bold" color="white" mb="2px">
+                                        Adquiriu um novo processo?
+                                    </Text>
+                                    <Text fontSize="sm" color="whiteAlpha.700">
+                                        Envie seus documentos financeiros para que nossa equipe possa vinculá-los ao processo.
+                                    </Text>
+                                </Box>
+                                <Button
+                                    size="sm" flexShrink={0}
+                                    bg="gray.200" color="gray.800"
+                                    _hover={{ bg: 'gray.300' }}
+                                    fontWeight="bold"
+                                    gap={1}
+                                >
+                                    Enviar documentos <Icon as={PiArrowRight} />
+                                </Button>
                             </Flex>
                         )}
                     </Link>

@@ -279,26 +279,20 @@ export default function ProfilePage() {
 
                     {/* 3. LINK PARA DOCUMENTOS FINANCEIROS */}
                     <Link as={NextLink} href="/meus-documentos" _hover={{ textDecoration: 'none' }}>
-                        <Card.Root
-                            variant="outline" bg="gray.800"
-                            borderColor="yellow.800"
-                            _hover={{ borderColor: 'yellow.600', bg: 'gray.750' }}
-                            transition="all 0.15s"
+                        <Flex
+                            w="100%" p={4} borderRadius="lg" gap={4} align="center"
+                            bg="brand.800" _hover={{ bg: 'brand.700' }} transition="all 0.15s"
                             cursor="pointer"
                         >
-                            <Card.Body>
-                                <Flex align="center" justify="space-between">
-                                    <HStack gap={3}>
-                                        <Icon as={PiCurrencyCircleDollar} color="yellow.400" boxSize={6} />
-                                        <Box>
-                                            <Text fontWeight="semibold" color="white">Documentos Financeiros Privados</Text>
-                                            <Text fontSize="xs" color="gray.400">Envie contratos de cessão, comprovantes e outros documentos financeiros</Text>
-                                        </Box>
-                                    </HStack>
-                                    <Icon as={PiArrowRight} color="yellow.400" boxSize={5} flexShrink={0} />
-                                </Flex>
-                            </Card.Body>
-                        </Card.Root>
+                            <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
+                            <Box flex={1}>
+                                <Text fontWeight="bold" color="white" mb="2px">Documentos Financeiros Privados</Text>
+                                <Text fontSize="sm" color="whiteAlpha.700">
+                                    Envie contratos de cessão, comprovantes e outros documentos financeiros
+                                </Text>
+                            </Box>
+                            <Icon as={PiArrowRight} color="white" boxSize={5} flexShrink={0} />
+                        </Flex>
                     </Link>
                 </VStack>
 

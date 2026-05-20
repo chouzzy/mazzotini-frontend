@@ -2,7 +2,7 @@
 
 import {
     Box, Heading, Text, Flex, Icon, Spinner, VStack,
-    SimpleGrid, Card, Badge, HStack, Button, Link,
+    SimpleGrid, Badge, HStack, Button, Link,
 } from '@chakra-ui/react';
 import { useRef, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -88,34 +88,36 @@ export function StagingDocumentsSection() {
 
             <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
 
-            <SimpleGrid columns={{ base: 2, md: 3 }} gap={3} mb={6}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={3} mb={6}>
                 {STAGING_CATEGORIES.filter(cat => CLIENT_UPLOAD_CATEGORIES.includes(cat.value)).map(cat => {
                     const catDocs = docs?.filter(d => d.category === cat.value) || [];
+                    const hasFiles = catDocs.length > 0;
                     return (
-                        <Card.Root
+                        <Box
                             key={cat.value}
-                            variant="outline"
-                            bg="gray.800"
-                            borderColor={catDocs.length > 0 ? 'brand.700' : 'gray.700'}
+                            borderRadius="xl"
+                            overflow="hidden"
+                            border="1px solid"
+                            borderColor={hasFiles ? 'brand.700' : 'gray.700'}
                             cursor="pointer"
-                            _hover={{ borderColor: 'brand.500', bg: 'gray.750' }}
-                            transition="all 0.15s"
                             onClick={() => triggerUpload(cat.value)}
+                            _hover={{ borderColor: 'brand.500' }}
+                            transition="all 0.15s"
                         >
-                            <Card.Body py={3} px={4}>
-                                <Flex justify="space-between" align="start" mb={1}>
-                                    <Text fontSize="sm" fontWeight="semibold" color="white">{cat.label}</Text>
-                                    {catDocs.length > 0 && (
-                                        <Badge colorPalette="brand" size="sm">{catDocs.length}</Badge>
-                                    )}
-                                </Flex>
-                                <Text fontSize="xs" color="gray.500" mb={2}>{cat.desc}</Text>
+                            <Flex px={4} py={3} bg="gray.800" align="center" justify="space-between">
+                                <Text fontSize="sm" fontWeight="bold" color="white">{cat.label}</Text>
+                                {hasFiles && (
+                                    <Badge colorPalette="brand" variant="solid" size="sm">{catDocs.length}</Badge>
+                                )}
+                            </Flex>
+                            <Flex px={4} py={3} bg="gray.900" direction="column" gap={2}>
+                                <Text fontSize="xs" color="gray.500">{cat.desc}</Text>
                                 <Flex align="center" gap={1} color="brand.400">
                                     <Icon as={PiUploadSimple} boxSize={3} />
-                                    <Text fontSize="xs">Clique para enviar</Text>
+                                    <Text fontSize="xs" fontWeight="medium">Clique para enviar</Text>
                                 </Flex>
-                            </Card.Body>
-                        </Card.Root>
+                            </Flex>
+                        </Box>
                     );
                 })}
             </SimpleGrid>
@@ -136,15 +138,22 @@ export function StagingDocumentsSection() {
                 }, {} as Record<string, { name: string; docs: typeof docs }>);
 
                 const DocRow = ({ doc }: { doc: (typeof docs)[0] }) => (
-                    <Flex align="center" gap={3} px={3} py={2} borderRadius="md"
-                        bg="whiteAlpha.50" _hover={{ bg: 'whiteAlpha.100' }}>
-                        <Icon as={PiFilePdf} color="red.400" boxSize={4} flexShrink={0} />
-                        <VStack align="start" gap={0} flex={1} minW={0}>
-                            <Text fontSize="sm" truncate color="gray.200">{doc.fileName}</Text>
-                            {doc.category && (
-                                <Text fontSize="xs" color="gray.500">{CATEGORY_LABEL_MAP[doc.category] || doc.category}</Text>
-                            )}
-                        </VStack>
+                    <Flex
+                        display="flex" flexDirection="row" alignItems="center"
+                        gap={3} px={4} py={3}
+                        _hover={{ bg: 'whiteAlpha.50' }} transition="all 0.1s"
+                        borderBottom="1px solid" borderColor="whiteAlpha.50"
+                        _last={{ borderBottom: 'none' }}
+                    >
+                        <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
+                        <Text flex={1} fontSize="sm" color="gray.100" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                            {doc.fileName}
+                        </Text>
+                        {doc.category && (
+                            <Badge variant="subtle" colorPalette="gray" size="sm" flexShrink={0}>
+                                {CATEGORY_LABEL_MAP[doc.category] || doc.category}
+                            </Badge>
+                        )}
                         <HStack gap={1} flexShrink={0}>
                             <Link href={doc.fileUrl} target="_blank" _hover={{ textDecoration: 'none' }}>
                                 <Button size="xs" variant="ghost" colorPalette="brand">
@@ -160,48 +169,35 @@ export function StagingDocumentsSection() {
                     </Flex>
                 );
 
+                const SectionCard = ({ color, icon, label, count, children }: {
+                    color: string; icon: any; label: string; count: number; children: React.ReactNode;
+                }) => (
+                    <Box borderRadius="xl" overflow="hidden" border="1px solid" borderColor={`${color}.800`}>
+                        <Flex px={4} py={3} bg={`${color}.700`} align="center" gap={2}>
+                            <Icon as={icon} color="white" boxSize={4} />
+                            <Text fontSize="sm" fontWeight="bold" color="white" flex={1}>
+                                {label}
+                            </Text>
+                            <Badge colorPalette={color} variant="solid" size="sm">{count}</Badge>
+                        </Flex>
+                        <Box bg="gray.900">{children}</Box>
+                    </Box>
+                );
+
                 return (
-                    <VStack align="stretch" gap={4}>
+                    <VStack align="stretch" gap={3}>
                         {/* Grupos por processo */}
                         {Object.entries(byProcess).map(([assetId, group]) => (
-                            <Box key={assetId}>
-                                <HStack mb={2} gap={2}>
-                                    <Icon as={PiCheckCircle} color="green.400" boxSize={4} />
-                                    <Text fontSize="xs" fontWeight="bold" color="green.400"
-                                        textTransform="uppercase" letterSpacing="wider">
-                                        {group.name}
-                                    </Text>
-                                    <Badge colorPalette="green" size="xs">{group.docs.length}</Badge>
-                                </HStack>
-                                <Card.Root variant="outline" bg="gray.800" borderColor="green.900">
-                                    <Card.Body p={2}>
-                                        <VStack align="stretch" gap={1}>
-                                            {group.docs.map(doc => <DocRow key={doc.id} doc={doc} />)}
-                                        </VStack>
-                                    </Card.Body>
-                                </Card.Root>
-                            </Box>
+                            <SectionCard key={assetId} color="green" icon={PiCheckCircle} label={group.name} count={group.docs.length}>
+                                {group.docs.map(doc => <DocRow key={doc.id} doc={doc} />)}
+                            </SectionCard>
                         ))}
 
                         {/* Pendentes */}
                         {pending.length > 0 && (
-                            <Box>
-                                <HStack mb={2} gap={2}>
-                                    <Icon as={PiClock} color="orange.400" boxSize={4} />
-                                    <Text fontSize="xs" fontWeight="bold" color="orange.400"
-                                        textTransform="uppercase" letterSpacing="wider">
-                                        Aguardando vinculação
-                                    </Text>
-                                    <Badge colorPalette="orange" size="xs">{pending.length}</Badge>
-                                </HStack>
-                                <Card.Root variant="outline" bg="gray.800" borderColor="orange.900">
-                                    <Card.Body p={2}>
-                                        <VStack align="stretch" gap={1}>
-                                            {pending.map(doc => <DocRow key={doc.id} doc={doc} />)}
-                                        </VStack>
-                                    </Card.Body>
-                                </Card.Root>
-                            </Box>
+                            <SectionCard color="orange" icon={PiClock} label="Aguardando vinculação" count={pending.length}>
+                                {pending.map(doc => <DocRow key={doc.id} doc={doc} />)}
+                            </SectionCard>
                         )}
                     </VStack>
                 );

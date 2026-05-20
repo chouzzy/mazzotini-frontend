@@ -83,7 +83,6 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         const isOnOnboardingPage = pathname === '/perfil/completar';
         const isOnPendingPage = pathname === '/perfil/pendente';
 
-        console.log("Status do usuário:", status);
         switch (status) {
             case 'ACTIVE':
                 if (isOnOnboardingPage || isOnPendingPage) {
@@ -107,7 +106,8 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                 router.push('/');
         }
 
-    }, [isLoading, isProfileLoading, userProfile, pathname, router, isAuthenticated, isPublicRoute]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading, userProfile, pathname, isAuthenticated]);
 
 
     // --- SPINNER GLOBAL ---

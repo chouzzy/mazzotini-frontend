@@ -2,7 +2,7 @@
 
 import {
     Flex, Heading, Text, VStack, Button, Icon, Field, Input, SimpleGrid, Spinner, createListCollection, Select, Portal, Checkbox, Stack, RadioGroup, Box,
-    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset, Dialog, CloseButton, Card, Badge, Accordion, Combobox, useFilter,
+    HStack, IconButton, Separator, FileUpload, CheckboxGroup, Alert, Fieldset, Dialog, CloseButton, Card, Badge, Accordion, Combobox,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler, Controller, useController } from "react-hook-form";
 import { useAuth0 } from '@auth0/auth0-react';
@@ -106,7 +106,7 @@ const SECTION_CATEGORIES = createListCollection({
 function AdminStagingDocumentsSection({ userId }: { userId: string }) {
     const { getAccessTokenSilently } = useAuth0();
     const { data, isLoading, mutate } = useApi<{ user: any; docs: UserStagingDocument[] }>(`/api/management/users/${userId}/staging-documents`);
-    const { data: userAssets } = useApi<{ items: { legalOneId: number; processNumber: string }[] }>(`/api/assets?limit=200&page=1`);
+    const { data: userAssets, isLoading: isLoadingAssets } = useApi<{ items: { legalOneId: number; processNumber: string; nickname?: string | null }[] }>(`/api/assets?limit=999&page=1`);
 
     const [selectedDoc, setSelectedDoc]           = useState<UserStagingDocument | null>(null);
     const [selectedAsset, setSelectedAsset]       = useState<string>('');
@@ -114,17 +114,21 @@ function AdminStagingDocumentsSection({ userId }: { userId: string }) {
     const [selectedSectionCat, setSelectedSectionCat] = useState<string>('');
     const [isAttaching, setIsAttaching]           = useState(false);
 
-    const { contains } = useFilter({ sensitivity: 'base' });
-
     const allAssetItems = useMemo(
-        () => (userAssets?.items || []).map(a => ({ label: a.processNumber, value: String(a.legalOneId) })),
+        () => (userAssets?.items || []).map(a => ({
+            label: a.processNumber || a.nickname || String(a.legalOneId),
+            sublabel: a.nickname && a.processNumber ? a.nickname : undefined,
+            value: String(a.legalOneId),
+            searchText: `${a.processNumber || ''} ${a.nickname || ''} ${a.legalOneId}`.toLowerCase(),
+        })),
         [userAssets]
     );
 
-    const filteredAssetItems = useMemo(
-        () => assetInputValue ? allAssetItems.filter(a => contains(a.label, assetInputValue)) : allAssetItems,
-        [allAssetItems, assetInputValue, contains]
-    );
+    const filteredAssetItems = useMemo(() => {
+        const q = assetInputValue.trim().toLowerCase();
+        if (!q) return allAssetItems;
+        return allAssetItems.filter(a => a.searchText.includes(q));
+    }, [allAssetItems, assetInputValue]);
 
     const assetsComboCollection = useMemo(
         () => createListCollection({ items: filteredAssetItems }),
@@ -166,68 +170,75 @@ function AdminStagingDocumentsSection({ userId }: { userId: string }) {
         <Box mt={8}>
             <Separator borderColor="gray.700" mb={6} />
 
-            <Card.Root bg="gray.900" borderColor="gray.700" borderWidth={1}>
-                <Card.Body gap={4}>
-                    <HStack gap={2}>
-                        <Icon as={PiCurrencyCircleDollar} color="yellow.400" boxSize={5} />
-                        <Heading size="md">Documentos Transitórios do Cliente</Heading>
-                        {pending.length > 0 && (
-                            <Badge colorPalette="orange" variant="solid" borderRadius="full" px={2}>
-                                {pending.length} pendente{pending.length > 1 ? 's' : ''}
-                            </Badge>
-                        )}
-                    </HStack>
+            {/* Header da seção */}
+            <Box borderRadius="xl" overflow="hidden" border="1px solid" borderColor="gray.700">
+                <Flex px={5} py={4} bg="gray.800" align="center" gap={3}>
+                    <Icon as={PiCurrencyCircleDollar} color="orange.400" boxSize={5} flexShrink={0} />
+                    <Text fontWeight="bold" color="white" flex={1}>Documentos Financeiros do Cliente</Text>
+                    {pending.length > 0 && (
+                        <Badge colorPalette="orange" size="sm">
+                            {pending.length} pendente{pending.length > 1 ? 's' : ''}
+                        </Badge>
+                    )}
+                </Flex>
 
+                <Box bg="gray.900" px={4} py={isLoading || docs.length === 0 ? 4 : 0}>
                     {isLoading && <Spinner size="sm" />}
 
                     {!isLoading && docs.length === 0 && (
-                        <Text color="gray.500" fontSize="sm">Este cliente ainda não enviou nenhum documento transitório.</Text>
+                        <Text color="gray.500" fontSize="sm">Este cliente ainda não enviou nenhum documento.</Text>
                     )}
 
                     {!isLoading && docs.length > 0 && (
-                        <VStack align="stretch" gap={2}>
-                            {docs.map(doc => {
+                        <VStack align="stretch" gap={0}>
+                            {docs.map((doc, i) => {
                                 const isPending  = doc.status === 'PENDING';
                                 const isSelected = selectedDoc?.id === doc.id;
+                                const isLast     = i === docs.length - 1;
                                 return (
                                     <Box
                                         key={doc.id}
-                                        p={3} borderRadius="lg" border="1px solid"
-                                        bg={isSelected ? 'orange.900/30' : isPending ? 'gray.800' : 'green.900/10'}
-                                        borderColor={isSelected ? 'orange.500' : isPending ? 'gray.700' : 'green.800/40'}
+                                        borderBottom={isLast ? 'none' : '1px solid'}
+                                        borderColor="gray.800"
+                                        bg={isSelected ? 'orange.950' : 'gray.900'}
                                         transition="all 0.15s"
                                     >
-                                        <HStack gap={3} align="center">
+                                        <Flex
+                                            display="flex" flexDirection="row" alignItems="center"
+                                            gap={3} px={2} h="56px"
+                                        >
                                             <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
-                                            <VStack align="start" gap={0} flex={1} minW={0}>
-                                                <Text fontSize="sm" fontWeight="medium" truncate>{doc.fileName}</Text>
-                                                {doc.status === 'ATTACHED' ? (
-                                                    <Text fontSize="xs" color="green.400">
-                                                        {doc.attachedToAssetName} · {doc.attachedCategory}
-                                                    </Text>
-                                                ) : doc.category ? (
-                                                    <Text fontSize="xs" color="gray.500">Categoria sugerida: {doc.category}</Text>
-                                                ) : null}
-                                            </VStack>
-                                            <HStack gap={2} flexShrink={0}>
-                                                {isPending ? (
-                                                    <Badge colorPalette="orange" variant="subtle" gap={1}>
-                                                        <Icon as={PiClock} boxSize={3} /> Pendente
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge colorPalette="green" variant="subtle" gap={1}>
-                                                        <Icon as={PiCheckCircle} boxSize={3} /> Vinculado
-                                                    </Badge>
-                                                )}
+                                            <Text flex={1} fontSize="sm" fontWeight="medium" color="gray.100"
+                                                overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                                                {doc.fileName}
+                                            </Text>
+                                            {doc.status === 'ATTACHED' ? (
+                                                <Badge colorPalette="green" size="sm" variant="subtle" flexShrink={0}>
+                                                    {doc.attachedToAssetName}
+                                                </Badge>
+                                            ) : doc.category ? (
+                                                <Badge colorPalette="gray" size="sm" variant="subtle" flexShrink={0}>
+                                                    {doc.category}
+                                                </Badge>
+                                            ) : null}
+                                            <HStack gap={1} flexShrink={0}>
+                                                <Badge
+                                                    colorPalette={isPending ? 'orange' : 'green'}
+                                                    variant="subtle" size="sm" gap={1}
+                                                >
+                                                    <Icon as={isPending ? PiClock : PiCheckCircle} boxSize={3} />
+                                                    {isPending ? 'Pendente' : 'Vinculado'}
+                                                </Badge>
                                                 <Link href={doc.fileUrl} target="_blank">
-                                                    <Button size="xs" variant="ghost" colorPalette="gray" title="Baixar">
+                                                    <Button size="xs" variant="ghost" colorPalette="gray">
                                                         <Icon as={PiDownloadSimple} />
                                                     </Button>
                                                 </Link>
                                                 {isPending && (
                                                     <Button
-                                                        size="xs" colorPalette="orange"
-                                                        variant={isSelected ? 'solid' : 'outline'}
+                                                        size="xs"
+                                                        colorPalette={isSelected ? 'gray' : 'orange'}
+                                                        variant="solid"
                                                         gap={1}
                                                         onClick={() => isSelected ? clearAttach() : setSelectedDoc(doc)}
                                                     >
@@ -236,19 +247,22 @@ function AdminStagingDocumentsSection({ userId }: { userId: string }) {
                                                     </Button>
                                                 )}
                                             </HStack>
-                                        </HStack>
+                                        </Flex>
 
                                         {/* Painel inline de vinculação */}
                                         {isSelected && (
-                                            <Box mt={4} pt={4} borderTopWidth="1px" borderColor="orange.700/40">
+                                            <Box px={2} pb={3} pt={2}>
+                                                <Box p={4} bg="gray.800" borderRadius="lg" border="1px solid" borderColor="gray.700">
                                                 <VStack align="stretch" gap={3}>
-                                                    <Text fontSize="xs" fontWeight="semibold" color="orange.300" textTransform="uppercase" letterSpacing="wider">
+                                                    <Text fontSize="xs" fontWeight="semibold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
                                                         Selecione o processo e a categoria
                                                     </Text>
 
                                                     {/* Combobox pesquisável para processos */}
                                                     <Field.Root>
-                                                        <Field.Label fontSize="xs" color="gray.400">Processo</Field.Label>
+                                                        <Field.Label fontSize="xs" color="gray.400">
+                                                            Processo {isLoadingAssets ? '(carregando...)' : `(${allAssetItems.length} disponíveis)`}
+                                                        </Field.Label>
                                                         <Combobox.Root
                                                             collection={assetsComboCollection}
                                                             value={selectedAsset ? [selectedAsset] : []}
@@ -357,6 +371,7 @@ function AdminStagingDocumentsSection({ userId }: { userId: string }) {
                                                         </Button>
                                                     </HStack>
                                                 </VStack>
+                                                </Box>
                                             </Box>
                                         )}
                                     </Box>
@@ -364,8 +379,8 @@ function AdminStagingDocumentsSection({ userId }: { userId: string }) {
                             })}
                         </VStack>
                     )}
-                </Card.Body>
-            </Card.Root>
+                </Box>
+            </Box>
         </Box>
     );
 }
@@ -554,7 +569,7 @@ export default function EditUserPage() {
                             <Heading size="sm" color="brand.400" mb={4}>Segurança da Conta</Heading>
                             <HStack gap={4} wrap="wrap">
                                 <Button
-                                    variant="solid" colorPalette="orange" gap={2}
+                                    variant="solid" colorPalette="orange" color="white" gap={2}
                                     loading={isSendingReset}
                                     onClick={async () => {
                                         setIsSendingReset(true);

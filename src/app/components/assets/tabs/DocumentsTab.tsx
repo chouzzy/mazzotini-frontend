@@ -1,14 +1,14 @@
 'use client';
 
 import {
-    Card, Text, VStack, Button, Icon, Flex, Spinner, Badge, Box, HStack,
-    Accordion, Portal, Select, createListCollection, Avatar,
+    Text, VStack, Button, Icon, Flex, Spinner, Badge, Box, HStack,
+    Accordion, Portal, Select, createListCollection, Avatar, Link,
 } from '@chakra-ui/react';
 import { useRef, useState } from 'react';
 import {
     PiFilePdf, PiFileText, PiImage, PiFile, PiLockKey, PiGavel,
     PiScales, PiUploadSimple, PiTrash, PiDownloadSimple,
-    PiCaretDownBold, PiUser,
+    PiCaretDownBold, PiUser, PiPlus,
 } from 'react-icons/pi';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { ProcessDocument, DocumentSection } from '@/types/api';
@@ -61,6 +61,29 @@ const PROCESSUAL_CATEGORIES = createListCollection({ items: [
     { label: 'Outro Processual', value: 'OUTRO_PROCESSUAL' },
 ]});
 
+// ── SectionCard ───────────────────────────────────────────────────────────────
+
+function SectionCard({ icon, iconColor, title, titleColor, description, count, children }: {
+    icon: any; iconColor: string; title: string; titleColor: string;
+    description: string; count: number; children: React.ReactNode;
+}) {
+    return (
+        <Box borderRadius="xl" overflow="hidden" border="1px solid" borderColor="gray.700">
+            <Flex px={5} py={4} bg="gray.800" align="center" gap={3}>
+                <Icon as={icon} color={iconColor} boxSize={5} flexShrink={0} />
+                <Box flex={1}>
+                    <Text fontSize="sm" fontWeight="bold" color={titleColor} textTransform="uppercase" letterSpacing="wider">
+                        {title}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" mt="1px">{description}</Text>
+                </Box>
+                <Badge colorPalette="gray" variant="subtle" size="sm">{count}</Badge>
+            </Flex>
+            <Box bg="gray.900">{children}</Box>
+        </Box>
+    );
+}
+
 // ── DocRow ────────────────────────────────────────────────────────────────────
 
 function DocRow({ doc, canDelete, onDelete, onDownload, loadingId }: {
@@ -70,17 +93,28 @@ function DocRow({ doc, canDelete, onDelete, onDownload, loadingId }: {
     const { icon: FileIcon, color } = getFileIcon(doc.name);
     const source = SOURCE_LABELS[doc.sourceType] ?? { label: doc.sourceType, color: 'gray' };
     return (
-        <Flex align="center" gap={3} p={3} borderRadius="md" bg="whiteAlpha.50" _hover={{ bg: 'whiteAlpha.100' }} transition="background 0.15s">
+        <Flex
+            display="flex" flexDirection="row" alignItems="center"
+            gap={3} px={4} py={3} cursor="pointer"
+            _hover={{ bg: 'whiteAlpha.50' }} transition="background 0.15s"
+            borderBottom="1px solid" borderColor="whiteAlpha.50"
+            _last={{ borderBottom: 'none' }}
+        >
             <Icon as={FileIcon} boxSize={5} color={color} flexShrink={0} />
-            <Text fontSize="sm" flex={1} truncate color="gray.200">{doc.name}</Text>
+            <Text fontSize="sm" flex={1} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" color="gray.100">
+                {doc.name}
+            </Text>
             <HStack gap={2} flexShrink={0}>
                 <Badge colorPalette={source.color} variant="subtle" size="sm">{source.label}</Badge>
-                {doc.category && <Badge colorPalette="gray" variant="outline" size="sm">{CATEGORY_LABELS[doc.category] || doc.category}</Badge>}
-                <Button size="xs" variant="ghost" colorPalette="brand" loading={loadingId === doc.id} onClick={() => onDownload(doc)}>
+                {doc.category && (
+                    <Badge colorPalette="gray" variant="outline" size="sm">{CATEGORY_LABELS[doc.category] || doc.category}</Badge>
+                )}
+                <Button size="xs" variant="ghost" colorPalette="brand" cursor="pointer"
+                    loading={loadingId === doc.id} onClick={() => onDownload(doc)}>
                     <Icon as={PiDownloadSimple} />
                 </Button>
                 {canDelete && (
-                    <Button size="xs" variant="ghost" colorPalette="red" onClick={() => onDelete(doc.id)}>
+                    <Button size="xs" variant="ghost" colorPalette="red" cursor="pointer" onClick={() => onDelete(doc.id)}>
                         <Icon as={PiTrash} />
                     </Button>
                 )}
@@ -89,7 +123,7 @@ function DocRow({ doc, canDelete, onDelete, onDownload, loadingId }: {
     );
 }
 
-// ── UploadInline (para Jurídico e Processual — globais) ───────────────────────
+// ── UploadInline ──────────────────────────────────────────────────────────────
 
 function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
     legalOneId: number; section: DocumentSection;
@@ -116,11 +150,15 @@ function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
     };
 
     return (
-        <Flex gap={2} align="center" mt={2} wrap="wrap">
-            <Select.Root collection={categoryCollection} value={category ? [category] : []} onValueChange={e => setCategory(e.value[0])} size="xs" w="200px">
+        <Flex gap={2} align="center" px={4} py={3} bg="whiteAlpha.30"
+            borderTop="1px dashed" borderColor="gray.700">
+            <Select.Root collection={categoryCollection} value={category ? [category] : []}
+                onValueChange={e => setCategory(e.value[0])} size="xs" w="180px">
                 <Select.HiddenSelect />
                 <Select.Control>
-                    <Select.Trigger bg="gray.800" borderColor="gray.600"><Select.ValueText placeholder="Categoria" /></Select.Trigger>
+                    <Select.Trigger bg="gray.800" borderColor="gray.600" cursor="pointer">
+                        <Select.ValueText placeholder="Categoria" />
+                    </Select.Trigger>
                 </Select.Control>
                 <Portal>
                     <Select.Positioner>
@@ -128,10 +166,8 @@ function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
                             {categoryCollection.items.map(item => (
                                 <Select.Item key={item.value} item={item}
                                     px={3} py={2} cursor="pointer"
-                                    _hover={{ bg: 'gray.600' }}
-                                    _highlighted={{ bg: 'gray.600' }}
-                                    _selected={{ bg: 'brand.800/60', color: 'brand.200' }}
-                                >
+                                    _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}
+                                    _selected={{ bg: 'brand.800/60', color: 'brand.200' }}>
                                     <Select.ItemText>{item.label}</Select.ItemText>
                                     <Select.ItemIndicator />
                                 </Select.Item>
@@ -141,75 +177,58 @@ function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
                 </Portal>
             </Select.Root>
             <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={handleFile} />
-            <Button size="xs" colorPalette="brand" variant="outline" loading={uploading} disabled={!category} onClick={() => inputRef.current?.click()} gap={1}>
+            <Button size="xs" colorPalette="brand" loading={uploading} disabled={!category}
+                onClick={() => inputRef.current?.click()} gap={1} cursor="pointer">
                 <Icon as={PiUploadSimple} /> Enviar arquivo
             </Button>
+            {!category && (
+                <Text fontSize="xs" color="gray.500">← Selecione a categoria primeiro</Text>
+            )}
         </Flex>
     );
 }
 
-// ── PrivadoSection — seção com seletor de investidor (admin) ──────────────────
+// ── PrivadoSection ────────────────────────────────────────────────────────────
 
-function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, onRefresh, loadingId, myUserId }: {
-    asset: DetailedCreditAsset;
-    docs: ProcessDocument[];
-    isAdminOrOperator: boolean;
-    onDelete: (id: string) => void;
-    onDownload: (doc: ProcessDocument) => void;
-    onRefresh: () => void;
-    loadingId: string | null;
-    myUserId: string;
+function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, onRefresh, loadingId }: {
+    asset: DetailedCreditAsset; docs: ProcessDocument[];
+    isAdminOrOperator: boolean; onDelete: (id: string) => void;
+    onDownload: (doc: ProcessDocument) => void; onRefresh: () => void;
+    loadingId: string | null; myUserId: string;
 }) {
     const { getAccessTokenSilently } = useAuth0();
     const [selectedInvestorId, setSelectedInvestorId] = useState<string>('');
 
-    // Build investor collection from process investors
     const investorsCollection = createListCollection({
         items: asset.investors.map(inv => ({ label: inv.user.name, value: inv.user.id })),
     });
 
-    // For admin: filter docs by selected investor. For investor: docs already filtered by backend.
     const visibleDocs = isAdminOrOperator
         ? docs.filter(d => selectedInvestorId ? d.investorUserId === selectedInvestorId : false)
-        : docs; // investor sees only own (backend already filtered)
+        : docs;
 
-    const totalForInvestor = isAdminOrOperator && selectedInvestorId
-        ? docs.filter(d => d.investorUserId === selectedInvestorId).length
-        : docs.length;
+    const selectedInvestor = asset.investors.find(inv => inv.user.id === selectedInvestorId);
 
     return (
-        <Card.Root bg="gray.900" border="1px solid" borderColor="gray.700">
-            <Card.Body>
-                <Flex align="center" gap={2} mb={1}>
-                    <Icon as={PiLockKey} color="yellow.400" boxSize={5} />
-                    <Card.Title color="yellow.300" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
-                        Documentos Privados e Financeiros
-                    </Card.Title>
-                    <Badge colorPalette="gray" variant="outline" size="sm" ml="auto">{docs.length}</Badge>
-                </Flex>
-                <Text fontSize="xs" color="gray.500" mb={4}>
-                    Cessão, honorários, orientações e comprovantes. Cada documento é privado por investidor.
-                </Text>
-
-                {/* Seletor de investidor — visível só para admin */}
-                {isAdminOrOperator && (
-                    <Box mb={4} p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
-                        <Flex align="center" gap={2} mb={2}>
-                            <Icon as={PiUser} color="brand.400" boxSize={4} />
-                            <Text fontSize="xs" fontWeight="bold" color="brand.300" textTransform="uppercase" letterSpacing="wide">
-                                Selecionar investidor
-                            </Text>
-                        </Flex>
-                        <Select.Root
-                            collection={investorsCollection}
+        <SectionCard
+            icon={PiLockKey} iconColor="yellow.400"
+            title="Documentos Privados e Financeiros" titleColor="yellow.300"
+            description="Cessão, honorários, orientações e comprovantes. Cada documento é privado por investidor."
+            count={docs.length}
+        >
+            {/* Seletor de investidor */}
+            {isAdminOrOperator && (
+                <Box px={4} py={3} borderBottom="1px solid" borderColor="gray.800">
+                    <Flex align="center" gap={3}>
+                        <Icon as={PiUser} color="gray.400" boxSize={4} flexShrink={0} />
+                        <Select.Root collection={investorsCollection}
                             value={selectedInvestorId ? [selectedInvestorId] : []}
-                            onValueChange={e => setSelectedInvestorId(e.value[0] || '')}
-                            size="sm"
-                        >
+                            onValueChange={e => setSelectedInvestorId(e.value[0] || '')} size="sm" flex={1}>
                             <Select.HiddenSelect />
                             <Select.Control>
-                                <Select.Trigger bg="gray.900" borderColor="gray.600">
-                                    <Select.ValueText placeholder="Selecione o investidor para ver/gerenciar documentos..." />
+                                <Select.Trigger bg="gray.800" borderColor="gray.700" cursor="pointer"
+                                    _hover={{ borderColor: 'gray.500' }}>
+                                    <Select.ValueText placeholder="Selecionar investidor..." />
                                 </Select.Trigger>
                             </Select.Control>
                             <Portal>
@@ -218,10 +237,8 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
                                         {investorsCollection.items.map(item => (
                                             <Select.Item key={item.value} item={item}
                                                 px={3} py={2} cursor="pointer"
-                                                _hover={{ bg: 'gray.600' }}
-                                                _highlighted={{ bg: 'gray.600' }}
-                                                _selected={{ bg: 'brand.800/60', color: 'brand.200' }}
-                                            >
+                                                _hover={{ bg: 'gray.600' }} _highlighted={{ bg: 'gray.600' }}
+                                                _selected={{ bg: 'brand.800/60', color: 'brand.200' }}>
                                                 <Select.ItemText>{item.label}</Select.ItemText>
                                                 <Select.ItemIndicator />
                                             </Select.Item>
@@ -231,91 +248,96 @@ function PrivadoSection({ asset, docs, isAdminOrOperator, onDelete, onDownload, 
                             </Portal>
                         </Select.Root>
                         {selectedInvestorId && (
-                            <Text fontSize="xs" color="gray.500" mt={1}>
-                                {totalForInvestor} documento(s) para este investidor
-                            </Text>
+                            <Badge colorPalette="brand" size="sm" flexShrink={0}>
+                                {visibleDocs.length} doc(s)
+                            </Badge>
                         )}
-                    </Box>
-                )}
-
-                {/* Prompt para admin selecionar investidor */}
-                {isAdminOrOperator && !selectedInvestorId ? (
-                    <Flex justify="center" py={6} borderRadius="md" bg="whiteAlpha.50" border="1px dashed" borderColor="gray.700">
-                        <Text fontSize="sm" color="gray.500">Selecione um investidor acima para visualizar e gerenciar os documentos privados.</Text>
                     </Flex>
-                ) : (
-                    <Accordion.Root multiple collapsible variant="plain" spaceY={2}>
-                        {PRIVADO_CATEGORIES.items.map(cat => {
-                            const catDocs = visibleDocs.filter(d => d.category === cat.value);
-                            return (
-                                <Accordion.Item key={cat.value} value={cat.value} border="1px solid" borderColor="gray.700" borderRadius="md" overflow="hidden">
-                                    <Accordion.ItemTrigger px={4} py={3} bg="gray.800" _hover={{ bg: 'gray.750' }}>
-                                        <Flex justify="space-between" w="100%" align="center">
-                                            <Text fontSize="sm" fontWeight="medium">{cat.label}</Text>
-                                            <HStack gap={2}>
-                                                {catDocs.length > 0 && <Badge colorPalette="yellow" size="sm">{catDocs.length}</Badge>}
-                                                <Accordion.ItemIndicator><Icon as={PiCaretDownBold} boxSize={3} color="gray.500" /></Accordion.ItemIndicator>
-                                            </HStack>
+                </Box>
+            )}
+
+            {/* Prompt para selecionar investidor */}
+            {isAdminOrOperator && !selectedInvestorId ? (
+                <Flex justify="center" align="center" py={10} px={4}>
+                    <Text fontSize="sm" color="gray.600" textAlign="center">
+                        Selecione um investidor acima para visualizar os documentos privados.
+                    </Text>
+                </Flex>
+            ) : (
+                <Accordion.Root multiple collapsible variant="plain">
+                    {PRIVADO_CATEGORIES.items.map((cat, i) => {
+                        const catDocs = visibleDocs.filter(d => d.category === cat.value);
+                        const isLast = i === PRIVADO_CATEGORIES.items.length - 1;
+                        return (
+                            <Accordion.Item key={cat.value} value={cat.value}
+                                borderBottom={isLast ? 'none' : '1px solid'} borderColor="gray.800">
+                                <Accordion.ItemTrigger px={4} py={3} cursor="pointer"
+                                    _hover={{ bg: 'whiteAlpha.50' }} transition="background 0.15s">
+                                    <Flex justify="space-between" w="100%" align="center">
+                                        <Text fontSize="sm" fontWeight="medium" color="gray.200">{cat.label}</Text>
+                                        <HStack gap={2}>
+                                            {catDocs.length > 0 && (
+                                                <Badge colorPalette="yellow" size="sm">{catDocs.length}</Badge>
+                                            )}
+                                            <Accordion.ItemIndicator>
+                                                <Icon as={PiCaretDownBold} boxSize={3} color="gray.500" />
+                                            </Accordion.ItemIndicator>
+                                        </HStack>
+                                    </Flex>
+                                </Accordion.ItemTrigger>
+                                <Accordion.ItemContent px={0} py={0} bg="blackAlpha.300">
+                                    {catDocs.length === 0 ? (
+                                        <Text fontSize="xs" color="gray.600" px={4} py={3}>
+                                            Nenhum documento nesta categoria.
+                                        </Text>
+                                    ) : (
+                                        catDocs.map(doc => (
+                                            <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator}
+                                                onDelete={onDelete} onDownload={onDownload} loadingId={loadingId} />
+                                        ))
+                                    )}
+                                    {isAdminOrOperator && selectedInvestorId && (
+                                        <Flex gap={2} align="center" px={4} py={2}>
+                                            <input type="file" id={`upload-priv-${cat.value}-${selectedInvestorId}`}
+                                                style={{ display: 'none' }}
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    try {
+                                                        const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+                                                        const form = new FormData();
+                                                        form.append('document', file);
+                                                        form.append('section', 'PRIVADO_FINANCEIRO');
+                                                        form.append('category', cat.value);
+                                                        form.append('investorUserId', selectedInvestorId);
+                                                        await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/${asset.legalOneId}/documents`, form, { headers: { Authorization: `Bearer ${token}` } });
+                                                        toaster.create({ title: `Documento enviado em "${cat.label}".`, type: 'success' });
+                                                        onRefresh();
+                                                    } catch (err: any) {
+                                                        toaster.create({ title: err?.response?.data?.error || 'Erro ao enviar.', type: 'error' });
+                                                    }
+                                                    e.target.value = '';
+                                                }}
+                                            />
+                                            <Button size="xs" variant="ghost" colorPalette="gray" gap={1} cursor="pointer"
+                                                onClick={() => document.getElementById(`upload-priv-${cat.value}-${selectedInvestorId}`)?.click()}>
+                                                <Icon as={PiPlus} /> Enviar em {cat.label}
+                                            </Button>
                                         </Flex>
-                                    </Accordion.ItemTrigger>
-                                    <Accordion.ItemContent px={4} py={3} bg="blackAlpha.400">
-                                        <VStack align="stretch" gap={2}>
-                                            {catDocs.length === 0 && (
-                                                <Text fontSize="xs" color="gray.600">Nenhum documento nesta categoria.</Text>
-                                            )}
-                                            {catDocs.map(doc => (
-                                                <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator} onDelete={onDelete} onDownload={onDownload} loadingId={loadingId} />
-                                            ))}
-                                            {/* Upload para admin — exige investidor selecionado */}
-                                            {isAdminOrOperator && selectedInvestorId && (
-                                                <Box>
-                                                    <input
-                                                        type="file"
-                                                        id={`upload-priv-${cat.value}-${selectedInvestorId}`}
-                                                        style={{ display: 'none' }}
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-                                                                const form = new FormData();
-                                                                form.append('document', file);
-                                                                form.append('section', 'PRIVADO_FINANCEIRO');
-                                                                form.append('category', cat.value);
-                                                                form.append('investorUserId', selectedInvestorId);
-                                                                await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/${asset.legalOneId}/documents`, form, { headers: { Authorization: `Bearer ${token}` } });
-                                                                toaster.create({ title: `Documento enviado em "${cat.label}".`, type: 'success' });
-                                                                onRefresh();
-                                                            } catch (err: any) {
-                                                                toaster.create({ title: err?.response?.data?.error || 'Erro ao enviar.', type: 'error' });
-                                                            }
-                                                            e.target.value = '';
-                                                        }}
-                                                    />
-                                                    <Button size="xs" variant="outline" colorPalette="gray" gap={1} mt={1}
-                                                        onClick={() => document.getElementById(`upload-priv-${cat.value}-${selectedInvestorId}`)?.click()}>
-                                                        <Icon as={PiUploadSimple} /> Enviar em {cat.label}
-                                                    </Button>
-                                                </Box>
-                                            )}
-                                        </VStack>
-                                    </Accordion.ItemContent>
-                                </Accordion.Item>
-                            );
-                        })}
-                    </Accordion.Root>
-                )}
-            </Card.Body>
-        </Card.Root>
+                                    )}
+                                </Accordion.ItemContent>
+                            </Accordion.Item>
+                        );
+                    })}
+                </Accordion.Root>
+            )}
+        </SectionCard>
     );
 }
 
 // ── DocumentsTab principal ────────────────────────────────────────────────────
 
-interface TabProps {
-    asset: DetailedCreditAsset;
-    onRefresh: () => void;
-}
+interface TabProps { asset: DetailedCreditAsset; onRefresh: () => void; }
 
 export function DocumentsTab({ asset, onRefresh }: TabProps) {
     const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
@@ -353,70 +375,47 @@ export function DocumentsTab({ asset, onRefresh }: TabProps) {
     };
 
     return (
-        <VStack gap={5} align="stretch" w="100%">
+        <VStack gap={4} align="stretch" w="100%">
             <Toaster />
 
-            {/* ── SEÇÃO 1: DOCUMENTOS JURÍDICOS (global) ── */}
-            <Card.Root bg="gray.900" border="1px solid" borderColor="gray.700">
-                <Card.Body>
-                    <Flex align="center" gap={2} mb={1}>
-                        <Icon as={PiScales} color="brand.400" boxSize={5} />
-                        <Card.Title color="brand.300" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
-                            Documentos Jurídicos
-                        </Card.Title>
-                        <Badge colorPalette="gray" variant="outline" size="sm" ml="auto">{juridicoDocs.length}</Badge>
-                    </Flex>
-                    <Text fontSize="xs" color="gray.500" mb={4}>
-                        Termo de cessão e procuração. Visíveis para todos os investidores do processo.
-                    </Text>
-                    <VStack align="stretch" gap={2}>
-                        {juridicoDocs.length === 0 && <Text fontSize="sm" color="gray.600" py={2}>Nenhum documento jurídico anexado.</Text>}
-                        {juridicoDocs.map(doc => (
-                            <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator} onDelete={handleDelete} onDownload={handleDownload} loadingId={loadingDocId} />
-                        ))}
-                        {isAdminOrOperator && (
-                            <UploadInline legalOneId={asset.legalOneId!} section="JURIDICO" categoryCollection={JURIDICO_CATEGORIES} onSuccess={onRefresh} />
-                        )}
-                    </VStack>
-                </Card.Body>
-            </Card.Root>
+            {/* Jurídicos */}
+            <SectionCard icon={PiScales} iconColor="brand.400" title="Documentos Jurídicos"
+                titleColor="brand.300" description="Termo de cessão e procuração. Visíveis para todos os investidores do processo."
+                count={juridicoDocs.length}>
+                {juridicoDocs.length === 0 && !isAdminOrOperator && (
+                    <Text fontSize="sm" color="gray.600" px={4} py={4}>Nenhum documento jurídico anexado.</Text>
+                )}
+                {juridicoDocs.map(doc => (
+                    <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator}
+                        onDelete={handleDelete} onDownload={handleDownload} loadingId={loadingDocId} />
+                ))}
+                {isAdminOrOperator && (
+                    <UploadInline legalOneId={asset.legalOneId!} section="JURIDICO"
+                        categoryCollection={JURIDICO_CATEGORIES} onSuccess={onRefresh} />
+                )}
+            </SectionCard>
 
-            {/* ── SEÇÃO 2: DOCUMENTOS PRIVADOS E FINANCEIROS (por investidor) ── */}
-            <PrivadoSection
-                asset={asset}
-                docs={privadoDocs}
-                isAdminOrOperator={isAdminOrOperator}
-                onDelete={handleDelete}
-                onDownload={handleDownload}
-                onRefresh={onRefresh}
-                loadingId={loadingDocId}
-                myUserId={myProfile?.id || ''}
-            />
+            {/* Privados/Financeiros */}
+            <PrivadoSection asset={asset} docs={privadoDocs} isAdminOrOperator={isAdminOrOperator}
+                onDelete={handleDelete} onDownload={handleDownload} onRefresh={onRefresh}
+                loadingId={loadingDocId} myUserId={myProfile?.id || ''} />
 
-            {/* ── SEÇÃO 3: DOCUMENTOS PROCESSUAIS (global) ── */}
-            <Card.Root bg="gray.900" border="1px solid" borderColor="gray.700">
-                <Card.Body>
-                    <Flex align="center" gap={2} mb={1}>
-                        <Icon as={PiGavel} color="purple.400" boxSize={5} />
-                        <Card.Title color="purple.300" fontSize="sm" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
-                            Documentos Processuais
-                        </Card.Title>
-                        <Badge colorPalette="gray" variant="outline" size="sm" ml="auto">{processualDocs.length}</Badge>
-                    </Flex>
-                    <Text fontSize="xs" color="gray.500" mb={4}>
-                        Sentenças, despachos e peças. Visíveis para todos os investidores do processo.
-                    </Text>
-                    <VStack align="stretch" gap={2}>
-                        {processualDocs.length === 0 && <Text fontSize="sm" color="gray.600" py={2}>Nenhum documento processual anexado.</Text>}
-                        {processualDocs.map(doc => (
-                            <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator} onDelete={handleDelete} onDownload={handleDownload} loadingId={loadingDocId} />
-                        ))}
-                        {isAdminOrOperator && (
-                            <UploadInline legalOneId={asset.legalOneId!} section="PROCESSUAL" categoryCollection={PROCESSUAL_CATEGORIES} onSuccess={onRefresh} />
-                        )}
-                    </VStack>
-                </Card.Body>
-            </Card.Root>
+            {/* Processuais */}
+            <SectionCard icon={PiGavel} iconColor="purple.400" title="Documentos Processuais"
+                titleColor="purple.300" description="Sentenças, despachos e peças. Visíveis para todos os investidores do processo."
+                count={processualDocs.length}>
+                {processualDocs.length === 0 && !isAdminOrOperator && (
+                    <Text fontSize="sm" color="gray.600" px={4} py={4}>Nenhum documento processual anexado.</Text>
+                )}
+                {processualDocs.map(doc => (
+                    <DocRow key={doc.id} doc={doc} canDelete={isAdminOrOperator}
+                        onDelete={handleDelete} onDownload={handleDownload} loadingId={loadingDocId} />
+                ))}
+                {isAdminOrOperator && (
+                    <UploadInline legalOneId={asset.legalOneId!} section="PROCESSUAL"
+                        categoryCollection={PROCESSUAL_CATEGORIES} onSuccess={onRefresh} />
+                )}
+            </SectionCard>
         </VStack>
     );
 }

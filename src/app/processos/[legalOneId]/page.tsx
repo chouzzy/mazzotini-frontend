@@ -202,6 +202,7 @@ export default function AssetDetailsPage() {
   const roles: string[] = user?.['https://mazzotini.awer.co/roles'] || [];
   const { viewMode } = useViewMode();
   const isRawAssociate = roles.includes('ASSOCIATE');
+  const isAdmin = roles.includes('ADMIN');
   // Dual-role: quando ASSOCIATE está em "client view", comporta-se como INVESTOR
   const isAssociate = isRawAssociate && viewMode === 'associate';
   const isInvestor = roles.includes('INVESTOR') || (isRawAssociate && viewMode === 'client');
@@ -239,7 +240,7 @@ export default function AssetDetailsPage() {
       {isInvestor && myProfile?.id && (
         <AssociateSection asset={asset} myUserId={myProfile.id} onUpdate={mutate} />
       )}
-      <AssetTabs asset={asset} hideDocuments={isAssociate} onRefresh={mutate} />
+      <AssetTabs asset={asset} hideDocuments={isRawAssociate} hideCalculator={!isAdmin} onRefresh={mutate} />
     </VStack>
   );
 }

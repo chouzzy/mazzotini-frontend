@@ -28,13 +28,28 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-const getStatusColorScheme = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'ativo': return 'green';
-        case 'liquidado': return 'gray';
-        case 'em negociação': return 'yellow';
-        case 'pending_enrichment': return 'purple';
-        case 'failed_enrichment': return 'red';
+const translateStatus = (status: string) => {
+    switch (status) {
+        case 'ACTIVE':
+        case 'Ativo': return 'Ativo';
+        case 'CLOSED':
+        case 'Liquidado': return 'Liquidado';
+        case 'Em Negociação': return 'Em Negociação';
+        case 'PENDING_ENRICHMENT': return 'Em Análise';
+        case 'FAILED_ENRICHMENT': return 'Falha no Legal One';
+        default: return status;
+    }
+};
+
+const getStatusColorPalette = (status: string) => {
+    switch (status) {
+        case 'ACTIVE':
+        case 'Ativo': return 'green';
+        case 'CLOSED':
+        case 'Liquidado': return 'gray';
+        case 'Em Negociação': return 'yellow';
+        case 'PENDING_ENRICHMENT': return 'purple';
+        case 'FAILED_ENRICHMENT': return 'red';
         default: return 'blue';
     }
 };
@@ -51,8 +66,6 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     // Busca o perfil para saber se é Admin ou Operador
     const { data: myProfile } = useApi<any>('/api/users/me');
     const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
-
-    console.log('AssetHeader asset:', asset);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -154,8 +167,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         </>
                     )}
                     
-                    <Tag.Root size="lg" variant="solid" colorScheme={getStatusColorScheme(asset.status)}>
-                        <Tag.Label>{asset.status}</Tag.Label>
+                    <Tag.Root size="lg" variant="solid" colorPalette={getStatusColorPalette(asset.status)}>
+                        <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
                     </Tag.Root>
                 </Flex>
             </Flex>
