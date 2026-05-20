@@ -1,6 +1,6 @@
 import {
     PiHouseDuotone, PiChartPieSlice, PiScales, PiList,
-    PiUser, PiUsers, PiFolderFill, PiUsersThree, PiGear,
+    PiUser, PiUsers, PiFolderFill, PiUsersThree, PiGear, PiFolderOpen,
 } from "react-icons/pi";
 
 const SideBarItems = [
@@ -18,6 +18,9 @@ const SideBarItems = [
 
     // Área exclusiva do ASSOCIATE
     { name: 'Meus Clientes',    icon: PiUsersThree,     href: '/associado',               roles: ['ASSOCIATE'] },
+
+    // Documentos financeiros — só INVESTOR vê (não ASSOCIATE, não admin)
+    { name: 'Meus Documentos',  icon: PiFolderOpen,      href: '/meus-documentos',          roles: ['INVESTOR'] },
 
     // Visível para todos
     { name: 'Meu Perfil',       icon: PiUser,            href: '/perfil' },

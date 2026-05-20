@@ -6,7 +6,7 @@ import { Footer } from './Footer';
 import { AppLayout, HeaderNav } from './AppLayout';
 import { useApi } from '@/hooks/useApi';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Flex, Spinner, Text, VStack } from '@chakra-ui/react';
 import axios from 'axios'; // Import necessário para o POST
 import { useSWRConfig } from 'swr'; // Para atualizar o cache após o sync
@@ -24,7 +24,8 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, user } = useAuth0();
     const router = useRouter();
     const pathname = usePathname();
-    const { mutate } = useSWRConfig(); // Função para recarregar dados
+    const { mutate } = useSWRConfig();
+    const hasSynced = useRef(false);
 
     // Verifica se a página atual é pública teste
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
@@ -34,8 +35,6 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         isAuthenticated ? '/api/users/me' : null
     );
 
-    console.log('User Profile:', userProfile);
-
     const isLoading = isAuthLoading || (isAuthenticated && isProfileLoading);
 
     // =================================================================
@@ -43,31 +42,27 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     // =================================================================
     
     useEffect(() => {
+        if (!isAuthenticated || !user || hasSynced.current) return;
+        hasSynced.current = true;
+
         const syncUser = async () => {
-            if (isAuthenticated && user) {
-                try {
-                    const token = await getAccessTokenSilently();
-                    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-                    // CORREÇÃO: Enviando os dados do usuário no corpo da requisição
-                    await axios.post(`${apiBaseUrl}/api/users/sync`, {
-                        email: user.email,
-                        name: user.name,
-                        picture: user.picture
-                    }, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-
-                    mutate('/api/users/me');
-
-                } catch (error) {
-                    console.error("[LayoutController] Erro na sincronização silenciosa:", error);
-                }
+            try {
+                const token = await getAccessTokenSilently();
+                await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/sync`, {
+                    email: user.email,
+                    name: user.name,
+                    picture: user.picture,
+                }, { headers: { Authorization: `Bearer ${token}` } });
+                mutate('/api/users/me');
+            } catch (error) {
+                console.error('[LayoutController] Erro na sincronização silenciosa:', error);
+                hasSynced.current = false;
             }
         };
 
         syncUser();
-    }, [isAuthenticated, user, getAccessTokenSilently, mutate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]);
 
     // =================================================================
 
