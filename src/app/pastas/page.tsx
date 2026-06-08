@@ -49,13 +49,24 @@ interface PaginatedFoldersResponse {
     };
 }
 
+const translateStatus = (status: string) => {
+    switch (status) {
+        case 'Ativo': return 'Ativo';
+        case 'Liquidado': return 'Liquidado';
+        case 'Em Negociação': return 'Em Negociação';
+        case 'PENDING_ENRICHMENT':
+        case 'FAILED_ENRICHMENT': return 'Em Análise';
+        default: return status;
+    }
+};
+
 const getStatusColorScheme = (status: string) => {
     switch (status) {
         case 'Ativo': return 'green';
         case 'Liquidado': return 'gray';
         case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
+        case 'PENDING_ENRICHMENT':
+        case 'FAILED_ENRICHMENT': return 'yellow';
         default: return 'blue';
     }
 };
@@ -74,7 +85,7 @@ const AssetTableRow = ({ asset }: { asset: AssetSummary }) => (
         </Table.Cell>
         <Table.Cell>
             <Tag.Root size="sm" variant="solid" colorPalette={getStatusColorScheme(asset.status)}>
-                <Tag.Label>{asset.status}</Tag.Label>
+                <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
             </Tag.Root>
         </Table.Cell>
         <Table.Cell textAlign="right" pr={6}>

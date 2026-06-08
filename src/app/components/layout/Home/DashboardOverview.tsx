@@ -85,11 +85,11 @@ export function DashboardOverview() {
 
     const totalActiveAssets = isAssociate
         ? (associateRows?.filter(a => a.status === 'ACTIVE').length ?? 0)
-        : (assets?.filter(a => a.status === 'ACTIVE').length ?? 0);
+        : (assets?.filter(a => a.status === 'Ativo').length ?? 0);
 
     const totalInactiveAssets = isAssociate
         ? (associateRows?.filter(a => a.status === 'CLOSED').length ?? 0)
-        : (assets?.filter(a => a.status === 'Liquidado').length ?? 0);
+        : (assets?.filter(a => a.status === 'Liquidado' || a.status === 'CLOSED').length ?? 0);
 
     const previewClients = uniqueClients.slice(0, 3);
     const hasMore = uniqueClients.length > 3;

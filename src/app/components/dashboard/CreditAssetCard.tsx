@@ -31,7 +31,7 @@ export type InvestorCreditAsset = {
     legalOneId: number;
     processNumber: string;
     originalCreditor: string;
-    status: 'ACTIVE' | 'Liquidado' | 'Em Negociação';
+    status: string;
     acquisitionDate: Date;
     investedValue: number;
     currentValue: number;
