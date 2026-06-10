@@ -163,7 +163,7 @@ export default function OperatorAssetsPage() {
                                 <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
                                 <Box flex={1}>
                                     <Text fontWeight="bold" color="white" mb="2px">
-                                        Adquiriu um novo processo?
+                                        Realizou nova cessão de crédito?
                                     </Text>
                                     <Text fontSize="sm" color="whiteAlpha.700">
                                         Envie seus documentos financeiros para que nossa equipe possa vinculá-los ao processo.
