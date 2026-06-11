@@ -10,197 +10,275 @@ import {
     Icon,
     Flex,
     Spinner,
-    Dialog,
-    Button
+    Button,
+    Badge,
 } from "@chakra-ui/react";
-import { PiBell, PiCheckCircle, PiInfo, PiWarning, PiStar, PiX, PiBellFill } from "react-icons/pi";
+import {
+    PiBell,
+    PiBellFill,
+    PiCheckCircle,
+    PiInfo,
+    PiWarning,
+    PiXCircle,
+    PiUploadSimple,
+    PiUserCircle,
+    PiPencilSimple,
+    PiRobotDuotone,
+    PiArrowRight,
+} from "react-icons/pi";
 import { useApi } from "@/hooks/useApi";
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import axios from "axios";
 
-interface SystemNotification {
+interface AdminNotification {
     id: string;
     title: string;
     message: string;
-    type: 'info' | 'success' | 'warning' | 'new';
-    createdAt: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    notificationType: string;
+    relatedEntityId?: string;
+    relatedEntityType?: string;
+    relatedEntityName?: string;
     link?: string;
+    isRead: boolean;
+    createdAt: string;
+}
+
+interface NotificationsResponse {
+    items: AdminNotification[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+interface UnreadCountResponse {
+    count: number;
+}
+
+function getTypeIcon(notificationType: string, type: string) {
+    switch (notificationType) {
+        case 'STAGING_DOCUMENT_UPLOADED': return <Icon as={PiUploadSimple} color="orange.400" />;
+        case 'NEW_USER_PENDING_REVIEW':   return <Icon as={PiUserCircle} color="blue.400" />;
+        case 'PROFILE_CHANGE_REQUESTED': return <Icon as={PiPencilSimple} color="purple.400" />;
+        case 'FAILED_ENRICHMENT':        return <Icon as={PiXCircle} color="red.400" />;
+        case 'ASSET_IMPORTED':           return <Icon as={PiRobotDuotone} color="green.400" />;
+        default:
+            if (type === 'success') return <Icon as={PiCheckCircle} color="green.400" />;
+            if (type === 'warning') return <Icon as={PiWarning} color="orange.400" />;
+            if (type === 'error')   return <Icon as={PiXCircle} color="red.400" />;
+            return <Icon as={PiInfo} color="blue.400" />;
+    }
+}
+
+function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return 'agora';
+    if (m < 60) return `${m}m atrás`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h atrás`;
+    const d = Math.floor(h / 24);
+    return `${d}d atrás`;
 }
 
 export function NotificationsMenu() {
-    const { data: notifications, isLoading } = useApi<SystemNotification[]>('/api/notifications');
-    const [hasUnread, setHasUnread] = useState(false);
+    const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+    const { data: profile } = useApi<{ role: string }>('/api/users/me');
+    const isAdmin = profile?.role === 'ADMIN';
 
-    // Estado para controlar o Dialog
-    const [selectedNotif, setSelectedNotif] = useState<SystemNotification | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { data: unreadData, mutate: mutateCount } = useApi<UnreadCountResponse>(
+        isAdmin ? '/api/notifications/unread-count' : null
+    );
+    const { data: notifData, mutate: mutateList } = useApi<NotificationsResponse>(
+        isAdmin ? '/api/notifications?limit=10' : null
+    );
 
-    // Verifica notificações não lidas
-    useEffect(() => {
-        if (notifications && notifications.length > 0) {
-            const lastRead = localStorage.getItem('mazzotini_last_read_notif');
-            const latestNotifDate = new Date(notifications[0].createdAt).getTime();
+    const unreadCount = unreadData?.count ?? 0;
+    const notifications = notifData?.items ?? [];
 
-            if (!lastRead || latestNotifDate > parseInt(lastRead)) {
-                setHasUnread(true);
-            } else {
-                setHasUnread(false);
-            }
-        }
-    }, [notifications]);
+    const markAsRead = useCallback(async (id: string) => {
+        try {
+            const token = await getAccessTokenSilently();
+            const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+            await axios.patch(`${base}/api/notifications/${id}/read`, {}, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            mutateList();
+            mutateCount();
+        } catch {}
+    }, [getAccessTokenSilently, mutateList, mutateCount]);
 
-    const handleOpenMenu = () => {
-        // Marca como lido apenas ao abrir o menu (visualização rápida)
-        if (notifications && notifications.length > 0) {
-            const latestNotifDate = new Date(notifications[0].createdAt).getTime();
-            localStorage.setItem('mazzotini_last_read_notif', latestNotifDate.toString());
-            setHasUnread(false);
-        }
-    };
+    const markAllAsRead = useCallback(async () => {
+        try {
+            const token = await getAccessTokenSilently();
+            const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+            await axios.patch(`${base}/api/notifications/read-all`, {}, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            mutateList();
+            mutateCount();
+        } catch {}
+    }, [getAccessTokenSilently, mutateList, mutateCount]);
 
-    const handleItemClick = (notif: SystemNotification) => {
-        setSelectedNotif(notif);
-        setIsDialogOpen(true);
-    };
-
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'success': return <Icon as={PiCheckCircle} color="green.400" mt={1} />;
-            case 'warning': return <Icon as={PiWarning} color="orange.400" mt={1} />;
-            case 'new': return <Icon as={PiStar} color="yellow.400" mt={1} />;
-            default: return <Icon as={PiInfo} color="blue.400" mt={1} />;
-        }
-    };
+    if (!isAuthenticated || !isAdmin) return null;
 
     return (
-        <>
-            {/* --- MENU (O SININHO) --- */}
-            <Menu.Root onOpenChange={(e) => e.open && handleOpenMenu()}>
-                <Menu.Trigger asChild>
-                    <Box position="relative">
-                        <IconButton
-                            aria-label="Notificações"
-                            variant="ghost"
-                            color="gray.400"
-                            _hover={{ color: "white", bg: "whiteAlpha.200" }}
+        <Menu.Root>
+            <Menu.Trigger asChild>
+                <Box position="relative" cursor="pointer">
+                    <IconButton
+                        aria-label="Notificações"
+                        variant="ghost"
+                        color={unreadCount > 0 ? "#d3b53d" : "gray.400"}
+                        _hover={{ color: "white", bg: "whiteAlpha.200" }}
+                        borderRadius="full"
+                    >
+                        {unreadCount > 0 ? <PiBellFill size={20} /> : <PiBell size={20} />}
+                    </IconButton>
+                    {unreadCount > 0 && (
+                        <Box
+                            position="absolute"
+                            top="2px"
+                            right="2px"
+                            minW="16px"
+                            h="16px"
+                            bg="red.500"
                             borderRadius="full"
+                            border="2px solid"
+                            borderColor="gray.900"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
                         >
-                            <PiBellFill color={hasUnread ? "#d3b53d" : "gray.400"} size={20} />
-                        </IconButton>
-                        {hasUnread && (
-                            <Box
-                                position="absolute"
-                                top="2px"
-                                right="2px"
-                                w="8px"
-                                h="8px"
-                                bg="red.500"
-                                borderRadius="full"
-                                border="2px solid"
-                                borderColor="gray.900"
-                            />
-                        )}
-                    </Box>
-                </Menu.Trigger>
-                <Portal>
-                    <Menu.Positioner>
-                        <Menu.Content minW={'xl'} maxW="2xl" maxH="400px" overflowY="auto" borderRadius="md" bg="gray.800" borderColor="gray.700">
-                            <Box p={3} borderBottom="1px solid" borderColor="gray.700">
-                                <Text fontWeight="bold" fontSize="sm" color="gray.300">Novidades e Atualizações</Text>
-                            </Box>
-
-                            {isLoading ? (
-                                <Flex p={4} justify="center"><Spinner size="sm" /></Flex>
-                            ) : notifications && notifications.length > 0 ? (
-                                notifications.map((notif) => (
-                                    <Menu.Item
-                                        key={notif.id}
-                                        value={notif.id}
-                                        _hover={{ bg: "gray.700" }}
-                                        p={3}
-                                        cursor="pointer"
-                                        onClick={() => handleItemClick(notif)}
-                                    >
-                                        <Flex gap={3} align="start" w='100%'>
-                                            <Flex align="center" my={'auto'} fontSize={'xl'}>
-                                                {getIcon(notif.type)}
-                                            </Flex>
-                                            <VStack align="start" gap={2} flex={1} w='100%'>
-                                                <Flex justify="space-between" w="100%" align="center" gap={2}>
-                                                    <Text fontWeight="semibold" fontSize="sm" color="white">{notif.title}</Text>
-                                                    <Text fontSize="xs" color="gray.500">
-                                                        {new Date(notif.createdAt).toLocaleDateString('pt-BR')}
-                                                    </Text>
-                                                </Flex>
-                                                <Text fontSize="xs" color="gray.400" lineHeight="1.4" lineClamp={2}>
-                                                    {notif.message}
-                                                </Text>
-                                            </VStack>
-                                        </Flex>
-                                    </Menu.Item>
-                                ))
-                            ) : (
-                                <Box p={4} textAlign="center">
-                                    <Text fontSize="sm" color="gray.500">Nenhuma novidade por enquanto.</Text>
-                                </Box>
-                            )}
-                        </Menu.Content>
-                    </Menu.Positioner>
-                </Portal>
-            </Menu.Root>
-
-            {/* --- DIALOG (DETALHES DA NOTIFICAÇÃO) --- */}
-            <Dialog.Root
-                open={isDialogOpen}
-                onOpenChange={(e) => setIsDialogOpen(e.open)}
-                size="lg"
-            >
-                <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content bg="gray.800" color="white">
-                        <Dialog.CloseTrigger asChild>
-                            <IconButton aria-label="Close" variant="ghost" size="sm" position="absolute" top="2" right="2">
-                                <PiX />
-                            </IconButton>
-                        </Dialog.CloseTrigger>
-
-                        <Dialog.Header gap={0} flexDir={'column'} >
-                            <Flex align="center" gap={3} alignItems={'center'}>
-                                <Dialog.Title fontSize="xl">{selectedNotif?.title}</Dialog.Title>
-                            </Flex>
-                            {selectedNotif && (
-                                <Text fontSize="sm" color="gray.500" mt={1}>
-                                    Publicado em: {new Date(selectedNotif.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </Text>
-                            )}
-                        </Dialog.Header>
-
-                        <Dialog.Body>
-                            <Box
-                                whiteSpace="pre-wrap"
-                                color="gray.300"
-                                lineHeight="1.8"
-                                fontSize="md"
-                            >
-                                {selectedNotif?.message}
-                            </Box>
-                        </Dialog.Body>
-
-                        <Dialog.Footer>
-                            <Button variant="solid" colorPalette="red" onClick={() => setIsDialogOpen(false)}>
-                                Fechar
-                            </Button>
-                            {selectedNotif?.link && (
+                            <Text fontSize="9px" fontWeight="bold" color="white" lineHeight="1" px="2px">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </Text>
+                        </Box>
+                    )}
+                </Box>
+            </Menu.Trigger>
+            <Portal>
+                <Menu.Positioner>
+                    <Menu.Content
+                        minW="380px"
+                        maxW="420px"
+                        maxH="480px"
+                        overflowY="auto"
+                        borderRadius="md"
+                        bg="gray.800"
+                        borderColor="gray.700"
+                        p={0}
+                    >
+                        {/* Header */}
+                        <Flex
+                            px={4} py={3}
+                            borderBottom="1px solid"
+                            borderColor="gray.700"
+                            justify="space-between"
+                            align="center"
+                        >
+                            <Text fontWeight="bold" fontSize="sm" color="white">
+                                Notificações
+                                {unreadCount > 0 && (
+                                    <Badge ml={2} colorPalette="red" size="sm">{unreadCount} novas</Badge>
+                                )}
+                            </Text>
+                            {unreadCount > 0 && (
                                 <Button
-                                    colorScheme="blue"
-                                    onClick={() => window.open(selectedNotif.link, '_blank')}
+                                    size="xs"
+                                    variant="ghost"
+                                    color="brand.400"
+                                    _hover={{ color: 'brand.300' }}
+                                    onClick={markAllAsRead}
                                 >
-                                    Saiba Mais
+                                    Marcar todas como lidas
                                 </Button>
                             )}
-                        </Dialog.Footer>
-                    </Dialog.Content>
-                </Dialog.Positioner>
-            </Dialog.Root>
-        </>
+                        </Flex>
+
+                        {/* Lista */}
+                        {notifications.length === 0 ? (
+                            <Box p={6} textAlign="center">
+                                <Text fontSize="sm" color="gray.500">Nenhuma notificação por enquanto.</Text>
+                            </Box>
+                        ) : (
+                            notifications.map(notif => (
+                                <Menu.Item
+                                    key={notif.id}
+                                    value={notif.id}
+                                    p={0}
+                                    cursor="pointer"
+                                    _hover={{ bg: 'gray.750' }}
+                                    bg={notif.isRead ? 'transparent' : 'gray.750'}
+                                    onClick={() => {
+                                        if (!notif.isRead) markAsRead(notif.id);
+                                    }}
+                                >
+                                    <Flex
+                                        px={4} py={3}
+                                        gap={3}
+                                        align="start"
+                                        w="100%"
+                                        borderBottom="1px solid"
+                                        borderColor="gray.700"
+                                        position="relative"
+                                    >
+                                        {!notif.isRead && (
+                                            <Box
+                                                position="absolute"
+                                                left="8px"
+                                                top="50%"
+                                                transform="translateY(-50%)"
+                                                w="6px"
+                                                h="6px"
+                                                bg="brand.400"
+                                                borderRadius="full"
+                                            />
+                                        )}
+                                        <Box mt="2px" fontSize="lg" flexShrink={0} pl={notif.isRead ? 0 : '10px'}>
+                                            {getTypeIcon(notif.notificationType, notif.type)}
+                                        </Box>
+                                        <VStack align="start" gap={1} flex={1} minW={0}>
+                                            <Flex justify="space-between" w="100%" align="center" gap={2}>
+                                                <Text
+                                                    fontWeight={notif.isRead ? 'normal' : 'semibold'}
+                                                    fontSize="sm"
+                                                    color={notif.isRead ? 'gray.300' : 'white'}
+                                                    overflow="hidden"
+                                                    textOverflow="ellipsis"
+                                                    whiteSpace="nowrap"
+                                                >
+                                                    {notif.title}
+                                                </Text>
+                                                <Text fontSize="xs" color="gray.500" flexShrink={0}>
+                                                    {timeAgo(notif.createdAt)}
+                                                </Text>
+                                            </Flex>
+                                            <Text fontSize="xs" color="gray.400" lineHeight="1.4" lineClamp={2}>
+                                                {notif.message}
+                                            </Text>
+                                        </VStack>
+                                    </Flex>
+                                </Menu.Item>
+                            ))
+                        )}
+
+                        {/* Footer link */}
+                        <Menu.Item
+                            value="ver-todas"
+                            px={4} py={3}
+                            borderTop="1px solid"
+                            borderColor="gray.700"
+                            cursor="pointer"
+                            _hover={{ bg: 'gray.750' }}
+                            onClick={() => window.location.href = '/gestao/notificacoes'}
+                        >
+                            <Flex align="center" justify="center" gap={1} w="100%" color="brand.400" fontSize="sm" fontWeight="medium">
+                                Ver todas as notificações <Icon as={PiArrowRight} boxSize={4} />
+                            </Flex>
+                        </Menu.Item>
+                    </Menu.Content>
+                </Menu.Positioner>
+            </Portal>
+        </Menu.Root>
     );
 }

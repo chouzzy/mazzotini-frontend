@@ -1,6 +1,6 @@
 import {
     PiHouseDuotone, PiChartPieSlice, PiScales, PiList,
-    PiUser, PiUsers, PiFolderFill, PiUsersThree, PiGear, PiFolderOpen,
+    PiUser, PiUsers, PiFolderFill, PiUsersThree, PiGear, PiFolderOpen, PiBell,
 } from "react-icons/pi";
 
 const SideBarItems = [
@@ -27,6 +27,7 @@ const SideBarItems = [
 
     // Restrito a ADMIN / OPERATOR
     { name: 'Usuários',         icon: PiUsers,           href: '/gestao/usuarios',         roles: ['ADMIN', 'OPERATOR'] },
+    { name: 'Notificações',     icon: PiBell,            href: '/gestao/notificacoes',     roles: ['ADMIN'] },
     { name: 'Configurações',    icon: PiGear,            href: '/configuracoes',            roles: ['ADMIN'] },
 ];
 

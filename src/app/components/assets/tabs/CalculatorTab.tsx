@@ -506,18 +506,24 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         )} />
     );
 
-    // ── toggle a.m. / a.a. ───────────────────────────────────────────────────
+    // ── toggle a.m. / a.a. / a.d. ────────────────────────────────────────────
+    const RATE_UNITS: { value: string; label: string }[] = [
+        { value: 'AM', label: '% a.m.' },
+        { value: 'AA', label: '% a.a.' },
+        { value: 'AD', label: '% a.d.' },
+    ];
+
     const RateUnitToggle = ({ name }: { name: 'moratoryRateUnit' | 'compensatoryRateUnit' }) => (
         <Controller name={name} control={control} render={({ field }) => (
             <HStack gap={0} border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden">
-                {(['AM', 'AA'] as const).map(unit => (
-                    <Button key={unit} size="xs" type="button" borderRadius="none"
-                        variant={field.value === unit ? 'solid' : 'ghost'}
-                        colorPalette={field.value === unit ? 'brand' : 'gray'}
-                        onClick={() => field.onChange(unit)}
+                {RATE_UNITS.map(({ value, label }) => (
+                    <Button key={value} size="xs" type="button" borderRadius="none"
+                        variant={field.value === value ? 'solid' : 'ghost'}
+                        colorPalette={field.value === value ? 'brand' : 'gray'}
+                        onClick={() => field.onChange(value)}
                         px={3}
                     >
-                        {unit === 'AM' ? '% a.m.' : '% a.a.'}
+                        {label}
                     </Button>
                 ))}
             </HStack>
@@ -586,7 +592,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <HStack gap={4} wrap="wrap" mb={3} align="flex-end">
                                         <Field.Root flex={1} minW="160px">
                                             <Field.Label fontSize="sm">
-                                                Taxa ({moratoryRateUnit === 'AA' ? '% a.a.' : '% a.m.'})
+                                                Taxa ({RATE_UNITS.find(u => u.value === moratoryRateUnit)?.label ?? '% a.m.'})
                                             </Field.Label>
                                             <Input {...register('moratoryRate')} type="number" step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" />
                                         </Field.Root>
@@ -618,7 +624,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 <HStack gap={4} wrap="wrap" mb={3} align="flex-end">
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">
-                                            Taxa ({compensatoryRateUnit === 'AA' ? '% a.a.' : '% a.m.'}) — 0 = não aplicar
+                                            Taxa ({RATE_UNITS.find(u => u.value === compensatoryRateUnit)?.label ?? '% a.m.'}) — 0 = não aplicar
                                         </Field.Label>
                                         <Input {...register('compensatoryRate')} type="number" step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                     </Field.Root>
