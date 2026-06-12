@@ -349,6 +349,12 @@ export default function CompleteProfilePage() {
                 }),
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
+
+                ...(data.termsAccepted && {
+                    consentedToTermsAt: new Date().toISOString(),
+                    consentedToPrivacyAt: new Date().toISOString(),
+                    termsVersion: '1.0',
+                }),
             };
 
             await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
