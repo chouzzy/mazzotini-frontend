@@ -132,12 +132,12 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                     </Flex>
                     <Flex align="center" gap={2} minW={0}>
                         <PiScales color='#B8A76E' size={24} style={{ flexShrink: 0 }} />
-                        <Text color="gray.400" noOfLines={1}>{asset.origemProcesso || "Processo N°"}</Text>
+                        <Text color="gray.400" lineClamp={1}>{asset.origemProcesso || "Processo N°"}</Text>
                     </Flex>
                     {asset.nickname && (
                         <Flex align="center" gap={2} minW={0}>
                             <PiIdentificationCardDuotone color='#B8A76E' size={24} style={{ flexShrink: 0 }} />
-                            <Text color="gray.400" noOfLines={1}>{asset.nickname}</Text>
+                            <Text color="gray.400" lineClamp={1}>{asset.nickname}</Text>
                         </Flex>
                     )}
                 </VStack>

@@ -118,7 +118,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
 
                     <HStack color="gray.400" gap={2}>
                         <Icon as={PiBank} boxSize={{ base: 3, md: 4 }} flexShrink={0} />
-                        <Text color='textPrimary' fontSize={{ base: 'xs', md: 'sm' }} noOfLines={1}>Parte(s): {asset.nickname || asset.originalCreditor}</Text>
+                        <Text color='textPrimary' fontSize={{ base: 'xs', md: 'sm' }} lineClamp={1}>Parte(s): {asset.nickname || asset.originalCreditor}</Text>
                     </HStack>
 
                     <Stat.Root pt={3} borderTop="1px" borderColor="gray.800">

@@ -389,7 +389,7 @@ export default function UserManagementPage() {
                                                         <Avatar.Root size="xs" flexShrink={0}><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
                                                         <VStack align="start" gap={0} minW={0}>
                                                             <HStack gap={1}>
-                                                                <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" fontSize="sm" _hover={{ color: 'brand.400' }} noOfLines={1}>{u.name}</Text></Link>
+                                                                <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" fontSize="sm" _hover={{ color: 'brand.400' }} lineClamp={1}>{u.name}</Text></Link>
                                                                 {u.roles.includes('ASSOCIATE') && (
                                                                     <HStack gap={1} flexShrink={0}>
                                                                         {u.associateSequence != null && (
@@ -409,7 +409,7 @@ export default function UserManagementPage() {
                                                                     </HStack>
                                                                 )}
                                                             </HStack>
-                                                            <Text fontSize="xs" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"} noOfLines={1}>
+                                                            <Text fontSize="xs" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"} lineClamp={1}>
                                                                 {u.email}
                                                             </Text>
                                                         </VStack>
