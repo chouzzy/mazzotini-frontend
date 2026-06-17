@@ -76,9 +76,9 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
                                                     Processos Principais ({mainList.length})
                                                 </Text>
                                             </HStack>
-                                            <Table.Root size="sm" variant="line">
+                                            <Box overflowX="auto"><Table.Root size="sm" variant="line">
                                                 <Table.Body>{mainList.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body>
-                                            </Table.Root>
+                                            </Table.Root></Box>
                                         </Box>
                                     )}
                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
@@ -94,7 +94,7 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
                                                     </Flex>
                                                 </Accordion.ItemTrigger>
                                                 <Accordion.ItemContent bg="blackAlpha.400">
-                                                    <Table.Root size="sm" variant="line"><Table.Body>{appeals.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                    <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root></Box>
                                                 </Accordion.ItemContent>
                                             </Accordion.Item>
                                         )}
@@ -110,7 +110,7 @@ export function FoldersSection({ foldersData }: FoldersSectionProps) {
                                                     </Flex>
                                                 </Accordion.ItemTrigger>
                                                 <Accordion.ItemContent bg="blackAlpha.400">
-                                                    <Table.Root size="sm" variant="line"><Table.Body>{incidents.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                    <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root></Box>
                                                 </Accordion.ItemContent>
                                             </Accordion.Item>
                                         )}

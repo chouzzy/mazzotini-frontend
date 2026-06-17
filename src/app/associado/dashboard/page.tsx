@@ -22,7 +22,7 @@ interface AssociateProcessRow {
 
 function KPICard({ label, value, icon, color }: { label: string; value: string | number; icon: any; color: string }) {
     return (
-        <Box flex={1} minW="180px" p={6} bg="gray.900" borderRadius="lg" border="1px solid" borderColor="gray.700">
+        <Box flex={1} minW={{ base: '100%', md: '180px' }} p={6} bg="gray.900" borderRadius="lg" border="1px solid" borderColor="gray.700">
             <HStack justify="space-between" mb={3}>
                 <Text fontSize="sm" color="gray.400">{label}</Text>
                 <Icon as={icon} color={`${color}.400`} boxSize={5} />
@@ -50,7 +50,7 @@ function AssociateDashboardContent() {
     }
 
     return (
-        <Flex w="100%" p={8} flexDir="column" gap={8}>
+        <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={8}>
             <VStack align="start" gap={1}>
                 <Heading as="h1" size="lg">Olá, {firstName}!</Heading>
                 <Text color="gray.400" fontSize="sm">

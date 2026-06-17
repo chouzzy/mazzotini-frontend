@@ -93,7 +93,7 @@ export function EditUserModal({ user, isOpen, onClose, onUpdateSuccess }: EditUs
             <Toaster/>
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content bg="gray.800">
+                <Dialog.Content bg="gray.800" maxW={{ base: '95vw', md: 'lg' }}>
                     <Dialog.Header>
                         <Dialog.Title>Editar Permissão de {user?.name}</Dialog.Title>
                         <Dialog.CloseTrigger asChild>

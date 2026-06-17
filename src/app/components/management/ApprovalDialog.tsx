@@ -109,7 +109,7 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
 
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content bg="gray.800">
+                <Dialog.Content bg="gray.800" maxW={{ base: '95vw', md: '2xl' }}>
                     <Dialog.Header>
                         <Dialog.CloseTrigger asChild>
                             <Button variant="solid" colorPalette="gray" size="sm"><PiX /></Button>

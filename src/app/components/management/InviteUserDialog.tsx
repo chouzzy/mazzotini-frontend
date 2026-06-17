@@ -104,7 +104,7 @@ export function InviteUserDialog({ isOpen, onClose, onInviteSuccess }: InviteUse
             <Toaster/>
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content bg="gray.800">
+                <Dialog.Content bg="gray.800" maxW={{ base: '95vw', md: 'lg' }}>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <Dialog.Header>
                             <Dialog.Title>{generatedLink ? "Convite Gerado com Sucesso!" : "Convidar Novo Usuário"}</Dialog.Title>

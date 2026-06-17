@@ -169,7 +169,7 @@ export default function NotificacoesPage() {
 
                     {/* Filtros */}
                     <Flex gap={3} wrap="wrap" align="flex-end">
-                        <Box minW="180px">
+                        <Box minW={{ base: '100%', md: '180px' }}>
                             <Text fontSize="xs" color="gray.400" mb={1}>Tipo</Text>
                             <Select.Root
                                 collection={createListCollection({ items: NOTIFICATION_TYPES })}
@@ -192,7 +192,7 @@ export default function NotificacoesPage() {
                             </Select.Root>
                         </Box>
 
-                        <Box minW="140px">
+                        <Box minW={{ base: '100%', md: '140px' }}>
                             <Text fontSize="xs" color="gray.400" mb={1}>Status</Text>
                             <Select.Root
                                 collection={createListCollection({ items: STATUS_OPTIONS })}
@@ -224,7 +224,7 @@ export default function NotificacoesPage() {
                                 borderColor="gray.600"
                                 value={filterFrom}
                                 onChange={e => { setFilterFrom(e.target.value); setPage(1); }}
-                                w="160px"
+                                w={{ base: '100%', md: '160px' }}
                             />
                         </Box>
 
@@ -237,7 +237,7 @@ export default function NotificacoesPage() {
                                 borderColor="gray.600"
                                 value={filterTo}
                                 onChange={e => { setFilterTo(e.target.value); setPage(1); }}
-                                w="160px"
+                                w={{ base: '100%', md: '160px' }}
                             />
                         </Box>
 
@@ -276,6 +276,7 @@ export default function NotificacoesPage() {
                             </Flex>
                         ) : (
                             <Box opacity={isLoading ? 0.5 : 1} transition="opacity 0.2s">
+                                <Box overflowX="auto">
                                 <Table.Root variant="line" size="sm" bgColor="bodyBg">
                                     <Table.Header>
                                         <Table.Row borderBottom="1px solid" borderColor="gray.700" bg="gray.900">
@@ -373,11 +374,12 @@ export default function NotificacoesPage() {
                                         ))}
                                     </Table.Body>
                                 </Table.Root>
+                                </Box>
 
                                 {/* Paginação */}
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={4} px={2}>
-                                        <Text fontSize="sm" color="gray.400">
+                                        <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>
                                             Mostrando <b>{notifications.length}</b> de <b>{meta.total}</b> notificações
                                         </Text>
                                         <HStack gap={2}>

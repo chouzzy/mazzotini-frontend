@@ -107,7 +107,7 @@ function ClientProcessesContent() {
                         <Text>Nenhum processo vinculado a você para este cliente.</Text>
                     </VStack>
                 ) : (
-                    <Table.Root variant="line" size="md">
+                    <Box overflowX="auto"><Table.Root variant="line" size="md">
                         <Table.Header>
                             <Table.Row bg="gray.800" borderBottom="1px solid" borderColor="gray.700">
                                 <Table.ColumnHeader color="brand.500" px={6}>Processo</Table.ColumnHeader>
@@ -168,7 +168,7 @@ function ClientProcessesContent() {
                                 );
                             })}
                         </Table.Body>
-                    </Table.Root>
+                    </Table.Root></Box>
                 )}
             </Box>
         </Flex>

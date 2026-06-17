@@ -44,7 +44,7 @@ function ToggleCard({ label, description, checked, onChange, loading }: {
 }) {
     return (
         <HStack
-            justify="space-between" align="center" gap={6} p={5}
+            justify="space-between" align={{ base: 'start', md: 'center' }} flexDir={{ base: 'column', md: 'row' }} gap={4} p={5}
             bg={checked ? 'green.900/20' : 'gray.800'}
             borderRadius="lg" border="1px solid"
             borderColor={checked ? 'green.700/50' : 'gray.700'}
@@ -149,7 +149,7 @@ function ConfiguracoesContent() {
     }
 
     return (
-        <Flex w="100%" p={8} flexDir="column" gap={8} maxW="860px">
+        <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={8} maxW="860px">
             <Toaster />
 
             {/* Header */}
@@ -236,7 +236,7 @@ function ConfiguracoesContent() {
                                 bgColor="gray.800"
                                 borderColor="gray.600"
                                 size="sm"
-                                w="180px"
+                                w={{ base: '100%', md: '180px' }}
                                 _focus={{ borderColor: 'brand.500' }}
                             />
                         </Field.Root>

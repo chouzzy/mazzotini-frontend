@@ -121,7 +121,7 @@ export function ProfileChangeDialog({ request, currentData, isOpen, onClose, onU
         <Dialog.Root open={isOpen} onOpenChange={(details) => !details.open && onClose()} size="xl">
             <Dialog.Backdrop />
             <Dialog.Positioner>
-                <Dialog.Content bg="gray.800">
+                <Dialog.Content bg="gray.800" maxW={{ base: '95vw', md: '2xl' }}>
                     <Dialog.Header>
                         <Dialog.CloseTrigger asChild>
                             <Button variant="solid" colorPalette="gray" size="sm"><PiX /></Button>

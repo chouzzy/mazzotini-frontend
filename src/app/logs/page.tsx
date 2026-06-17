@@ -199,7 +199,7 @@ function LogsContent() {
                         Nenhum log registrado. Clique em "Executar agora" para iniciar.
                     </Text>
                 ) : (
-                    <Table.Root variant="line" size="sm" w="100%">
+                    <Box overflowX="auto"><Table.Root variant="line" size="sm" w="100%">
                         <Table.Header>
                             <Table.Row borderBottom="1px solid" borderColor="gray.700" bg="gray.800">
                                 <Table.ColumnHeader px={4} color="brand.500" w="100%">Status</Table.ColumnHeader>
@@ -211,7 +211,7 @@ function LogsContent() {
                         <Table.Body>
                             {logs.map((log) => <LogRow key={log.id} log={log} />)}
                         </Table.Body>
-                    </Table.Root>
+                    </Table.Root></Box>
                 )}
             </Box>
         </Flex>
