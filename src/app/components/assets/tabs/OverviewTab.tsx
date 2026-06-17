@@ -54,7 +54,7 @@ export function OverviewTab({ asset }: TabProps) {
     const titleText = lastUpdate ? extractFreeText(lastUpdate.description) : "";
 
     return (
-        <SimpleGrid columns={{ base: 1, lg: 3 }} gap={{ base: 5, lg: 8 }} minW={0}>
+        <SimpleGrid columns={{ base: 1, lg: 3 }} gap={{ base: 8, lg: 10 }} minW={0}>
             
             {/* Card de Detalhes da Aquisição */}
             <Card.Root bg="gray.900" minW={0} overflow="hidden">
