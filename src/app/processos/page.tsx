@@ -210,12 +210,12 @@ export default function OperatorAssetsPage() {
                                 <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
                                     <Table.Header>
                                         <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3}>Nº do Processo</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3}>Parte Contrária</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3} display={{ base: 'none', lg: 'table-cell' }}>Cliente Principal</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3} display={{ base: 'none', lg: 'table-cell' }}>Credor</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3} display={{ base: 'none', md: 'table-cell' }}>Estimativa Atual</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'brand.600'} px={4} py={3} display={{ base: 'none', md: 'table-cell' }}>Status</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3}>Nº do Processo</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3}>Parte Contrária</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>Cliente Principal</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>Credor</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', md: 'table-cell' }}>Estimativa Atual</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', md: 'table-cell' }}>Status</Table.ColumnHeader>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
@@ -227,7 +227,7 @@ export default function OperatorAssetsPage() {
                                                 bgColor={tableBgColor} 
                                                 onClick={() => window.location.href = `/processos/${asset.legalOneId}`}
                                             >
-                                                <Table.Cell px={4} py={3} fontWeight="semibold">
+                                                <Table.Cell px={3} py={3} fontWeight="semibold">
                                                     <VStack align="start" gap={0}>
                                                         <Text fontSize="sm">{asset.processNumber}</Text>
                                                         {asset.legalOneType === 'Lawsuit' && <Text fontSize="xs" color="blue.400">Processo Principal</Text>}
@@ -235,11 +235,11 @@ export default function OperatorAssetsPage() {
                                                         {asset.legalOneType === 'ProceduralIssue' && <Text fontSize="xs" color="purple.400">Incidente</Text>}
                                                     </VStack>
                                                 </Table.Cell>
-                                                <Table.Cell px={4} py={3}>{asset.nickname || '—'}</Table.Cell>
-                                                <Table.Cell px={4} py={3} display={{ base: 'none', lg: 'table-cell' }}>{myProfile?.name || user?.name || '—'}</Table.Cell>
-                                                <Table.Cell px={4} py={3} display={{ base: 'none', lg: 'table-cell' }}>{asset.originalCreditor}</Table.Cell>
-                                                <Table.Cell px={4} py={3} display={{ base: 'none', md: 'table-cell' }}>{formatCurrency(asset.currentValue)}</Table.Cell>
-                                                <Table.Cell px={4} py={3} display={{ base: 'none', md: 'table-cell' }}>
+                                                <Table.Cell px={3} py={3}>{asset.nickname || '—'}</Table.Cell>
+                                                <Table.Cell px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>{myProfile?.name || user?.name || '—'}</Table.Cell>
+                                                <Table.Cell px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>{asset.originalCreditor}</Table.Cell>
+                                                <Table.Cell px={3} py={3} display={{ base: 'none', md: 'table-cell' }}>{formatCurrency(asset.currentValue)}</Table.Cell>
+                                                <Table.Cell px={3} py={3} display={{ base: 'none', md: 'table-cell' }}>
                                                     <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
                                                         <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
                                                     </Tag.Root>
