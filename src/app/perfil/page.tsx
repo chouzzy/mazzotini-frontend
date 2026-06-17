@@ -84,12 +84,23 @@ const ProfileField = ({ label, value, icon }: { label: string, value?: string | 
 const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, index: number, prefix?: string }) => {
     const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `${prefix} ${index + 1}`);
     return (
-        <Link key={index} href={url} target='_blank' _hover={{ textDecoration: 'none' }}>
-            <Button size="sm" bgColor={'brand.700'} color={'white'} _hover={{ bgColor: 'brand.900' }} gap={2}>
-                <Icon as={PiFilePdf} />
-                <Text truncate maxW="200px">{fileName}</Text>
-                <Icon as={PiDownloadDuotone} ml={1} />
-            </Button>
+        <Link href={url} target='_blank' _hover={{ textDecoration: 'none' }}>
+            <Flex
+                align="center"
+                gap={3}
+                px={4}
+                py={3}
+                bg="gray.800"
+                border="1px solid"
+                borderColor="gray.700"
+                borderRadius="md"
+                _hover={{ borderColor: 'brand.500', bg: 'gray.750' }}
+                transition="all 0.15s"
+            >
+                <Icon as={PiFilePdf} color="red.400" boxSize={5} flexShrink={0} />
+                <Text fontSize="sm" color="gray.100" flex={1} truncate>{fileName}</Text>
+                <Icon as={PiDownloadDuotone} color="gray.400" boxSize={4} flexShrink={0} />
+            </Flex>
         </Link>
     );
 };
@@ -134,7 +145,7 @@ export default function ProfilePage() {
     return (
         <AuthenticationGuard>
             <Toaster />
-            <VStack gap={8} align="stretch" w="100%">
+            <VStack gap={8} align="stretch">
                 <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                     <Flex align="center" gap={4}>
                         <Avatar.Root size="lg" border={'1px solid'} borderColor={'brand.600'} bgColor={'bodyBg'}>
@@ -227,19 +238,15 @@ export default function ProfilePage() {
 
                     <Box>
                         <Heading size="md" color="gray.300" mb={3}>Documentos Pessoais</Heading>
-                        <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
-                            <Card.Body>
-                                {userProfile.personalDocumentUrls && userProfile.personalDocumentUrls.length > 0 ? (
-                                    <Flex gap={3} flexWrap="wrap">
-                                        {userProfile.personalDocumentUrls.map((url, index) => (
-                                            <DocumentButton key={index} url={url} index={index} prefix="Doc Pessoal" />
-                                        ))}
-                                    </Flex>
-                                ) : (
-                                    <Text color="gray.500" fontSize="sm">Nenhum documento pessoal anexado.</Text>
-                                )}
-                            </Card.Body>
-                        </Card.Root>
+                        {userProfile.personalDocumentUrls && userProfile.personalDocumentUrls.length > 0 ? (
+                            <VStack align="stretch" gap={2}>
+                                {userProfile.personalDocumentUrls.map((url, index) => (
+                                    <DocumentButton key={index} url={url} index={index} prefix="Doc Pessoal" />
+                                ))}
+                            </VStack>
+                        ) : (
+                            <Text color="gray.500" fontSize="sm">Nenhum documento pessoal anexado.</Text>
+                        )}
                     </Box>
 
                     {investmentsWithDocs.length > 0 && (
@@ -258,11 +265,11 @@ export default function ProfilePage() {
                                                     <Text fontSize="sm" color="gray.400">({inv.asset.nickname})</Text>
                                                 )}
                                             </Flex>
-                                            <Flex gap={3} flexWrap="wrap">
+                                            <VStack align="stretch" gap={2}>
                                                 {inv.documents.map((url, index) => (
                                                     <DocumentButton key={index} url={url} index={index} prefix="Doc Processo" />
                                                 ))}
-                                            </Flex>
+                                            </VStack>
                                         </Card.Body>
                                     </Card.Root>
                                 ))}
@@ -273,17 +280,21 @@ export default function ProfilePage() {
                     <Link as={NextLink} href="/meus-documentos" _hover={{ textDecoration: 'none' }}>
                         <Flex
                             w="100%" p={4} borderRadius="lg" gap={4} align="center"
-                            bg="brand.800" _hover={{ bg: 'brand.700' }} transition="all 0.15s"
+                            bg="gray.900"
+                            border="1px solid"
+                            borderColor="brand.700"
+                            _hover={{ borderColor: 'brand.500', bg: 'gray.800' }}
+                            transition="all 0.15s"
                             cursor="pointer"
                         >
-                            <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
+                            <Icon as={PiCurrencyCircleDollar} color="brand.400" boxSize={6} flexShrink={0} />
                             <Box flex={1}>
                                 <Text fontWeight="bold" color="white" mb="2px">Documentos Financeiros Privados</Text>
-                                <Text fontSize="sm" color="whiteAlpha.700">
-                                    Envie contratos de cessão, comprovantes e outros documentos financeiros
+                                <Text fontSize="sm" color="gray.400">
+                                    Contratos de cessão, comprovantes e documentos financeiros
                                 </Text>
                             </Box>
-                            <Icon as={PiArrowRight} color="white" boxSize={5} flexShrink={0} />
+                            <Icon as={PiArrowRight} color="brand.400" boxSize={5} flexShrink={0} />
                         </Flex>
                     </Link>
                 </VStack>
