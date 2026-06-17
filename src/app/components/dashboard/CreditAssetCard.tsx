@@ -70,8 +70,8 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
 
     return (
         <Link as={NextLink} href={`/processos/${asset.legalOneId}`} _hover={{ textDecoration: 'none' }} w={{ base: '100%', md: 'auto' }} display="block">
-            <Box w={'100%'} minW={{ md: 'xl' }} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'brand.500', transform: 'translateY(-4px)', shadow: 'lg' }}>
-                <VStack align="stretch" gap={4}>
+            <Box w={'100%'} minW={{ md: 'xl' }} borderWidth="1px" borderRadius="lg" p={{ base: 4, md: 6 }} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'brand.500', transform: 'translateY(-4px)', shadow: 'lg' }}>
+                <VStack align="stretch" gap={3}>
                     <Flex justify="space-between" align="start">
                         <HStack wrap="wrap" gap={2}>
                             {isMain && (
@@ -97,9 +97,9 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
 
                     <VStack align="start" gap={1}>
                         <HStack>
-                            <Icon as={PiScales} color="brand.400" />
+                            <Icon as={PiScales} color="brand.400" boxSize={{ base: 4, md: 5 }} flexShrink={0} />
                             <Tooltip content={`Processo Nº ${asset.processNumber}`}>
-                                <Heading size="md" maxLines={1} color={'textPrimary'}>
+                                <Heading size={{ base: 'sm', md: 'md' }} maxLines={1} color={'textPrimary'}>
                                     {asset.processNumber}
                                 </Heading>
                             </Tooltip>
@@ -116,25 +116,23 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                         )}
                     </VStack>
 
-                    <HStack color="gray.400">
-                        <Icon as={PiBank} />
-                        <Text color='textPrimary' fontSize="sm">Parte(s) Contrária(s): {asset.nickname || asset.originalCreditor}</Text>
+                    <HStack color="gray.400" gap={2}>
+                        <Icon as={PiBank} boxSize={{ base: 3, md: 4 }} flexShrink={0} />
+                        <Text color='textPrimary' fontSize={{ base: 'xs', md: 'sm' }} noOfLines={1}>Parte(s): {asset.nickname || asset.originalCreditor}</Text>
                     </HStack>
 
-                    <SimpleGrid columns={{ base: 1, md: 2}} gap={4} pt={4}>
-                        <Stat.Root>
-                            <Stat.Label color="gray.400">Estimativa Atual do Valor Total do Crédito</Stat.Label>
-                            <Stat.ValueText color={'textPrimary'}>{formatCurrency(asset.currentValue)}</Stat.ValueText>
-                            <StatHelpText display="flex" alignItems="center" color={yieldValue >= 0 ? 'green.600' : 'red.600'}>
-                                <Icon as={PiChartLineUp} color={yieldValue >= 0 ? "green.400" : "red.400"} mr={1} />
-                                {formatCurrency(yieldValue)} ({yieldPercentage.toFixed(2)}%)
-                            </StatHelpText>
-                        </Stat.Root>
-                    </SimpleGrid>
+                    <Stat.Root pt={3} borderTop="1px" borderColor="gray.800">
+                        <Stat.Label color="gray.400" fontSize={{ base: 'xs', md: 'sm' }}>Estimativa Atual</Stat.Label>
+                        <Stat.ValueText color={'textPrimary'} fontSize={{ base: 'lg', md: 'xl' }}>{formatCurrency(asset.currentValue)}</Stat.ValueText>
+                        <StatHelpText display="flex" alignItems="center" fontSize="xs" color={yieldValue >= 0 ? 'green.600' : 'red.600'}>
+                            <Icon as={PiChartLineUp} color={yieldValue >= 0 ? "green.400" : "red.400"} mr={1} />
+                            {formatCurrency(yieldValue)} ({yieldPercentage.toFixed(2)}%)
+                        </StatHelpText>
+                    </Stat.Root>
 
-                    <HStack color="gray.500" pt={4} borderTop="1px" borderColor="gray.700">
-                        <Icon as={PiCalendarBlank} />
-                        <Text fontSize="xs">Posição Credora em: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
+                    <HStack color="gray.500" gap={2}>
+                        <Icon as={PiCalendarBlank} boxSize={3} flexShrink={0} />
+                        <Text fontSize="xs">Cessão: {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}</Text>
                     </HStack>
                 </VStack>
             </Box>
