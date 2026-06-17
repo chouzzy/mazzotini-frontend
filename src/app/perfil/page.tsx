@@ -180,8 +180,8 @@ export default function ProfilePage() {
     return (
         <AuthenticationGuard>
             <Toaster />
-            <VStack gap={8} align="stretch">
-                <VStack align="stretch" gap={4}>
+            <VStack gap={5} align="stretch">
+                <VStack align="stretch" gap={3}>
                     <Flex gap={5} align="center">
                         <Avatar.Root size="xl" border={'2px solid'} borderColor={'brand.600'} bgColor={'bodyBg'} flexShrink={0}>
                             <Avatar.Image src={userProfile.profilePictureUrl || auth0User?.picture} alt={userProfile.name} />
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                     </Link>
                 </VStack>
 
-                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4}>
+                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={4}>
                     <Card.Root variant="outline" bg="transparent" borderColor="gray.800">
                         <Card.Body p={4}>
                             <Card.Title color={'brand.600'} fontSize="sm">Dados Pessoais</Card.Title>
