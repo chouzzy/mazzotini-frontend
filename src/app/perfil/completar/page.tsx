@@ -372,7 +372,7 @@ export default function CompleteProfilePage() {
     };
 
     return (
-        <Flex w="100%" p={8} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
+        <Flex w="100%" p={{ base: 4, md: 8 }} bgColor={'bodyBg'} maxW="breakpoint-lg" borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
                 <VStack gap={8} align="stretch">
                     <VStack align="start" gap={2}>

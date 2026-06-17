@@ -155,10 +155,10 @@ function LogsContent() {
     };
 
     return (
-        <Flex w="100%" p={8} bgColor="bodyBg" flexDir="column" gap={6}>
+        <Flex w="100%" p={{ base: 4, md: 8 }} bgColor="bodyBg" flexDir="column" gap={6}>
             <Toaster />
 
-            <Flex justify="space-between" align="center">
+            <Flex justify="space-between" align={{ base: 'flex-start', md: 'center' }} flexDir={{ base: 'column', md: 'row' }} gap={3}>
                 <VStack align="start" gap={1}>
                     <Heading as="h1" size="lg">Logs de Saúde do Sistema</Heading>
                     <Text color="gray.400" fontSize="sm">

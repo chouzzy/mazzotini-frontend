@@ -478,7 +478,7 @@ export default function UserManagementPage() {
                 <Dialog.Root open={codeEditUser !== null} onOpenChange={(e) => { if (!e.open) setCodeEditUser(null); }}>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content bg="gray.900" border="1px solid" borderColor="gray.700" maxW="400px">
+                        <Dialog.Content bg="gray.900" border="1px solid" borderColor="gray.700" maxW={{ base: '95vw', md: '400px' }}>
                             <Dialog.Header>
                                 <Dialog.Title>Editar Código do Associado</Dialog.Title>
                             </Dialog.Header>

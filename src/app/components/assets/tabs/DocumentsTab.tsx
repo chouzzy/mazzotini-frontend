@@ -150,10 +150,10 @@ function UploadInline({ legalOneId, section, categoryCollection, onSuccess }: {
     };
 
     return (
-        <Flex gap={2} align="center" px={4} py={3} bg="whiteAlpha.30"
+        <Flex gap={2} align="center" wrap="wrap" px={4} py={3} bg="whiteAlpha.30"
             borderTop="1px dashed" borderColor="gray.700">
             <Select.Root collection={categoryCollection} value={category ? [category] : []}
-                onValueChange={e => setCategory(e.value[0])} size="xs" w="180px">
+                onValueChange={e => setCategory(e.value[0])} size="xs" w={{ base: '100%', sm: '180px' }}>
                 <Select.HiddenSelect />
                 <Select.Control>
                     <Select.Trigger bg="gray.800" borderColor="gray.600" cursor="pointer">

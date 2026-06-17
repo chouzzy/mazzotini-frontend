@@ -159,8 +159,8 @@ export function NotificationsMenu() {
             <Portal>
                 <Menu.Positioner>
                     <Menu.Content
-                        minW="380px"
-                        maxW="420px"
+                        minW={{ base: '90vw', md: '380px' }}
+                        maxW={{ base: '95vw', md: '420px' }}
                         maxH="480px"
                         overflowY="auto"
                         borderRadius="md"

@@ -76,7 +76,7 @@ function ClientProcessesContent() {
     const { client, processes } = data;
 
     return (
-        <Flex w="100%" p={8} flexDir="column" gap={6}>
+        <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={6}>
             {/* Header */}
             <HStack gap={4} wrap="wrap">
                 <Link href="/associado">

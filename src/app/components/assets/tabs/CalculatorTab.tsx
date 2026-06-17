@@ -1047,7 +1047,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                     ))}
                                                 </Flex>
                                                 {inst.monthBreakdown?.length > 0 && (
-                                                    <Box maxH="200px" overflowY="auto">
+                                                    <Box maxH="200px" overflowY="auto" overflowX="auto">
                                                         <Table.Root size="sm" variant="line">
                                                             <Table.Header>
                                                                 <Table.Row bg="gray.800" borderColor="gray.700">

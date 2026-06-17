@@ -543,7 +543,7 @@ export default function EditUserPage() {
     }
 
     return (
-        <Flex w="100%" p={8} bgColor={'bodyBg'} borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
+        <Flex w="100%" p={{ base: 4, md: 8 }} bgColor={'bodyBg'} borderRadius="md" boxShadow="md" flexDir="column" justify="center" align="center" mx='auto'>
             {/* Botão de Voltar */}
             <Flex w="100%" mb={6}>
                 <Link href="/gestao/usuarios" passHref>
@@ -609,7 +609,7 @@ export default function EditUserPage() {
                 <Dialog.Root open={isEmailDialogOpen} onOpenChange={(d) => !d.open && setIsEmailDialogOpen(false)}>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content bg="gray.800">
+                        <Dialog.Content bg="gray.800" maxW={{ base: '95vw', md: 'lg' }}>
                             <Dialog.Header>
                                 <Dialog.Title>Alterar E-mail do Usuário</Dialog.Title>
                                 <Dialog.CloseTrigger asChild><CloseButton size="sm" /></Dialog.CloseTrigger>
@@ -856,9 +856,9 @@ export default function EditUserPage() {
 
                                     return (
                                         <HStack key={index} justify="space-between" p={3} bg="gray.800" borderRadius="md" borderWidth="1px" borderColor="gray.700">
-                                            <HStack gap={3}>
-                                                <Icon as={PiFilePdf} color="red.400" boxSize={6} />
-                                                <Text fontWeight="medium" truncate maxW="300px">{fileName}</Text>
+                                            <HStack gap={3} minW={0} flex={1}>
+                                                <Icon as={PiFilePdf} color="red.400" boxSize={6} flexShrink={0} />
+                                                <Text fontWeight="medium" truncate maxW={{ base: '140px', md: '300px' }}>{fileName}</Text>
                                             </HStack>
                                             <HStack>
                                                 <Button
