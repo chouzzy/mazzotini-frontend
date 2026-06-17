@@ -146,8 +146,15 @@ export default function ProfilePage() {
                             <Text color="gray.400">{userProfile.email}</Text>
                         </Box>
                     </Flex>
-                    <Link as={NextLink} href="/perfil/editar" _hover={{ textDecoration: 'none' }}>
-                        <Button colorPalette="blue" gap={2}>
+                    <Link as={NextLink} href="/perfil/editar" _hover={{ textDecoration: 'none' }} w={{ base: '100%', md: 'auto' }}>
+                        <Button
+                            variant="outline"
+                            w={{ base: '100%', md: 'auto' }}
+                            borderColor="gray.600"
+                            color="gray.200"
+                            _hover={{ bg: 'gray.800', borderColor: 'gray.400' }}
+                            gap={2}
+                        >
                             <Icon as={PiPencilSimple} />
                             Editar Perfil
                         </Button>
