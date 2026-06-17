@@ -210,7 +210,7 @@ export default function OperatorAssetsPage() {
                                 <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
                                     <Table.Header>
                                         <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
-                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3}>Nº do Processo</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'brand.600'} px={3} py={3} w={{ base: '55%', md: 'auto' }}>Nº do Processo</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} px={3} py={3}>Parte Contrária</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>Cliente Principal</Table.ColumnHeader>
                                             <Table.ColumnHeader color={'brand.600'} px={3} py={3} display={{ base: 'none', lg: 'table-cell' }}>Credor</Table.ColumnHeader>
