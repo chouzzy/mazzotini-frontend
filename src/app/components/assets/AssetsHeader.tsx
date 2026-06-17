@@ -11,6 +11,7 @@ import {
     Icon,
     Button,
     Badge,
+    Box,
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
 import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone } from 'react-icons/pi';
@@ -116,40 +117,35 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     };
 
     return (
-        <VStack w="100%" align="stretch" gap={8}>
+        <VStack align="stretch" gap={6}>
 
-            <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
-                <VStack align="start" gap={2}>
+            <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={4}>
+                <VStack align="start" gap={2} minW={0} flex={1}>
                         <Flex>
                             {asset.legalOneType == 'Lawsuit' && (<Badge colorPalette="blue" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Processo Principal</Badge>)}
                             {asset.legalOneType == 'Appeal' && (<Badge colorPalette="orange" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Recurso</Badge>)}
                             {asset.legalOneType == 'ProceduralIssue' && (<Badge colorPalette="purple" color={'white'} variant={'solid'} borderRadius={2} mt={0.5} textTransform="uppercase">Incidente</Badge>)}
                         </Flex>
-                    <Flex align="center" gap={2}>
-                        <PiGavelDuotone color='#B8A76E' size={24} />
-                        <Heading as="h1" color="white">{asset.processNumber}</Heading>
+                    <Flex align="center" gap={2} minW={0}>
+                        <PiGavelDuotone color='#B8A76E' size={24} style={{ flexShrink: 0 }} />
+                        <Heading as="h1" color="white" size={{ base: 'lg', md: 'xl' }} wordBreak="break-word">{asset.processNumber}</Heading>
                     </Flex>
-                    <Flex align="center" gap={2}>
-                        <PiScales color='#B8A76E' size={24} />
-                        <Text color="gray.400">{asset.origemProcesso || "Processo N°"}</Text>
+                    <Flex align="center" gap={2} minW={0}>
+                        <PiScales color='#B8A76E' size={24} style={{ flexShrink: 0 }} />
+                        <Text color="gray.400" noOfLines={1}>{asset.origemProcesso || "Processo N°"}</Text>
                     </Flex>
                     {asset.nickname && (
-                        <Flex align="center" gap={2}>
-                            <PiIdentificationCardDuotone color='#B8A76E' size={24} />
-                            <Text color="gray.400">{asset.nickname}</Text>
+                        <Flex align="center" gap={2} minW={0}>
+                            <PiIdentificationCardDuotone color='#B8A76E' size={24} style={{ flexShrink: 0 }} />
+                            <Text color="gray.400" noOfLines={1}>{asset.nickname}</Text>
                         </Flex>
                     )}
                 </VStack>
-                <Flex gap={4} align="center" wrap="wrap">
+                <Flex gap={3} align="center" wrap="wrap">
 
-                    {/* TRAVA VISUAL: Só mostra Editar e Sincronizar se for Admin/Operador */}
                     {isAdminOrOperator && (
                         <>
-                            <Button
-                                onClick={handleEdit}
-                                colorScheme="black" 
-                                gap={2}
-                            >
+                            <Button onClick={handleEdit} colorScheme="black" gap={2}>
                                 <Icon as={PiPencilSimple} />
                                 Editar
                             </Button>
@@ -159,14 +155,14 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                                 loading={isSyncing}
                                 loadingText="Sincronizando"
                                 bgColor="brand.500"
-                                gap={2} 
+                                gap={2}
                             >
-                                <Icon as={PiArrowsClockwise} /> 
-                                Sincronizar Andamentos
+                                <Icon as={PiArrowsClockwise} />
+                                Sincronizar<Box as="span" display={{ base: 'none', md: 'inline' }}> Andamentos</Box>
                             </Button>
                         </>
                     )}
-                    
+
                     <Tag.Root size="lg" variant="solid" colorPalette={getStatusColorPalette(asset.status)}>
                         <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
                     </Tag.Root>

@@ -234,7 +234,7 @@ export default function AssetDetailsPage() {
   if (!asset) return <Text>Nenhum dado de processo para exibir.</Text>;
 
   return (
-    <VStack w="100%" align="stretch" gap={8}>
+    <VStack align="stretch" gap={8}>
       <Toaster />
       <AssetHeader asset={asset} />
       {isInvestor && myProfile?.id && (
