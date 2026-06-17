@@ -61,40 +61,40 @@ export function OverviewTab({ asset }: TabProps) {
                 <Card.Body>
                     <Card.Title color={'brand.600'} mb={4}>Detalhes do Processo</Card.Title>
                     <VStack align="stretch" gap={3}>
-                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
-                            <Text color="gray.400" fontSize="sm">Cliente Principal</Text>
-                            <Text fontWeight="medium" textAlign="right">{myProfile?.name || asset.originalCreditor}</Text>
+                        <Flex justify="space-between" gap={3} borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Text color="gray.400" fontSize="sm" flexShrink={0}>Cliente Principal</Text>
+                            <Text fontWeight="medium" textAlign="right" minW={0} truncate>{myProfile?.name || asset.originalCreditor}</Text>
                         </Flex>
-                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
-                            <Text color="gray.400" fontSize="sm">Parte Contrária / Apelido</Text>
-                            <Text fontWeight="medium" textAlign="right">{asset.nickname || 'N/A'}</Text>
+                        <Flex justify="space-between" gap={3} borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Text color="gray.400" fontSize="sm" flexShrink={0}>Parte Contrária / Apelido</Text>
+                            <Text fontWeight="medium" textAlign="right" minW={0} truncate>{asset.nickname || 'N/A'}</Text>
                         </Flex>
-                        <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                        <Flex justify="space-between" gap={3} borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
                             <Tooltip
                                 content="Data em que a Mazzotini adquiriu este crédito judicial. Pode ser diferente da data em que você individualmente entrou na operação."
                                 showArrow
                             >
-                                <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted">Data da Cessão</Text>
+                                <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted" flexShrink={0}>Data da Cessão</Text>
                             </Tooltip>
-                            <Text fontWeight="medium" textAlign="right">
+                            <Text fontWeight="medium" textAlign="right" minW={0}>
                                 {new Date(asset.acquisitionDate).toLocaleDateString('pt-BR')}
                             </Text>
                         </Flex>
                         {myAcquisitionDate && (
-                            <Flex justify="space-between" borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
+                            <Flex justify="space-between" gap={3} borderBottom="1px solid" borderColor="whiteAlpha.100" pb={2}>
                                 <Tooltip
                                     content="Data em que você adquiriu sua participação neste processo. Pode ser diferente da data de cessão geral do crédito."
                                     showArrow
                                 >
-                                    <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted">Data da sua Aquisição</Text>
+                                    <Text color="gray.400" fontSize="sm" cursor="help" textDecoration="underline dotted" flexShrink={0}>Data da sua Aquisição</Text>
                                 </Tooltip>
-                                <Text fontWeight="medium" textAlign="right">{myAcquisitionDate}</Text>
+                                <Text fontWeight="medium" textAlign="right" minW={0}>{myAcquisitionDate}</Text>
                             </Flex>
                         )}
-                        <Flex justify="space-between" pb={2}>
-                            <Text color="gray.400" fontSize="sm">Índice de Correção</Text>
-                            <Text fontWeight="medium" textAlign="right">
-                                {asset.updateIndexType} 
+                        <Flex justify="space-between" gap={3} pb={2}>
+                            <Text color="gray.400" fontSize="sm" flexShrink={0}>Índice de Correção</Text>
+                            <Text fontWeight="medium" textAlign="right" minW={0}>
+                                {asset.updateIndexType}
                                 {asset.contractualIndexRate ? ` + ${asset.contractualIndexRate}%` : ''}
                             </Text>
                         </Flex>
