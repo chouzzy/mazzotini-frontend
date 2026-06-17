@@ -37,14 +37,19 @@ export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false
           onChange={(e) => setActiveTab(e.target.value)}
           style={{
             width: '100%',
-            backgroundColor: '#2D3748',
-            color: 'white',
-            border: '1px solid #4A5568',
+            backgroundColor: '#1A1A1A',
+            color: '#E2E8F0',
+            border: '1px solid #B8A76E',
             borderRadius: '6px',
             padding: '10px 12px',
             fontSize: '14px',
             outline: 'none',
             cursor: 'pointer',
+            appearance: 'none',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23B8A76E'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 12px center',
+            paddingRight: '36px',
           }}
         >
           {tabs.map(tab => (
