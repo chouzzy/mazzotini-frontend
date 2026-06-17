@@ -356,6 +356,18 @@ export default function UserManagementPage() {
                             <EmptyState title="Nenhum usuário encontrado" description="Refine a sua busca ou filtros." buttonHref='#' />
                         ) : (
                             <Box opacity={isLoading ? 0.5 : 1} transition="opacity 0.2s">
+                            {/* hint de scroll no mobile */}
+                            <Flex display={{ base: 'flex', md: 'none' }} align="center" justify="flex-end" gap={1} mb={2}>
+                                <Text fontSize="xs" color="gray.500">Role para ver mais</Text>
+                                <Text fontSize="xs" color="gray.500">→</Text>
+                            </Flex>
+                            <Box position="relative">
+                                {/* gradiente fade direita no mobile */}
+                                <Box
+                                    display={{ base: 'block', md: 'none' }}
+                                    position="absolute" right={0} top={0} bottom={0} w="48px" zIndex={1} pointerEvents="none"
+                                    style={{ background: 'linear-gradient(to right, transparent, #171923)' }}
+                                />
                             <Box overflowX="auto">
                                 <Table.Root variant={'line'} size={{ base: 'sm', md: 'md' }} bgColor={'bodyBg'}>
                                     <Table.Header>
@@ -442,6 +454,7 @@ export default function UserManagementPage() {
                                     </Table.Body>
                                 </Table.Root>
                             </Box>
+                            </Box>{/* fim position:relative */}
 
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
