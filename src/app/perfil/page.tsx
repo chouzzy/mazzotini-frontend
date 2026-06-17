@@ -28,6 +28,8 @@ import {
     PiPhone,
     PiMapPin,
     PiIdentificationCard,
+    PiIdentificationBadge,
+    PiCalendarBlank,
     PiGlobe,
     PiHeart,
     PiBriefcase,
@@ -45,6 +47,8 @@ import {
     PiCheckCircle,
     PiCurrencyCircleDollar,
     PiArrowRight,
+    PiCaretDown,
+    PiCaretUp,
 } from 'react-icons/pi';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { UserStagingDocument } from '@/types/api';
@@ -72,9 +76,9 @@ interface ExtendedUserProfile extends UserProfile {
 const ProfileField = ({ label, value, icon }: { label: string, value?: string | null, icon?: React.ElementType }) => {
     if (!value) return null;
     return (
-        <Flex align="center" gap={3}>
-            {icon && <Icon as={icon} color="gray.400" boxSize={6} />}
-            <Text>
+        <Flex align="center" gap={2}>
+            {icon && <Icon as={icon} color="gray.500" boxSize={4} flexShrink={0} />}
+            <Text fontSize="sm">
                 <strong style={{ color: '#a8a8a8' }}>{label}:</strong> {value}
             </Text>
         </Flex>
@@ -125,8 +129,10 @@ const DocList = ({ urls, prefix }: { urls: string[], prefix: string }) => {
                     _hover={{ color: 'brand.300', bg: 'transparent' }}
                     alignSelf="flex-start"
                     px={1}
+                    gap={1}
                     onClick={() => setExpanded(e => !e)}
                 >
+                    <Icon as={expanded ? PiCaretUp : PiCaretDown} boxSize={3} />
                     {expanded ? 'Ver menos' : `Ver mais (${hidden} restantes)`}
                 </Button>
             )}
@@ -194,6 +200,7 @@ export default function ProfilePage() {
                     <Link as={NextLink} href="/perfil/editar" _hover={{ textDecoration: 'none' }}>
                         <Button
                             variant="outline"
+                            size="sm"
                             w="100%"
                             borderColor="gray.600"
                             color="gray.200"
@@ -207,13 +214,13 @@ export default function ProfilePage() {
                 </VStack>
 
                 <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4}>
-                    <Card.Root variant="subtle" bg="gray.900">
-                        <Card.Body>
-                            <Card.Title color={'brand.600'}>Dados Pessoais</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
+                    <Card.Root variant="outline" bg="transparent" borderColor="gray.800">
+                        <Card.Body p={4}>
+                            <Card.Title color={'brand.600'} fontSize="sm">Dados Pessoais</Card.Title>
+                            <VStack align="stretch" mt={3} gap={2} color={'white'}>
                                 <ProfileField label="CPF/CNPJ" value={userProfile.cpfOrCnpj ? maskCPFOrCNPJ(userProfile.cpfOrCnpj) : null} icon={PiIdentificationCard} />
-                                <ProfileField label="RG" value={userProfile.rg} />
-                                <ProfileField label="Data de Nascimento" value={userProfile.birthDate ? new Date(userProfile.birthDate).toLocaleDateString('pt-BR') : null} />
+                                <ProfileField label="RG" value={userProfile.rg} icon={PiIdentificationBadge} />
+                                <ProfileField label="Data de Nascimento" value={userProfile.birthDate ? new Date(userProfile.birthDate).toLocaleDateString('pt-BR') : null} icon={PiCalendarBlank} />
                                 <ProfileField label="Profissão" value={userProfile.profession} icon={PiBriefcase} />
                                 <ProfileField label="Nacionalidade" value={userProfile.nationality} icon={PiGlobe} />
                                 <ProfileField label="Estado Civil" value={userProfile.maritalStatus} icon={PiHeart} />
@@ -221,10 +228,10 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root variant="subtle" bg="gray.900">
-                        <Card.Body>
-                            <Card.Title color={'brand.600'}>Informações de Contato</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
+                    <Card.Root variant="outline" bg="transparent" borderColor="gray.800">
+                        <Card.Body p={4}>
+                            <Card.Title color={'brand.600'} fontSize="sm">Informações de Contato</Card.Title>
+                            <VStack align="stretch" mt={3} gap={2} color={'white'}>
                                 <ProfileField label="Celular" value={userProfile.cellPhone ? maskPhone(userProfile.cellPhone) : null} icon={PiPhone} />
                                 <ProfileField label="Telefone Fixo" value={userProfile.phone ? maskPhone(userProfile.phone) : null} icon={PiPhone} />
                                 <ProfileField label="E-mail de Informações" value={userProfile.infoEmail} icon={PiEnvelopeSimple} />
@@ -233,29 +240,29 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root variant="subtle" bg="gray.900">
-                        <Card.Body>
-                            <Card.Title color={'brand.600'}>Endereço Residencial</Card.Title>
-                            <VStack align="stretch" mt={4} gap={3} color={'white'}>
+                    <Card.Root variant="outline" bg="transparent" borderColor="gray.800">
+                        <Card.Body p={4}>
+                            <Card.Title color={'brand.600'} fontSize="sm">Endereço Residencial</Card.Title>
+                            <VStack align="stretch" mt={3} gap={2} color={'white'}>
                                 <ProfileField label="Endereço" value={residentialAddress} icon={PiHouse} />
                             </VStack>
                         </Card.Body>
                     </Card.Root>
 
                     {commercialAddress && (
-                        <Card.Root variant="subtle" bg="gray.900">
+                        <Card.Root variant="outline" bg="transparent" borderColor="gray.800">
                             <Card.Body>
                                 <Card.Title color={'brand.600'}>Endereço Comercial</Card.Title>
-                                <VStack align="stretch" mt={4} gap={3} color={'white'}>
+                                <VStack align="stretch" mt={3} gap={2} color={'white'}>
                                     <ProfileField label="Endereço" value={commercialAddress} icon={PiBuilding} />
                                 </VStack>
                             </Card.Body>
                         </Card.Root>
                     )}
 
-                    <Card.Root variant="subtle" bg="gray.900" gridColumn={{ lg: 'span 2' }}>
-                        <Card.Body>
-                            <Card.Title color={'brand.600'}>Outras Informações</Card.Title>
+                    <Card.Root variant="outline" bg="transparent" borderColor="gray.800" gridColumn={{ lg: 'span 2' }}>
+                        <Card.Body p={4}>
+                            <Card.Title color={'brand.600'} fontSize="sm">Outras Informações</Card.Title>
                             <VStack align="stretch" mt={4} gap={5} color={'white'}>
                                 <ProfileField label="Endereço de Correspondência" value={correspondenceAddress} icon={PiMapPin} />
                             </VStack>

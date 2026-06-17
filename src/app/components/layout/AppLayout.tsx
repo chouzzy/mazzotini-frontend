@@ -253,7 +253,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const shouldShowSidebar = !(pathname && pathname.startsWith('/perfil/completar'));
 
     return (
-        <Flex w="100%" minH="100vh" bg="gray.800">
+        <Flex w="100%" minH="100vh" bg="gray.900">
             {showSidebar && shouldShowSidebar && <SidebarContent onClose={onClose} />}
 
             <Drawer.Root open={open} placement="start">
