@@ -44,14 +44,15 @@ export function UserAvatar() {
         <>
             {
                 isAuthenticated ? (
-                    <Flex gap={{ base: 1, md: 4 }} alignItems="center" flexDir={{ base: 'column-reverse', md: 'row' }}>
+                    <Flex gap={4} alignItems="center">
                         {primaryRole && (
                             <Tag.Root
-                                size={{ base: 'sm', md: 'lg' }}
+                                size="lg"
                                 variant="subtle"
                                 colorPalette={getRoleColorScheme(primaryRole)}
+                                display={{ base: 'none', md: 'flex' }}
                             >
-                                <Tag.Label fontSize={{ base: '2xs', md: 'xs' }}>{translateRole(primaryRole)}</Tag.Label>
+                                <Tag.Label fontSize="xs">{translateRole(primaryRole)}</Tag.Label>
                             </Tag.Root>
                         )}
                         <Menu.Root >

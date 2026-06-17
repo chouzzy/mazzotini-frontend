@@ -1,7 +1,6 @@
 'use client';
 
 import {
-    Box,
     Flex,
     Drawer,
     useDisclosure,
@@ -216,31 +215,27 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             gap={3}
             {...rest}
         >
-            <HStack gap={2} display={{ base: 'flex', md: 'none' }}>
-                <IconButton
-                    onClick={onOpen}
-                    bgColor={'transparent'}
-                    border={'1px solid'}
-                    borderColor={'gray.600'}
-                    color={'brand.600'}
-                    aria-label="Abrir menu"
-                >
-                    <PiList />
-                </IconButton>
-                {isAuthenticated && <NotificationsMenu />}
-            </HStack>
+            <IconButton
+                display={{ base: 'flex', md: 'none' }}
+                onClick={onOpen}
+                bgColor={'transparent'}
+                border={'1px solid'}
+                borderColor={'gray.600'}
+                color={'brand.600'}
+                aria-label="Abrir menu"
+            >
+                <PiList />
+            </IconButton>
             <Text display={{ base: 'flex', md: 'none' }} fontSize="2xl" fontWeight="bold">
                 Mazzotini
             </Text>
 
             {isAuthenticated ? (
-                <>
+                <HStack gap={2}>
                     <ViewModeToggle />
-                    <Box display={{ base: 'none', md: 'flex' }} alignItems="center">
-                        <NotificationsMenu />
-                    </Box>
+                    <NotificationsMenu />
                     <UserAvatar />
-                </>
+                </HStack>
             ) : (
                 <Button onClick={() => loginWithRedirect()} colorScheme="blue">
                     Entrar
