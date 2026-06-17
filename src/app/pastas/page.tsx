@@ -173,7 +173,7 @@ export default function FoldersPage() {
 
                                     return (
                                         <Accordion.Item key={folder.id} value={folder.id} bg="gray.900" border="1px solid" borderColor="gray.700" borderRadius="md" overflow="hidden">
-                                            <Accordion.ItemTrigger _hover={{ bg: 'gray.800' }} py={4} px={6}>
+                                            <Accordion.ItemTrigger _hover={{ bg: 'gray.800' }} py={4} px={{ base: 3, md: 6 }}>
                                                 <Flex justify="space-between" w="100%" align="center" gap={4}>
                                                     <VStack align="start" gap={0}>
                                                         <Text fontWeight="bold" fontSize="lg" color="white">{folder.folderCode}</Text>
@@ -200,23 +200,23 @@ export default function FoldersPage() {
                                                 <VStack align="stretch" gap={0}>
                                                     {mainList.length > 0 && (
                                                         <Box>
-                                                            <HStack bg="blackAlpha.600" px={6} py={2} borderBottom="1px solid" borderColor="gray.800">
+                                                            <HStack bg="blackAlpha.600" px={{ base: 3, md: 6 }} py={2} borderBottom="1px solid" borderColor="gray.800">
                                                                 <Icon as={PiScalesDuotone} color="brand.400" /><Text fontSize="xs" fontWeight="bold" color="brand.400" textTransform="uppercase">Processos Principais ({mainList.length})</Text>
                                                             </HStack>
-                                                            <Table.Root size="sm" variant="line"><Table.Body>{mainList.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root>
+                                                            <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{mainList.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box>
                                                         </Box>
                                                     )}
                                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
                                                         {appeals.length > 0 && (
                                                             <Accordion.Item value="appeals" borderTop="1px solid" borderColor="gray.700">
                                                                 <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiFilesDuotone} color="orange.400" /><Text fontSize="xs" fontWeight="bold" color="orange.400" textTransform="uppercase">Recursos ({appeals.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="orange.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
-                                                                <Accordion.ItemContent bg="blackAlpha.400"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Accordion.ItemContent>
+                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
                                                         {incidents.length > 0 && (
                                                             <Accordion.Item value="incidents" borderTop="1px solid" borderColor="gray.700">
                                                                 <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiGavelDuotone} color="purple.400" /><Text fontSize="xs" fontWeight="bold" color="purple.400" textTransform="uppercase">Incidentes ({incidents.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="purple.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
-                                                                <Accordion.ItemContent bg="blackAlpha.400"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Accordion.ItemContent>
+                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
                                                     </Accordion.Root>
@@ -230,7 +230,7 @@ export default function FoldersPage() {
                             {/* PAGINAÇÃO */}
                             {meta && meta.totalPages > 1 && (
                                 <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
-                                    <Text fontSize="sm" color="gray.400">Mostrando <b>{folders.length}</b> de <b>{meta.total}</b> pastas</Text>
+                                    <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>Mostrando <b>{folders.length}</b> de <b>{meta.total}</b> pastas</Text>
                                     <HStack gap={2}>
                                         <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><Icon as={PiCaretLeftBold} /> Anterior</Button>
                                         <HStack gap={1}>

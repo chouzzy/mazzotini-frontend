@@ -234,7 +234,7 @@ export default function UserManagementPage() {
                     </Flex>
 
                     <Flex gap={4} p={4} bg={tableBgColor} borderRadius="md" border="1px solid" borderColor="gray.700" wrap="wrap" align="flex-end">
-                        <Box flex={1} minW="200px">
+                        <Box flex={1} minW={{ base: 'full', md: '200px' }}>
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">Busca por Nome ou E-mail</Field.Label>
                                 <Input
@@ -246,7 +246,7 @@ export default function UserManagementPage() {
                                 />
                             </Field.Root>
                         </Box>
-                        <Box flex={1} minW="200px">
+                        <Box flex={1} minW={{ base: 'full', md: '200px' }}>
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">
                                     <HStack gap={2} align="center">
@@ -264,7 +264,7 @@ export default function UserManagementPage() {
                                 />
                             </Field.Root>
                         </Box>
-                        <Box flex={1} minW="150px" maxW="180px">
+                        <Box flex={1} minW={{ base: 'full', md: '150px' }} maxW={{ base: 'full', md: '180px' }}>
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">
                                     <HStack gap={2} align="center">
@@ -283,7 +283,7 @@ export default function UserManagementPage() {
                                 />
                             </Field.Root>
                         </Box>
-                        <Box flex={1} minW="150px" maxW="180px">
+                        <Box flex={1} minW={{ base: 'full', md: '150px' }} maxW={{ base: 'full', md: '180px' }}>
                             <Field.Root>
                                 <Field.Label fontSize="sm" color="gray.400">
                                     <HStack gap={2} align="center">
@@ -360,22 +360,23 @@ export default function UserManagementPage() {
                             <EmptyState title="Nenhum usuário encontrado" description="Refine a sua busca ou filtros." buttonHref='#' />
                         ) : (
                             <Box opacity={isLoading ? 0.5 : 1} transition="opacity 0.2s">
+                            <Box overflowX="auto">
                                 <Table.Root variant={'line'} size={'md'} bgColor={'bodyBg'}>
                                     <Table.Header>
                                         <Table.Row borderBottom={'1px solid'} borderColor={'gray.700'} bgColor={tableBgColor}>
-                                            <Table.ColumnHeader color={'white'} p={8}>Usuários</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Permissões</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Associado</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Aprovado em</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Status</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Último Login</Table.ColumnHeader>
-                                            <Table.ColumnHeader color={'white'} p={8}>Ações</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Usuários</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Permissões</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Associado</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Aprovado em</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Status</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Último Login</Table.ColumnHeader>
+                                            <Table.ColumnHeader color={'white'} p={{ base: 3, md: 8 }}>Ações</Table.ColumnHeader>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
                                         {users.map((u) => (
                                             <Table.Row key={u.id} bgColor={tableBgColor} _hover={{ bg: 'whiteAlpha.50' }}>
-                                                <Table.Cell px={8} py={4}>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                     <Flex align="center" gap={3}>
                                                         <Avatar.Root size="sm"><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
                                                         <VStack align="start" gap={0}>
@@ -406,19 +407,19 @@ export default function UserManagementPage() {
                                                         </VStack>
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                     <Flex gap={2} align="center" wrap="wrap">
                                                         {u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                     <Text fontSize="sm" color={u.associateName ? 'white' : 'gray.500'}>
                                                         {u.referredBySequence != null
                                                             ? `${String(u.referredBySequence).padStart(3, '0')} — ${u.associateName}`
                                                             : u.associateName || '—'}
                                                     </Text>
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                     {u.approvedAt ? (
                                                         <Text fontSize="sm" color="green.300">
                                                             {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
@@ -431,23 +432,24 @@ export default function UserManagementPage() {
                                                         <Text fontSize="sm" color="gray.600">—</Text>
                                                     )}
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
-                                                <Table.Cell px={8} py={4}>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                     {u.email.includes('placeholder') ? (
                                                         <Badge variant="outline" colorPalette="orange">Importado</Badge>
                                                     ) : (
                                                         u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca'
                                                     )}
                                                 </Table.Cell>
-                                                <Table.Cell px={8} py={4}><HStack gap={2}><Link href={`/gestao/usuarios/${u.id}`}><Button size="sm" bgColor="brand.700" color="white"><Icon as={PiArrowRight} /></Button></Link><Button size="sm" colorPalette="blue" onClick={() => handleEditClick(u)}><Icon as={PiPencilSimple} /></Button></HStack></Table.Cell>
+                                                <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}><HStack gap={2}><Link href={`/gestao/usuarios/${u.id}`}><Button size="sm" bgColor="brand.700" color="white"><Icon as={PiArrowRight} /></Button></Link><Button size="sm" colorPalette="blue" onClick={() => handleEditClick(u)}><Icon as={PiPencilSimple} /></Button></HStack></Table.Cell>
                                             </Table.Row>
                                         ))}
                                     </Table.Body>
                                 </Table.Root>
+                            </Box>
 
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
-                                        <Text fontSize="sm" color="gray.400">Mostrando <b>{users.length}</b> de <b>{meta.total}</b> usuários</Text>
+                                        <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>Mostrando <b>{users.length}</b> de <b>{meta.total}</b> usuários</Text>
                                         <HStack gap={2}>
                                             <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><Icon as={PiCaretLeftBold} /> Anterior</Button>
                                             <HStack gap={1}>

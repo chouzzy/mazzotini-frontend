@@ -122,7 +122,7 @@ function FoldersSection() {
 
                     return (
                         <Accordion.Item key={folder.id} value={folder.id} bg="gray.900" border="1px solid" borderColor="gray.700" borderRadius="md" overflow="hidden">
-                            <Accordion.ItemTrigger _hover={{ bg: 'gray.800' }} py={4} px={6}>
+                            <Accordion.ItemTrigger _hover={{ bg: 'gray.800' }} py={4} px={{ base: 3, md: 6 }}>
                                 <Flex justify="space-between" w="100%" align="center" gap={4}>
                                     <VStack align="start" gap={0}>
                                         <Text fontWeight="bold" fontSize="md" color="white">{folder.folderCode}</Text>
@@ -152,15 +152,17 @@ function FoldersSection() {
                                 <VStack align="stretch" gap={0}>
                                     {mainList.length > 0 && (
                                         <Box>
-                                            <HStack bg="blackAlpha.600" px={6} py={2} borderBottom="1px solid" borderColor="gray.800">
+                                            <HStack bg="blackAlpha.600" px={{ base: 3, md: 6 }} py={2} borderBottom="1px solid" borderColor="gray.800">
                                                 <Icon as={PiScalesDuotone} color="brand.400" />
                                                 <Text fontSize="xs" fontWeight="bold" color="brand.400" textTransform="uppercase">
                                                     Processos Principais ({mainList.length})
                                                 </Text>
                                             </HStack>
-                                            <Table.Root size="sm" variant="line">
-                                                <Table.Body>{mainList.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body>
-                                            </Table.Root>
+                                            <Box overflowX="auto">
+                                                <Table.Root size="sm" variant="line">
+                                                    <Table.Body>{mainList.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body>
+                                                </Table.Root>
+                                            </Box>
                                         </Box>
                                     )}
                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
@@ -176,7 +178,7 @@ function FoldersSection() {
                                                     </Flex>
                                                 </Accordion.ItemTrigger>
                                                 <Accordion.ItemContent bg="blackAlpha.400">
-                                                    <Table.Root size="sm" variant="line"><Table.Body>{appeals.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                    <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root></Box>
                                                 </Accordion.ItemContent>
                                             </Accordion.Item>
                                         )}
@@ -192,7 +194,7 @@ function FoldersSection() {
                                                     </Flex>
                                                 </Accordion.ItemTrigger>
                                                 <Accordion.ItemContent bg="blackAlpha.400">
-                                                    <Table.Root size="sm" variant="line"><Table.Body>{incidents.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root>
+                                                    <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(a => <FolderAssetRow key={a.id} asset={a} />)}</Table.Body></Table.Root></Box>
                                                 </Accordion.ItemContent>
                                             </Accordion.Item>
                                         )}

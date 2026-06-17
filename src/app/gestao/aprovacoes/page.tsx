@@ -71,19 +71,20 @@ export default function ApprovalQueuePage() {
                                 <Text color="gray.500">Nenhum novo cadastro pendente.</Text>
                             </Flex>
                         ) : (
+                            <Box overflowX="auto">
                             <Table.Root variant="line" size="md" bgColor="bodyBg">
                                 <Table.Header border="1px solid transparent">
                                     <Table.Row fontSize="xl" borderBottom="1px solid" borderColor="gray.700" bgColor={tableBgColor}>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Usuário</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8}>Indicação</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8}>Data do cadastro</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} p={{ base: 3, md: 8 }} borderTopLeftRadius={8}>Usuário</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }}>Indicação</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }}>Data do cadastro</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
                                     </Table.Row>
                                 </Table.Header>
                                 <Table.Body bgColor={tableBgColor}>
                                     {pendingUsers.map((user) => (
                                         <Table.Row key={user.id} bgColor={tableBgColor}>
-                                            <Table.Cell px={8} py={4}>
+                                            <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                 <Flex align="center" gap={3}>
                                                     <Avatar.Root size="sm">
                                                         <Avatar.Fallback name={user.name} />
@@ -108,6 +109,7 @@ export default function ApprovalQueuePage() {
                                     ))}
                                 </Table.Body>
                             </Table.Root>
+                            </Box>
                         )}
                     </Box>
 
@@ -128,19 +130,20 @@ export default function ApprovalQueuePage() {
                                 <Text color="gray.500">Nenhuma alteração de perfil pendente.</Text>
                             </Flex>
                         ) : (
+                            <Box overflowX="auto">
                             <Table.Root variant="line" size="md" bgColor="bodyBg">
                                 <Table.Header border="1px solid transparent">
                                     <Table.Row fontSize="xl" borderBottom="1px solid" borderColor="gray.700" bgColor={tableBgColor}>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} p={8} borderTopLeftRadius={8}>Usuário</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8}>Localização atual</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8}>Solicitado em</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={8} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} p={{ base: 3, md: 8 }} borderTopLeftRadius={8}>Usuário</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }}>Localização atual</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }}>Solicitado em</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white" bgColor={tableBgColor} py={{ base: 3, md: 8 }} borderTopRightRadius={8}>Ações</Table.ColumnHeader>
                                     </Table.Row>
                                 </Table.Header>
                                 <Table.Body bgColor={tableBgColor}>
                                     {profileChanges.map((change) => (
                                         <Table.Row key={change.id} bgColor={tableBgColor}>
-                                            <Table.Cell px={8} py={4}>
+                                            <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }}>
                                                 <Flex align="center" gap={3}>
                                                     <Avatar.Root size="sm">
                                                         <Avatar.Fallback name={change.user.name} />
@@ -169,6 +172,7 @@ export default function ApprovalQueuePage() {
                                     ))}
                                 </Table.Body>
                             </Table.Root>
+                            </Box>
                         )}
                     </Box>
 

@@ -3,7 +3,8 @@
 import {
     Table,
     Tag,
-    Link
+    Link,
+    Box
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { AssetSummary } from '@/types/api';
@@ -25,6 +26,7 @@ interface AssetsTableProps {
 
 export function AssetsTable({ assets }: AssetsTableProps) {
     return (
+        <Box overflowX="auto" w="100%">
         <Table.Root variant="line">
             <Table.Header>
                 <Table.Row>
@@ -53,5 +55,6 @@ export function AssetsTable({ assets }: AssetsTableProps) {
                 ))}
             </Table.Body>
         </Table.Root>
+        </Box>
     );
 }

@@ -54,7 +54,7 @@ function MeusClientesContent() {
     }, [rows, search]);
 
     return (
-        <Flex w="100%" p={8} flexDir="column" gap={6}>
+        <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={6}>
             <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
                 <VStack align="start" gap={1}>
                     <Heading as="h1" size="lg">Meus Clientes</Heading>
@@ -71,7 +71,7 @@ function MeusClientesContent() {
                 )}
             </Flex>
 
-            <Box maxW="420px">
+            <Box w={{ base: '100%', md: '420px' }}>
                 <Field.Root>
                     <Input
                         placeholder="Buscar por cliente, processo ou parte contrária..."
@@ -83,7 +83,7 @@ function MeusClientesContent() {
                 </Field.Root>
             </Box>
 
-            <Box bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700" overflow="hidden">
+            <Box bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700" overflow="hidden" overflowX="auto">
                 {isLoading ? (
                     <Flex justify="center" p={10}><Spinner /></Flex>
                 ) : filtered.length === 0 ? (
@@ -98,12 +98,12 @@ function MeusClientesContent() {
                     <Table.Root variant="line" size="sm">
                         <Table.Header>
                             <Table.Row bg="gray.800" borderBottom="1px solid" borderColor="gray.700">
-                                <Table.ColumnHeader color="brand.500" px={5}>Cliente</Table.ColumnHeader>
-                                <Table.ColumnHeader color="brand.500" px={5}>Processo</Table.ColumnHeader>
-                                <Table.ColumnHeader color="brand.500" px={5}>Parte Contrária</Table.ColumnHeader>
-                                <Table.ColumnHeader color="brand.500" px={5}>Valor Atual</Table.ColumnHeader>
-                                <Table.ColumnHeader color="brand.500" px={5}>Último andamento</Table.ColumnHeader>
-                                <Table.ColumnHeader color="brand.500" px={5} textAlign="center">Status</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }}>Cliente</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }}>Processo</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }}>Parte Contrária</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }}>Valor Atual</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }}>Último andamento</Table.ColumnHeader>
+                                <Table.ColumnHeader color="brand.500" px={{ base: 2, md: 5 }} textAlign="center">Status</Table.ColumnHeader>
                                 <Table.ColumnHeader px={5} />
                             </Table.Row>
                         </Table.Header>
@@ -113,7 +113,7 @@ function MeusClientesContent() {
                                 const title = row.nickname || row.originalCreditor;
                                 return (
                                     <Table.Row key={row.investmentId} _hover={{ bg: 'whiteAlpha.50' }}>
-                                        <Table.Cell px={5} py={3}>
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3}>
                                             <HStack gap={2}>
                                                 <Avatar.Root size="xs">
                                                     <Avatar.Fallback name={row.clientName} />
@@ -125,21 +125,21 @@ function MeusClientesContent() {
                                                 </VStack>
                                             </HStack>
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3}>
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3}>
                                             <VStack align="start" gap={0}>
                                                 <Text fontSize="sm" fontWeight="medium">{title}</Text>
                                                 <Text fontSize="xs" color="gray.500" fontFamily="mono">{row.processNumber}</Text>
                                             </VStack>
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3}>
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3}>
                                             <Text fontSize="sm" color="gray.300">{row.otherParty || '—'}</Text>
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3}>
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3}>
                                             <Text fontSize="sm" fontWeight="medium" color="green.300">
                                                 {formatCurrency(row.currentValue)}
                                             </Text>
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3} maxW="220px">
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3} maxW="220px">
                                             {row.lastUpdateDate ? (
                                                 <VStack align="start" gap={0}>
                                                     <Text fontSize="xs" color="gray.500">
@@ -153,12 +153,12 @@ function MeusClientesContent() {
                                                 <Text fontSize="xs" color="gray.600">—</Text>
                                             )}
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3} textAlign="center">
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3} textAlign="center">
                                             <Badge colorPalette={st.color} variant="solid" fontSize="xs">
                                                 {st.label}
                                             </Badge>
                                         </Table.Cell>
-                                        <Table.Cell px={5} py={3} textAlign="right">
+                                        <Table.Cell px={{ base: 2, md: 5 }} py={3} textAlign="right">
                                             <Link href={`/processos/${row.legalOneId}`}>
                                                 <Button size="xs" colorPalette="brand" variant="solid" gap={1}>
                                                     Ver <Icon as={PiArrowRight} />
