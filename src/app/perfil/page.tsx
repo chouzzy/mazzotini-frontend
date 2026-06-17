@@ -86,13 +86,13 @@ const DOCS_PREVIEW = 3;
 const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, index: number, prefix?: string }) => {
     const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `${prefix} ${index + 1}`);
     return (
-        <Link href={url} target='_blank' _hover={{ textDecoration: 'none' }}>
+        <Link href={url} target='_blank' _hover={{ textDecoration: 'none' }} w="100%">
             <Flex
+                w="100%"
                 align="center"
                 gap={3}
                 px={4}
                 py={3}
-                maxW="560px"
                 bg="gray.800"
                 border="1px solid"
                 borderColor="gray.700"
@@ -175,21 +175,26 @@ export default function ProfilePage() {
         <AuthenticationGuard>
             <Toaster />
             <VStack gap={8} align="stretch">
-                <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
-                    <Flex align="center" gap={4}>
-                        <Avatar.Root size="lg" border={'1px solid'} borderColor={'brand.600'} bgColor={'bodyBg'}>
+                <VStack align="stretch" gap={4}>
+                    <Flex gap={5} align="center">
+                        <Avatar.Root size="xl" border={'2px solid'} borderColor={'brand.600'} bgColor={'bodyBg'} flexShrink={0}>
                             <Avatar.Image src={userProfile.profilePictureUrl || auth0User?.picture} alt={userProfile.name} />
                             <Avatar.Fallback name={userProfile.name} />
                         </Avatar.Root>
-                        <Box>
-                            <Heading as="h1" size="xl">{userProfile.name}</Heading>
-                            <Text color="gray.400">{userProfile.email}</Text>
-                        </Box>
+                        <VStack align="start" gap={1} minW={0} flex={1}>
+                            <Heading as="h1" size="md" lineHeight="tight">{userProfile.name}</Heading>
+                            <Text fontSize="sm" color="gray.400" truncate>{userProfile.email}</Text>
+                            {userProfile.cpfOrCnpj && (
+                                <Text fontSize="xs" color="gray.500">
+                                    CPF/CNPJ: {maskCPFOrCNPJ(userProfile.cpfOrCnpj)}
+                                </Text>
+                            )}
+                        </VStack>
                     </Flex>
-                    <Link as={NextLink} href="/perfil/editar" _hover={{ textDecoration: 'none' }} w={{ base: '100%', md: 'auto' }}>
+                    <Link as={NextLink} href="/perfil/editar" _hover={{ textDecoration: 'none' }}>
                         <Button
                             variant="outline"
-                            w={{ base: '100%', md: 'auto' }}
+                            w="100%"
                             borderColor="gray.600"
                             color="gray.200"
                             _hover={{ bg: 'gray.800', borderColor: 'gray.400' }}
@@ -199,7 +204,7 @@ export default function ProfilePage() {
                             Editar Perfil
                         </Button>
                     </Link>
-                </Flex>
+                </VStack>
 
                 <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4}>
                     <Card.Root variant="subtle" bg="gray.900">
