@@ -81,6 +81,8 @@ const ProfileField = ({ label, value, icon }: { label: string, value?: string | 
     );
 };
 
+const DOCS_PREVIEW = 3;
+
 const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, index: number, prefix?: string }) => {
     const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `${prefix} ${index + 1}`);
     return (
@@ -90,6 +92,7 @@ const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, ind
                 gap={3}
                 px={4}
                 py={3}
+                maxW="560px"
                 bg="gray.800"
                 border="1px solid"
                 borderColor="gray.700"
@@ -102,6 +105,32 @@ const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, ind
                 <Icon as={PiDownloadDuotone} color="gray.400" boxSize={4} flexShrink={0} />
             </Flex>
         </Link>
+    );
+};
+
+const DocList = ({ urls, prefix }: { urls: string[], prefix: string }) => {
+    const [expanded, setExpanded] = useState(false);
+    const visible = expanded ? urls : urls.slice(0, DOCS_PREVIEW);
+    const hidden = urls.length - DOCS_PREVIEW;
+    return (
+        <VStack align="stretch" gap={2}>
+            {visible.map((url, index) => (
+                <DocumentButton key={index} url={url} index={index} prefix={prefix} />
+            ))}
+            {urls.length > DOCS_PREVIEW && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    color="brand.400"
+                    _hover={{ color: 'brand.300', bg: 'transparent' }}
+                    alignSelf="flex-start"
+                    px={1}
+                    onClick={() => setExpanded(e => !e)}
+                >
+                    {expanded ? 'Ver menos' : `Ver mais (${hidden} restantes)`}
+                </Button>
+            )}
+        </VStack>
     );
 };
 
@@ -239,11 +268,7 @@ export default function ProfilePage() {
                     <Box>
                         <Heading size="md" color="gray.300" mb={3}>Documentos Pessoais</Heading>
                         {userProfile.personalDocumentUrls && userProfile.personalDocumentUrls.length > 0 ? (
-                            <VStack align="stretch" gap={2}>
-                                {userProfile.personalDocumentUrls.map((url, index) => (
-                                    <DocumentButton key={index} url={url} index={index} prefix="Doc Pessoal" />
-                                ))}
-                            </VStack>
+                            <DocList urls={userProfile.personalDocumentUrls} prefix="Doc Pessoal" />
                         ) : (
                             <Text color="gray.500" fontSize="sm">Nenhum documento pessoal anexado.</Text>
                         )}
@@ -265,11 +290,7 @@ export default function ProfilePage() {
                                                     <Text fontSize="sm" color="gray.400">({inv.asset.nickname})</Text>
                                                 )}
                                             </Flex>
-                                            <VStack align="stretch" gap={2}>
-                                                {inv.documents.map((url, index) => (
-                                                    <DocumentButton key={index} url={url} index={index} prefix="Doc Processo" />
-                                                ))}
-                                            </VStack>
+                                            <DocList urls={inv.documents} prefix="Doc Processo" />
                                         </Card.Body>
                                     </Card.Root>
                                 ))}
