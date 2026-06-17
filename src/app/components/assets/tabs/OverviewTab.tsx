@@ -54,10 +54,10 @@ export function OverviewTab({ asset }: TabProps) {
     const titleText = lastUpdate ? extractFreeText(lastUpdate.description) : "";
 
     return (
-        <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8}>
+        <SimpleGrid columns={{ base: 1, lg: 3 }} gap={8} minW={0}>
             
             {/* Card de Detalhes da Aquisição */}
-            <Card.Root bg="gray.900">
+            <Card.Root bg="gray.900" minW={0} overflow="hidden">
                 <Card.Body>
                     <Card.Title color={'brand.600'} mb={4}>Detalhes do Processo</Card.Title>
                     <VStack align="stretch" gap={3}>
@@ -103,7 +103,7 @@ export function OverviewTab({ asset }: TabProps) {
             </Card.Root>
             
             {/* Card de Resumo do Histórico */}
-            <Card.Root bg="gray.900">
+            <Card.Root bg="gray.900" minW={0} overflow="hidden">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Última Atualização Processual</Card.Title>
                     {lastUpdate ? (
@@ -131,7 +131,7 @@ export function OverviewTab({ asset }: TabProps) {
             </Card.Root>
             
             {/* Card de Resumo dos Documentos */}
-            <Card.Root bg="gray.900">
+            <Card.Root bg="gray.900" minW={0} overflow="hidden">
                 <Card.Body>
                     <Card.Title color={'brand.600'}>Documentos Anexados</Card.Title>
                     
