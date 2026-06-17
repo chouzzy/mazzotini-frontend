@@ -222,7 +222,7 @@ export default function UserManagementPage() {
                     <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box><Heading as="h1" size={{ base: 'lg', md: 'xl' }}>Gestão de Usuários</Heading><Text color="gray.400" mt={1} fontSize="sm">Convide novos usuários e gerencie permissões.</Text></Box>
                         <Flex flexDir={'column'} gap={4} w={{ base: '100%', md: 'auto' }}>
-                            <Button colorPalette={'blue'} variant={'solid'} gap={2} onClick={onInviteOpen}><Icon as={PiUserPlus} boxSize={5} />Novo usuário</Button>
+                            <Button variant="outline" borderColor="gray.600" color="gray.200" _hover={{ bg: 'gray.800', borderColor: 'gray.400' }} gap={2} onClick={onInviteOpen}><Icon as={PiUserPlus} boxSize={4} />Novo usuário</Button>
                             <Link href='/gestao/aprovacoes' style={{ textDecoration: 'none' }}>
                                 <Button bgColor={(pendingUsers?.length ?? 0) > 0 ? 'brand.800' : 'gray.700'} color={'white'} gap={2}>
                                     <Icon as={PiUserCircleCheck} boxSize={5} />Aprovar cadastros ({isLoadingPending ? <Spinner size="xs" /> : pendingUsers?.length || 0})
@@ -372,14 +372,14 @@ export default function UserManagementPage() {
                                     <Table.Body>
                                         {users.map((u) => (
                                             <Table.Row key={u.id} bgColor={tableBgColor} _hover={{ bg: 'whiteAlpha.50' }}>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}>
-                                                    <Flex align="center" gap={3}>
-                                                        <Avatar.Root size="sm"><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
-                                                        <VStack align="start" gap={0}>
-                                                            <HStack gap={2}>
-                                                                <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" _hover={{ color: 'brand.400' }}>{u.name}</Text></Link>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
+                                                    <Flex align="center" gap={2}>
+                                                        <Avatar.Root size="xs" flexShrink={0}><Avatar.Fallback name={u.name} /><Avatar.Image src={u.picture} /></Avatar.Root>
+                                                        <VStack align="start" gap={0} minW={0}>
+                                                            <HStack gap={1}>
+                                                                <Link href={`/gestao/usuarios/${u.id}`}><Text fontWeight="medium" fontSize="sm" _hover={{ color: 'brand.400' }} noOfLines={1}>{u.name}</Text></Link>
                                                                 {u.roles.includes('ASSOCIATE') && (
-                                                                    <HStack gap={1}>
+                                                                    <HStack gap={1} flexShrink={0}>
                                                                         {u.associateSequence != null && (
                                                                             <Badge colorPalette="brand" variant="solid" fontSize="2xs" fontFamily="mono" px={1.5}>
                                                                                 {String(u.associateSequence).padStart(3, '0')}
@@ -397,25 +397,25 @@ export default function UserManagementPage() {
                                                                     </HStack>
                                                                 )}
                                                             </HStack>
-                                                            <Text fontSize="sm" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"}>
+                                                            <Text fontSize="xs" color={u.email.includes('placeholder') ? "yellow.500" : "gray.400"} noOfLines={1}>
                                                                 {u.email}
                                                             </Text>
                                                         </VStack>
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
                                                     <Flex gap={2} align="center" wrap="wrap">
                                                         {u.roles.map(r => <Tag.Root key={r} colorPalette={getRoleColorScheme(r)} color="white"><Tag.Label>{translateRole(r)}</Tag.Label></Tag.Root>)}
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
                                                     <Text fontSize="sm" color={u.associateName ? 'white' : 'gray.500'}>
                                                         {u.referredBySequence != null
                                                             ? `${String(u.referredBySequence).padStart(3, '0')} — ${u.associateName}`
                                                             : u.associateName || '—'}
                                                     </Text>
                                                 </Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
                                                     {u.approvedAt ? (
                                                         <Text fontSize="sm" color="green.300">
                                                             {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
@@ -428,15 +428,15 @@ export default function UserManagementPage() {
                                                         <Text fontSize="sm" color="gray.600">—</Text>
                                                     )}
                                                 </Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}><Badge colorPalette={u.status === 'ACTIVE' ? 'green' : 'yellow'}>{u.status === 'ACTIVE' ? 'Ativo' : 'Pendente'}</Badge></Table.Cell>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
                                                     {u.email.includes('placeholder') ? (
                                                         <Badge variant="outline" colorPalette="orange">Importado</Badge>
                                                     ) : (
                                                         u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca'
                                                     )}
                                                 </Table.Cell>
-                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 1.5, md: 3 }}><HStack gap={2}><Link href={`/gestao/usuarios/${u.id}`}><Button size="sm" bgColor="brand.700" color="white"><Icon as={PiArrowRight} /></Button></Link><Button size="sm" colorPalette="blue" onClick={() => handleEditClick(u)}><Icon as={PiPencilSimple} /></Button></HStack></Table.Cell>
+                                                <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}><HStack gap={2}><Link href={`/gestao/usuarios/${u.id}`}><Button size="sm" bgColor="brand.700" color="white"><Icon as={PiArrowRight} /></Button></Link><Button size="sm" colorPalette="blue" onClick={() => handleEditClick(u)}><Icon as={PiPencilSimple} /></Button></HStack></Table.Cell>
                                             </Table.Row>
                                         ))}
                                     </Table.Body>
