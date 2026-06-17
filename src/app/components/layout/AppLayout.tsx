@@ -265,7 +265,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </Drawer.Positioner>
             </Drawer.Root>
 
-            <Flex flexDir="column" flex="1">
+            <Flex flexDir="column" flex="1" minW={0} overflowX="hidden">
                 <HeaderNav onOpen={onOpen} />
                 <Flex as="main" flexDir={'column'} p={{ base: 4, md: 6 }} flex="1">
                     {children}
