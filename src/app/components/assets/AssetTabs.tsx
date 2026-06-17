@@ -64,22 +64,22 @@ export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false
         ))}
       </Tabs.List>
 
-      <Tabs.Content value="overview" pt={{ base: 4, md: 6 }}>
+      <Tabs.Content value="overview" pt={{ base: 4, md: 6 }} overflow="hidden">
         <OverviewTab asset={asset} />
       </Tabs.Content>
-      <Tabs.Content value="strategy" pt={{ base: 4, md: 6 }}>
+      <Tabs.Content value="strategy" pt={{ base: 4, md: 6 }} overflow="hidden">
         <StrategyTab asset={asset} />
       </Tabs.Content>
-      <Tabs.Content value="updates" pt={{ base: 4, md: 6 }}>
+      <Tabs.Content value="updates" pt={{ base: 4, md: 6 }} overflow="hidden">
         <UpdatesTab asset={asset} />
       </Tabs.Content>
       {!hideDocuments && (
-        <Tabs.Content value="documents" pt={{ base: 4, md: 6 }}>
+        <Tabs.Content value="documents" pt={{ base: 4, md: 6 }} overflow="hidden">
           <DocumentsTab asset={asset} onRefresh={onRefresh} />
         </Tabs.Content>
       )}
       {!hideCalculator && (
-        <Tabs.Content value="calculator" pt={{ base: 4, md: 6 }}>
+        <Tabs.Content value="calculator" pt={{ base: 4, md: 6 }} overflow="hidden">
           <CalculatorTab asset={asset} onRefresh={onRefresh} />
         </Tabs.Content>
       )}

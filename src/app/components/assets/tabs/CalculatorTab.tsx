@@ -960,7 +960,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 { label: 'Honorários',             value: calcResult.feesValue },
                                 { label: 'HO e Multa Art. 523',    value: calcResult.penaltyValue },
                             ].map(item => (
-                                <Box key={item.label} flex={1} minW="140px" p={3} bg="gray.800" borderRadius="md">
+                                <Box key={item.label} flex={1} minW={{ base: '120px', md: '140px' }} maxW={{ base: '50%', md: 'none' }} p={3} bg="gray.800" borderRadius="md">
                                     <Text fontSize="xs" color="gray.500" mb={1}>{item.label}</Text>
                                     <Text fontWeight="bold" fontSize="sm">{formatBRL(item.value)}</Text>
                                 </Box>

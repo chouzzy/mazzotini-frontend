@@ -94,20 +94,21 @@ function DocRow({ doc, canDelete, onDelete, onDownload, loadingId }: {
     const source = SOURCE_LABELS[doc.sourceType] ?? { label: doc.sourceType, color: 'gray' };
     return (
         <Flex
-            display="flex" flexDirection="row" alignItems="center"
-            gap={3} px={4} py={3} cursor="pointer"
+            alignItems="center"
+            gap={2} px={3} py={3} cursor="pointer"
             _hover={{ bg: 'whiteAlpha.50' }} transition="background 0.15s"
             borderBottom="1px solid" borderColor="whiteAlpha.50"
             _last={{ borderBottom: 'none' }}
+            minW={0}
         >
-            <Icon as={FileIcon} boxSize={5} color={color} flexShrink={0} />
-            <Text fontSize="sm" flex={1} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" color="gray.100">
+            <Icon as={FileIcon} boxSize={4} color={color} flexShrink={0} />
+            <Text fontSize="sm" flex={1} minW={0} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" color="gray.100">
                 {doc.name}
             </Text>
-            <HStack gap={2} flexShrink={0}>
-                <Badge colorPalette={source.color} variant="subtle" size="sm">{source.label}</Badge>
+            <HStack gap={1} flexShrink={0}>
+                <Badge colorPalette={source.color} variant="subtle" size="sm" display={{ base: 'none', sm: 'flex' }}>{source.label}</Badge>
                 {doc.category && (
-                    <Badge colorPalette="gray" variant="outline" size="sm">{CATEGORY_LABELS[doc.category] || doc.category}</Badge>
+                    <Badge colorPalette="gray" variant="outline" size="sm" display={{ base: 'none', md: 'flex' }}>{CATEGORY_LABELS[doc.category] || doc.category}</Badge>
                 )}
                 <Button size="xs" variant="ghost" colorPalette="brand" cursor="pointer"
                     loading={loadingId === doc.id} onClick={() => onDownload(doc)}>
