@@ -216,17 +216,19 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             gap={3}
             {...rest}
         >
-            <IconButton
-                display={{ base: 'flex', md: 'none' }}
-                onClick={onOpen}
-                bgColor={'transparent'}
-                border={'1px solid'}
-                borderColor={'gray.600'}
-                color={'brand.600'}
-                aria-label="Abrir menu"
-            >
-                <PiList />
-            </IconButton>
+            <HStack gap={2} display={{ base: 'flex', md: 'none' }}>
+                <IconButton
+                    onClick={onOpen}
+                    bgColor={'transparent'}
+                    border={'1px solid'}
+                    borderColor={'gray.600'}
+                    color={'brand.600'}
+                    aria-label="Abrir menu"
+                >
+                    <PiList />
+                </IconButton>
+                {isAuthenticated && <NotificationsMenu />}
+            </HStack>
             <Text display={{ base: 'flex', md: 'none' }} fontSize="2xl" fontWeight="bold">
                 Mazzotini
             </Text>
@@ -234,7 +236,9 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
             {isAuthenticated ? (
                 <>
                     <ViewModeToggle />
-                    <NotificationsMenu />
+                    <Box display={{ base: 'none', md: 'flex' }} alignItems="center">
+                        <NotificationsMenu />
+                    </Box>
                     <UserAvatar />
                 </>
             ) : (
