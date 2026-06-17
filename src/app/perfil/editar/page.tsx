@@ -1,4 +1,3 @@
-// /src/app/perfil/editar/page.tsx
 'use client';
 
 import {
@@ -38,7 +37,6 @@ import { useSWRConfig } from "swr";
 import { useApi } from "@/hooks/useApi";
 import { UserProfile } from "@/types";
 
-// Tipagem expandida para todos os novos campos
 interface OnboardingFormData {
     name: string;
     cpfOrCnpj: string;
@@ -49,7 +47,7 @@ interface OnboardingFormData {
     infoEmail?: string;
     profession?: string;
     contactPreference: string[];
-    referredById: string; // ID do Associado (vendedor)
+    referredById: string;
 
     residentialCep: string;
     residentialStreet: string;
@@ -73,21 +71,16 @@ interface OnboardingFormData {
     nationality: string;
     maritalStatus: string;
 
-    // Campos para os arquivos
     profilePicture?: FileList;
     personalDocuments?: FileList;
 }
 
-// CORREÇÃO: A tipagem agora corresponde ao que a API envia
 interface Associate {
-    value: string; // O ID do utilizador no *nosso* banco
-    label: string; // O Nome do utilizador
+    value: string;
+    label: string;
 }
 
 
-// ============================================================================
-//  COLEÇÕES DE DADOS PARA OS SELECTS
-// ============================================================================
 const estadoCivilCollection = createListCollection({
     items: [
         { label: "Solteiro(a)", value: "Solteiro(a)" },
@@ -110,9 +103,6 @@ const nacionalidadesCollection = createListCollection({
 const contactPreferenceItems = [{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'E-mail', value: 'email' }];
 
 
-// ============================================================================
-//  SUB-COMPONENTE REUTILIZÁVEL: Bloco de Endereço
-// ============================================================================
 interface AddressBlockProps {
     type: 'residential' | 'commercial';
     control: Control<OnboardingFormData>;
@@ -200,9 +190,6 @@ function AddressBlock({ userProfile, type, control, register, errors, watch, set
     );
 }
 
-// ============================================================================
-//  PÁGINA PRINCIPAL
-// ============================================================================
 export default function CompleteProfilePage() {
     const { user } = useAuth0();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -211,7 +198,6 @@ export default function CompleteProfilePage() {
     const router = useRouter();
     const { mutate } = useSWRConfig();
 
-    // --- LÓGICA DE PRÉ-PREENCHIMENTO (EDIÇÃO) ---
     const { data: userProfile, isLoading: isLoadingProfile } = useApi<UserProfile>('/api/users/me');
 
     useEffect(() => {
@@ -221,7 +207,7 @@ export default function CompleteProfilePage() {
 
             reset({
                 ...userProfile,
-                name: userProfile.name || user?.name, // Prioriza o nome do nosso DB
+                name: userProfile.name || user?.name,
                 birthDate: birthDate,
                 contactPreference: contactPreference,
                 cpfOrCnpj: userProfile.cpfOrCnpj ? maskCPFOrCNPJ(userProfile.cpfOrCnpj) : '',
@@ -236,25 +222,19 @@ export default function CompleteProfilePage() {
             });
         }
     }, [userProfile, user, reset, setValue]);
-    // --- FIM DA LÓGICA DE PRÉ-PREENCHIMENTO ---
 
-    // Observa os campos necessários para a lógica da UI
     const useCommercialAddress = watch('useCommercialAddress');
     const profilePictureFile = watch('profilePicture');
     const profilePicturePreview = profilePictureFile && profilePictureFile.length > 0
         ? URL.createObjectURL(profilePictureFile[0])
-        // Dá prioridade à foto do nosso DB, e depois ao Auth0
         : (userProfile?.profilePictureUrl || user?.picture);
 
-    // Busca a lista de associados (vendedores) para o select
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
 
-    // CORREÇÃO: A coleção agora usa os dados da API (associates)
     const associatesCollection = createListCollection({
         items: associates || [],
     });
 
-    // Controlador para o CheckboxGroup de preferência de contato
     const contactPreference = useController({
         control,
         name: "contactPreference",
@@ -266,7 +246,6 @@ export default function CompleteProfilePage() {
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
-            // --- Lógica de Upload da Foto de Perfil (Passo 1) ---
             let profilePictureUrl = userProfile?.profilePictureUrl || user?.picture;
 
             if (data.profilePicture && data.profilePicture.length > 0) {
@@ -283,7 +262,6 @@ export default function CompleteProfilePage() {
                 profilePictureUrl = response.data.url;
             }
 
-            // --- Lógica de Upload dos Documentos (Passo 2) ---
             const personalDocumentUrls: string[] = [];
             if (data.personalDocuments && data.personalDocuments.length > 0) {
                 for (const file of Array.from(data.personalDocuments)) {
@@ -299,7 +277,6 @@ export default function CompleteProfilePage() {
                 }
             }
 
-            // --- Payload para o Perfil (Passo 3) ---
             const payload = {
                 name: data.name,
                 cpfOrCnpj: unmask(data.cpfOrCnpj),
@@ -340,8 +317,8 @@ export default function CompleteProfilePage() {
             await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             toaster.create({ title: "Perfil Atualizado!", description: "Os seus dados foram salvos e enviados para análise.", type: "success" });
-            await mutate('/api/users/me'); // Invalida o cache
-            router.push('/dashboard'); // Redireciona
+            await mutate('/api/users/me');
+            router.push('/dashboard');
         } catch (error: any) {
             const errorMessage = (error as any).response?.data?.details?.[0] || (error as any).response?.data?.error || "Tente novamente.";
             toaster.create({ title: "Erro ao Salvar.", description: errorMessage, type: "error" });
@@ -378,7 +355,6 @@ export default function CompleteProfilePage() {
                         </Alert.Root>
                     )}
 
-                    {/* FOTO DE PERFIL */}
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'}> <Text>Foto de Perfil</Text></Field.Label>
                         <Flex align="center" gap={4} flexDir={'column'} alignItems={'center'} justifyContent={'center'} w='100%' >
@@ -397,7 +373,6 @@ export default function CompleteProfilePage() {
                         </Flex>
                     </Field.Root>
 
-                    {/* DADOS PESSOAIS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Dados Pessoais</Heading>
                         <Field.Root invalid={!!errors.name} required>
@@ -448,7 +423,6 @@ export default function CompleteProfilePage() {
                         </SimpleGrid>
                     </VStack>
 
-                    {/* CONTATO */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Contato</Heading>
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
@@ -500,7 +474,6 @@ export default function CompleteProfilePage() {
                         </Fieldset.Root>
                     </VStack>
 
-                    {/* ASSOCIADO (VENDEDOR) */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação</Heading>
                         <Controller
@@ -537,13 +510,11 @@ export default function CompleteProfilePage() {
                         />
                     </VStack>
 
-                    {/* ENDEREÇO RESIDENCIAL */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Residencial</Heading>
                         <AddressBlock userProfile={userProfile} type="residential" {...{ control, register, errors, watch, setValue }} />
                     </VStack>
 
-                    {/* ENDEREÇO COMERCIAL */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço Comercial</Heading>
                         <Controller
@@ -563,7 +534,6 @@ export default function CompleteProfilePage() {
                         {useCommercialAddress && <AddressBlock userProfile={userProfile} type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
                     </VStack>
 
-                    {/* ESCOLHA DO ENDEREÇO DE CORRESPONDÊNCIA */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Endereço de Correspondência</Heading>
                         <Controller
@@ -588,7 +558,6 @@ export default function CompleteProfilePage() {
                         />
                     </VStack>
 
-                    {/* DOCUMENTOS */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Documentos</Heading>
                         <Text color="gray.400">Faça o upload de uma cópia do seu RG ou CNH (frente e verso).</Text>
@@ -614,7 +583,6 @@ export default function CompleteProfilePage() {
 
                             ))}
                         </Flex>
-                        {/* O VStack abaixo não é mais necessário, pois o FileUpload.List faz isso */}
                     </VStack>
 
                     <Button type="submit" colorPalette="blue" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch">

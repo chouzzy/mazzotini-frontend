@@ -168,7 +168,7 @@ function FoldersSection() {
                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
                                         {appeals.length > 0 && (
                                             <Accordion.Item value="appeals" borderTop="1px solid" borderColor="gray.700">
-                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
+                                                <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
                                                     <Flex justify="space-between" w="100%" align="center">
                                                         <HStack gap={2}>
                                                             <Icon as={PiFilesDuotone} color="orange.400" />
@@ -184,7 +184,7 @@ function FoldersSection() {
                                         )}
                                         {incidents.length > 0 && (
                                             <Accordion.Item value="incidents" borderTop="1px solid" borderColor="gray.700">
-                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
+                                                <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}>
                                                     <Flex justify="space-between" w="100%" align="center">
                                                         <HStack gap={2}>
                                                             <Icon as={PiGavelDuotone} color="purple.400" />
@@ -234,7 +234,7 @@ export default function DashboardPage() {
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterType, setFilterType] = useState('ALL'); // <-- ESTADO DO TIPO
+    const [filterType, setFilterType] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const limit = 10;
@@ -251,7 +251,6 @@ export default function DashboardPage() {
         setPage(1);
     }, [filterStatus, filterType]);
 
-    // Inclui o filterType na chamada à API
     const { data, isLoading, error } = useApi<PaginatedResponse>(
         `/api/assets?page=${page}&limit=${limit}&status=${filterStatus}&search=${debouncedSearch}&type=${filterType}`
     );
@@ -287,14 +286,13 @@ export default function DashboardPage() {
                         </Flex>
                     </Flex>
 
-                    {/* CORREÇÃO DO BUG: Passamos o 'assets' vindo da API para preencher a combobox */}
                     <AssetsToolbar
                         assets={assets}
                         viewMode={viewMode}
                         onViewChange={setViewMode}
                         onFilterChange={setFilterStatus}
                         onSearch={setSearchQuery}
-                        onTypeChange={setFilterType} // <-- BASTA ADICIONAR ISTO!
+                        onTypeChange={setFilterType}
                     />
 
                     <Box position="relative" mt={4} minH="200px">

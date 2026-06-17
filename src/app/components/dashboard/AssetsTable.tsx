@@ -46,7 +46,7 @@ export function AssetsTable({ assets }: AssetsTableProps) {
                             <Table.Cell>{formatCurrency(asset.investedValue)}</Table.Cell>
                             <Table.Cell>{formatCurrency(asset.currentValue)}</Table.Cell>
                             <Table.Cell>
-                                <Tag.Root variant="subtle" colorScheme={getStatusColorScheme(asset.status)}>
+                                <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
                                     <Tag.Label>{asset.status}</Tag.Label>
                                 </Tag.Root>
                             </Table.Cell>

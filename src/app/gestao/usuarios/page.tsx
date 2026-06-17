@@ -72,7 +72,7 @@ const RoleGuard = ({ children }: { children: React.ReactNode }) => {
     if (!roles.includes('ADMIN')) {
         return (
             <Flex w="100%" justify="center" align="center" p={4}>
-                <VStack gap={4} bg="red.900/20" p={8} borderRadius="md" border="1px solid" borderColor="red.500">
+                <VStack gap={4} bg="red.900/20" p={{ base: 4, md: 8 }} borderRadius="md" border="1px solid" borderColor="red.500">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" /><Heading size="md">Acesso Negado</Heading><Text>Apenas administradores podem acessar esta página.</Text>
                 </VStack>
             </Flex>
@@ -165,7 +165,6 @@ export default function UserManagementPage() {
     const handleExportExcel = async () => {
         setIsExporting(true);
         try {
-            // Obter token de autorização
             const token = await getAccessTokenSilently({
                 authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
             });
@@ -195,7 +194,6 @@ export default function UserManagementPage() {
             // \uFEFF é o BOM (Byte Order Mark) que garante que o Excel reconheça acentos (UTF-8)
             const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map((r: string[]) => r.join(';'))].join('\n');
             
-            // Criar o Blob e forçar o download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -279,7 +277,6 @@ export default function UserManagementPage() {
                                     bgColor="gray.800"
                                     borderColor={approvedFrom ? "green.500" : "gray.700"}
                                     _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
-                                    colorScheme="dark"
                                 />
                             </Field.Root>
                         </Box>
@@ -318,7 +315,6 @@ export default function UserManagementPage() {
                             </Field.Root>
                         </Box>
                         
-                        {/* Wrapper para agrupar botões à direita num layout responsivo */}
                         <Flex gap={2} ml="auto" wrap="wrap">
                             <Button 
                                 variant={filterOnlyShadow ? "solid" : "outline"} 
@@ -450,7 +446,7 @@ export default function UserManagementPage() {
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
                                         <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>Mostrando <b>{users.length}</b> de <b>{meta.total}</b> usuários</Text>
-                                        <HStack gap={2}>
+                                        <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
                                             <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><Icon as={PiCaretLeftBold} /> Anterior</Button>
                                             <HStack gap={1}>
                                                 {Array.from({ length: meta.totalPages }, (_, i) => i + 1)

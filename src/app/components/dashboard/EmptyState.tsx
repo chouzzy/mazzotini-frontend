@@ -31,7 +31,7 @@ export function EmptyState({ title = 'No data found', description = 'There is no
             </Text>
             {buttonLabel && buttonHref && (
                 <Link href={buttonHref} style={{ textDecoration: 'none' }}>
-                    <Button colorScheme="blue">
+                    <Button colorPalette="blue">
                         <Icon as={PiPlusCircle} mr={2} />
                         {buttonLabel}
                     </Button>

@@ -49,7 +49,6 @@ function LogRow({ log }: { log: HealthLog }) {
     const problemChecks = log.checks.filter(c => c.status !== 'ok');
     const date = new Date(log.runAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-    // Group checks by their group field
     const groups = log.checks.reduce<Record<string, CheckResult[]>>((acc, c) => {
         const g = c.group || 'Geral';
         if (!acc[g]) acc[g] = [];
@@ -171,7 +170,6 @@ function LogsContent() {
                 </Button>
             </Flex>
 
-            {/* Banner de status atual */}
             {lastLog && bannerCfg && (
                 <Box p={4} bg={`${bannerCfg.color}.900`} borderRadius="md"
                     border="1px solid" borderColor={`${bannerCfg.color}.700`}>
@@ -190,7 +188,6 @@ function LogsContent() {
                 </Box>
             )}
 
-            {/* Tabela */}
             <Box bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700" overflow="hidden">
                 {isLoading ? (
                     <Flex justify="center" p={8}><Spinner /></Flex>

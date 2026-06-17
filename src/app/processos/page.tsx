@@ -73,12 +73,11 @@ export default function OperatorAssetsPage() {
     // Estados de paginação e filtros
     const [page, setPage] = useState(1);
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterType, setFilterType] = useState('ALL'); // <-- ESTADO DO TIPO DE PROCESSO
+    const [filterType, setFilterType] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState(''); // <-- ESTADO DO DEBOUNCE
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const limit = 10;
 
-    // EFEITO DE DEBOUNCE: Aguarda 300ms após parar de digitar
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(searchQuery);
@@ -95,7 +94,6 @@ export default function OperatorAssetsPage() {
     const { data: myProfile } = useApi<{ role: string; name: string }>('/api/users/me');
     const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
 
-    // A URL consome debouncedSearch e filterType
     const { data, isLoading, error, mutate } = useApi<PaginatedResponse>(
         `/api/assets?page=${page}&limit=${limit}&status=${filterStatus}&search=${debouncedSearch}&type=${filterType}`
     );
@@ -121,7 +119,6 @@ export default function OperatorAssetsPage() {
         <Flex w='100%'>
             <VStack gap={8} align="stretch" w="100%">
                 
-                {/* CABEÇALHO */}
                 <Flex justify="space-between" align="start" direction={{ base: 'column', md: 'row' }} gap={4}>
                     <Box w='100%'>
                         <Flex align="center" gap={2} w='100%'>
@@ -139,7 +136,9 @@ export default function OperatorAssetsPage() {
                     <Link as={NextLink} href="/meus-documentos" _hover={{ textDecoration: 'none' }} w="100%">
                         {assets.length === 0 && !isLoading ? (
                             <Flex
-                                w="100%" p={4} borderRadius="lg" gap={4} align="center"
+                                w="100%" p={4} borderRadius="lg" gap={4}
+                                align={{ base: 'flex-start', md: 'center' }}
+                                flexDir={{ base: 'column', md: 'row' }}
                                 bg="brand.800" _hover={{ bg: 'brand.700' }} transition="all 0.15s"
                             >
                                 <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
@@ -151,13 +150,15 @@ export default function OperatorAssetsPage() {
                                         Envie seus documentos financeiros para que nossa equipe possa registrar sua participação.
                                     </Text>
                                 </Box>
-                                <Button size="sm" flexShrink={0} bg="gray.200" color="gray.800" _hover={{ bg: 'gray.300' }} fontWeight="bold" gap={1}>
+                                <Button size="sm" alignSelf={{ base: 'flex-end', md: 'auto' }} bg="gray.200" color="gray.800" _hover={{ bg: 'gray.300' }} fontWeight="bold" gap={1}>
                                     Enviar documentos <Icon as={PiArrowRight} />
                                 </Button>
                             </Flex>
                         ) : (
                             <Flex
-                                w="100%" p={4} borderRadius="lg" gap={4} align="center"
+                                w="100%" p={4} borderRadius="lg" gap={4}
+                                align={{ base: 'flex-start', md: 'center' }}
+                                flexDir={{ base: 'column', md: 'row' }}
                                 bg="brand.800" _hover={{ bg: 'brand.700' }} transition="all 0.15s"
                             >
                                 <Icon as={PiCurrencyCircleDollar} color="white" boxSize={7} flexShrink={0} />
@@ -169,7 +170,7 @@ export default function OperatorAssetsPage() {
                                         Envie seus documentos financeiros para que nossa equipe possa vinculá-los ao processo.
                                     </Text>
                                 </Box>
-                                <Button size="sm" flexShrink={0} bg="gray.200" color="gray.800" _hover={{ bg: 'gray.300' }} fontWeight="bold" gap={1}>
+                                <Button size="sm" alignSelf={{ base: 'flex-end', md: 'auto' }} bg="gray.200" color="gray.800" _hover={{ bg: 'gray.300' }} fontWeight="bold" gap={1}>
                                     Enviar documentos <Icon as={PiArrowRight} />
                                 </Button>
                             </Flex>
@@ -178,27 +179,22 @@ export default function OperatorAssetsPage() {
                 )}
 
                 <Box>
-                    {/* BARRA DE FERRAMENTAS COM OS FILTROS */}
                     <AssetsToolbar
-                        assets={assets} // <-- CORREÇÃO: Enviando os assets para a combobox funcionar
+                        assets={assets}
                         viewMode={'list'}
                         onViewChange={() => { }}
                         onFilterChange={setFilterStatus}
                         onSearch={setSearchQuery}
-                        onTypeChange={setFilterType} // <-- NOVO: Passando a função para o filtro de tipo
+                        onTypeChange={setFilterType}
                     />
 
-                    {/* ÁREA DA TABELA (COM LOADING ISOLADO E SEM PERDA DE FOCO) */}
                     <Box position="relative" overflowX="auto" borderRadius="md" mt={4} minH="200px">
-                        
-                        {/* Overlay de Loading Transparente */}
                         {isLoading && (
                             <Flex position="absolute" top={0} left={0} right={0} bottom={0} bg="blackAlpha.600" zIndex={2} justify="center" align="center" borderRadius="md">
                                 <Spinner size="xl" color="brand.500" />
                             </Flex>
                         )}
 
-                        {/* Exibição Condicional de Resultados Vázios */}
                         {assets.length === 0 && !isLoading && !debouncedSearch && !filterStatus && filterType === 'ALL' ? (
                             <EmptyState
                                 title="Nenhum processo Registrado"
@@ -235,7 +231,6 @@ export default function OperatorAssetsPage() {
                                                 <Table.Cell px={{ base: 3, md: 8 }} py={{ base: 2, md: 4 }} fontWeight="semibold">
                                                     <VStack align="start" gap={0}>
                                                         <Text>{asset.processNumber}</Text>
-                                                        {/* Pequena indicação se for um recurso/incidente na tabela também */}
                                                         {asset.legalOneType === 'Lawsuit' && <Text fontSize="xs" color="blue.400">Processo Principal</Text>}
                                                         {asset.legalOneType === 'Appeal' && <Text fontSize="xs" color="orange.400">Recurso</Text>}
                                                         {asset.legalOneType === 'ProceduralIssue' && <Text fontSize="xs" color="purple.400">Incidente</Text>}
@@ -255,13 +250,12 @@ export default function OperatorAssetsPage() {
                                     </Table.Body>
                                 </Table.Root>
 
-                                {/* CONTROLES DE PAGINAÇÃO */}
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={6} px={4} pb={4}>
                                         <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>
                                             Mostrando <b>{assets.length}</b> de <b>{meta.total}</b> processos
                                         </Text>
-                                        <HStack gap={2}>
+                                        <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
                                             <Button
                                                 size="sm"
                                                 variant="solid"

@@ -1,5 +1,3 @@
-// src/app/perfil/completar/page.tsx
-
 'use client';
 
 import {
@@ -43,9 +41,9 @@ import { useApi } from "@/hooks/useApi";
 import NextLink from 'next/link';
 
 interface Associate {
-    value: string; // O ID real do banco
+    value: string;
     label: string;
-    associateSequence?: number | null; // O novo campo
+    associateSequence?: number | null;
     role: string
     email: string;
 }
@@ -116,7 +114,6 @@ const nacionalidadesCollection = createListCollection({
 
 const contactPreferenceItems = [{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'E-mail', value: 'email' }];
 
-// --- Sub-componente de Endereço ---
 interface AddressBlockProps {
     type: 'residential' | 'commercial';
     control: Control<OnboardingFormData>;
@@ -242,7 +239,6 @@ export default function CompleteProfilePage() {
     const unknownAssociate = watch('unknownAssociate');
     const profilePictureFile = watch('profilePicture');
     const skipDocuments = watch('skipDocuments');
-    // Adicionado watch para os termos para desabilitar o botão
     const termsAccepted = watch('termsAccepted');
 
     const cpfOrCnpjValue = watch('cpfOrCnpj');
@@ -277,7 +273,6 @@ export default function CompleteProfilePage() {
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
 
-            // Upload Foto
             let profilePictureUrl = user?.picture;
             if (data.profilePicture && data.profilePicture.length > 0) {
                 setStatusMessage("Fazendo upload da foto de perfil..."); 
@@ -291,7 +286,6 @@ export default function CompleteProfilePage() {
                 profilePictureUrl = response.data.url;
             }
 
-            // Upload Docs
             const personalDocumentUrls: string[] = [];
             if (data.personalDocuments && data.personalDocuments.length > 0) {
                 const files = Array.from(data.personalDocuments);
@@ -310,8 +304,7 @@ export default function CompleteProfilePage() {
                 }
             }
 
-            // Payload
-            setStatusMessage("Salvando dados do perfil..."); 
+            setStatusMessage("Salvando dados do perfil...");
 
             const payload = {
                 name: data.name,
@@ -385,7 +378,6 @@ export default function CompleteProfilePage() {
                         </HStack>
                     </VStack>
 
-                    {/* FOTO DE PERFIL */}
                     <StepHeading step={1} title="Foto de Perfil" hint="Opcional — você pode pular esta etapa" />
                     <Field.Root>
                         <Field.Label w='100%' textAlign={'center'} fontSize={'xl'} alignItems={'center'} justifyContent={'center'} color="brand.500">
@@ -410,7 +402,6 @@ export default function CompleteProfilePage() {
                         </Flex>
                     </Field.Root>
 
-                    {/* DADOS PESSOAIS */}
                     <VStack gap={4} align="stretch">
                         <StepHeading step={2} title="Dados Pessoais" hint="Nome, documento, nascimento e gênero" />
                         <Field.Root invalid={!!errors.name} required>
@@ -481,7 +472,6 @@ export default function CompleteProfilePage() {
                         </Field.Root>
                     </VStack>
 
-                    {/* CONTATO */}
                     <VStack gap={4} align="stretch">
                         <StepHeading step={3} title="Contato" hint="Celular, e-mail e preferência de contato" />
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
@@ -518,7 +508,6 @@ export default function CompleteProfilePage() {
                         </Fieldset.Root>
                     </VStack>
 
-                    {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
                         <StepHeading step={4} title="Indicação" hint="Quem lhe apresentou a Mazzotini?" />
                         <Controller name="unknownAssociate" control={control} render={({ field }) => (
@@ -602,7 +591,6 @@ export default function CompleteProfilePage() {
                         )}
                     </VStack>
 
-                    {/* ENDEREÇOS */}
                     <VStack gap={4} align="stretch">
                         <StepHeading step={5} title="Endereço" hint="Residencial obrigatório · Comercial opcional" />
                         <Text fontSize="sm" color="brand.400" fontWeight="semibold">Endereço Residencial</Text>
@@ -620,7 +608,6 @@ export default function CompleteProfilePage() {
                         {useCommercialAddress && <AddressBlock type="commercial" {...{ control, register, errors, watch, setValue, isDisabled: !useCommercialAddress }} />}
                     </VStack>
 
-                    {/* DOCUMENTAÇÃO */}
                     <VStack gap={4} pt={4} align="stretch" borderTopWidth="1px" borderColor={skipDocuments ? "yellow.600" : "gray.700"}>
                         <StepHeading step={6} title="Documentação" hint="Opcional — você pode enviar depois" />
                         <Text color="gray.400">Documentos aceitos: RG + CPF (ou CNH), Comprovante de residência, Última alteração do contrato social (se empresa).</Text>
@@ -660,7 +647,6 @@ export default function CompleteProfilePage() {
                         />
                     </VStack>
 
-                    {/* Checkbox de Aceite dos Termos (LGPD) */}
                     <Box mt={8} p={4} bg="gray.900" borderRadius="md" border="1px solid" borderColor="gray.700">
                         <Controller
                             name="termsAccepted"
@@ -710,7 +696,7 @@ export default function CompleteProfilePage() {
                             gap={2} 
                             alignSelf="stretch" 
                             mt={8} 
-                            disabled={!termsAccepted} // <-- AQUI: Lógica adicionada para desabilitar
+                            disabled={!termsAccepted}
                         >
                             <Icon as={PiFloppyDisk} />
                             Salvar e Enviar para Análise

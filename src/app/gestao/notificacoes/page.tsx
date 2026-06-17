@@ -145,7 +145,6 @@ export default function NotificacoesPage() {
         <RoleGuard>
             <Flex w="100%">
                 <VStack gap={6} align="stretch" w="100%">
-                    {/* Cabeçalho */}
                     <Flex justify="space-between" align="start" direction={{ base: 'column', md: 'row' }} gap={4}>
                         <Box>
                             <Flex align="center" gap={2}>
@@ -167,7 +166,6 @@ export default function NotificacoesPage() {
                         </Button>
                     </Flex>
 
-                    {/* Filtros */}
                     <Flex gap={3} wrap="wrap" align="flex-end">
                         <Box minW={{ base: '100%', md: '180px' }}>
                             <Text fontSize="xs" color="gray.400" mb={1}>Tipo</Text>
@@ -259,7 +257,6 @@ export default function NotificacoesPage() {
                         )}
                     </Flex>
 
-                    {/* Tabela */}
                     <Box position="relative" minH="200px">
                         {isLoading && (
                             <Flex position="absolute" inset={0} bg="blackAlpha.500" zIndex={2} justify="center" align="center" borderRadius="md">
@@ -376,13 +373,12 @@ export default function NotificacoesPage() {
                                 </Table.Root>
                                 </Box>
 
-                                {/* Paginação */}
                                 {meta && meta.totalPages > 1 && (
                                     <Flex justify="space-between" align="center" mt={4} px={2}>
                                         <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>
                                             Mostrando <b>{notifications.length}</b> de <b>{meta.total}</b> notificações
                                         </Text>
-                                        <HStack gap={2}>
+                                        <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
                                             <Button
                                                 size="sm"
                                                 variant="solid"

@@ -99,19 +99,17 @@ const AssetTableRow = ({ asset }: { asset: AssetSummary }) => (
 export default function FoldersPage() {
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState(''); // <-- ESTADO DO DEBOUNCE
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const limit = 10;
 
-    // EFEITO DE DEBOUNCE: Aguarda 300ms após parar de escrever para atualizar a busca
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1); // Volta à pág 1 ao pesquisar
+            setPage(1);
         }, 300);
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
-    // A API agora consome a pesquisa com debounce
     const { data, isLoading, error } = useApi<PaginatedFoldersResponse>(
         `/api/assets/folders?page=${page}&limit=${limit}&search=${debouncedSearch}`
     );
@@ -131,7 +129,6 @@ export default function FoldersPage() {
         <AuthenticationGuard>
             <VStack gap={8} align="stretch" w="100%" p={{ base: 4, md: 8 }}>
 
-                {/* CABEÇALHO E PESQUISA SEMPRE VISÍVEIS */}
                 <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
                     <Box>
                         <Flex align="center" gap={2}>
@@ -151,9 +148,7 @@ export default function FoldersPage() {
                     </Box>
                 </Flex>
 
-                {/* ÁREA DOS DADOS (COM LOADING ISOLADO) */}
                 <Box position="relative" minH="200px">
-                    {/* OVERLAY DE LOADING */}
                     {isLoading && (
                         <Flex position="absolute" top={0} left={0} right={0} bottom={0} bg="blackAlpha.600" zIndex={2} justify="center" align="center" borderRadius="md">
                             <Spinner size="xl" color="brand.500" />
@@ -209,13 +204,13 @@ export default function FoldersPage() {
                                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
                                                         {appeals.length > 0 && (
                                                             <Accordion.Item value="appeals" borderTop="1px solid" borderColor="gray.700">
-                                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiFilesDuotone} color="orange.400" /><Text fontSize="xs" fontWeight="bold" color="orange.400" textTransform="uppercase">Recursos ({appeals.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="orange.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
+                                                                <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiFilesDuotone} color="orange.400" /><Text fontSize="xs" fontWeight="bold" color="orange.400" textTransform="uppercase">Recursos ({appeals.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="orange.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
                                                                 <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
                                                         {incidents.length > 0 && (
                                                             <Accordion.Item value="incidents" borderTop="1px solid" borderColor="gray.700">
-                                                                <Accordion.ItemTrigger px={6} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiGavelDuotone} color="purple.400" /><Text fontSize="xs" fontWeight="bold" color="purple.400" textTransform="uppercase">Incidentes ({incidents.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="purple.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
+                                                                <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiGavelDuotone} color="purple.400" /><Text fontSize="xs" fontWeight="bold" color="purple.400" textTransform="uppercase">Incidentes ({incidents.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="purple.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
                                                                 <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
@@ -227,11 +222,10 @@ export default function FoldersPage() {
                                 })}
                             </Accordion.Root>
 
-                            {/* PAGINAÇÃO */}
                             {meta && meta.totalPages > 1 && (
                                 <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
                                     <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>Mostrando <b>{folders.length}</b> de <b>{meta.total}</b> pastas</Text>
-                                    <HStack gap={2}>
+                                    <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
                                         <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><Icon as={PiCaretLeftBold} /> Anterior</Button>
                                         <HStack gap={1}>
                                             {Array.from({ length: meta.totalPages }, (_, i) => i + 1)

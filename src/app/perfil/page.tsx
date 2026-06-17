@@ -52,7 +52,6 @@ import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
 import { maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
 import { UserProfile } from '@/types';
 
-// Interface estendida para incluir os investimentos que vêm do backend
 interface ExtendedUserProfile extends UserProfile {
     investments: {
         id: string;
@@ -70,7 +69,6 @@ interface ExtendedUserProfile extends UserProfile {
     }[];
 }
 
-// Componente para exibir um campo de informação
 const ProfileField = ({ label, value, icon }: { label: string, value?: string | null, icon?: React.ElementType }) => {
     if (!value) return null;
     return (
@@ -83,7 +81,6 @@ const ProfileField = ({ label, value, icon }: { label: string, value?: string | 
     );
 };
 
-// Componente para renderizar um botão de documento
 const DocumentButton = ({ url, index, prefix = "Documento" }: { url: string, index: number, prefix?: string }) => {
     const fileName = decodeURIComponent(url.split('/').pop()?.split('-').pop() || `${prefix} ${index + 1}`);
     return (
@@ -113,7 +110,7 @@ export default function ProfilePage() {
     if (error || !userProfile) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center" p={4}>
-                <VStack gap={4} bg="red.900" p={8} borderRadius="md">
+                <VStack gap={4} bg="red.900" p={{ base: 4, md: 8 }} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os dados do seu perfil.</Text>
@@ -122,7 +119,6 @@ export default function ProfilePage() {
         );
     }
 
-    // Formata os endereços para uma exibição limpa
     const residentialAddress = userProfile.residentialCep ?
         `${userProfile.residentialStreet}, ${userProfile.residentialNumber}${userProfile.residentialComplement ? `, ${userProfile.residentialComplement}` : ''} - ${userProfile.residentialNeighborhood}, ${userProfile.residentialCity}/${userProfile.residentialState}`
         : null;
@@ -133,7 +129,6 @@ export default function ProfilePage() {
 
     const correspondenceAddress = userProfile.correspondenceAddress === 'commercial' ? 'Endereço Comercial' : 'Endereço Residencial';
 
-    // Filtra investimentos que possuem documentos
     const investmentsWithDocs = userProfile.investments?.filter(inv => inv.documents && inv.documents.length > 0) || [];
 
     return (
@@ -160,7 +155,6 @@ export default function ProfilePage() {
                 </Flex>
 
                 <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} pt={4}>
-                    {/* DADOS PESSOAIS */}
                     <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Dados Pessoais</Card.Title>
@@ -175,7 +169,6 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    {/* INFORMAÇÕES DE CONTATO */}
                     <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Informações de Contato</Card.Title>
@@ -188,7 +181,6 @@ export default function ProfilePage() {
                         </Card.Body>
                     </Card.Root>
 
-                    {/* ENDEREÇOS */}
                     <Card.Root variant="subtle" bg="gray.900">
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Endereço Residencial</Card.Title>
@@ -209,7 +201,6 @@ export default function ProfilePage() {
                         </Card.Root>
                     )}
 
-                    {/* OUTRAS INFORMAÇÕES */}
                     <Card.Root variant="subtle" bg="gray.900" gridColumn={{ lg: 'span 2' }}>
                         <Card.Body>
                             <Card.Title color={'brand.600'}>Outras Informações</Card.Title>
@@ -222,15 +213,11 @@ export default function ProfilePage() {
 
                 <Separator borderColor="gray.700" my={4} />
 
-                {/* ============================================================ */}
-                {/* ÁREA DE DOCUMENTOS SEGMENTADA                                */}
-                {/* ============================================================ */}
                 <VStack align="stretch" gap={6}>
                     <Heading size="lg" color="white" display="flex" alignItems="center" gap={2}>
                         <Icon as={PiFolderOpen} color="brand.400" /> Meus Documentos
                     </Heading>
 
-                    {/* 1. DOCUMENTOS PESSOAIS */}
                     <Box>
                         <Heading size="md" color="gray.300" mb={3}>Documentos Pessoais</Heading>
                         <Card.Root variant="outline" bg="gray.800" borderColor="gray.700">
@@ -248,7 +235,6 @@ export default function ProfilePage() {
                         </Card.Root>
                     </Box>
 
-                    {/* 2. DOCUMENTOS POR PROCESSO (Itera sobre os investimentos) */}
                     {investmentsWithDocs.length > 0 && (
                         <Box>
                             <Heading size="md" color="gray.300" mb={3}>Documentos dos Processos</Heading>
@@ -277,7 +263,6 @@ export default function ProfilePage() {
                         </Box>
                     )}
 
-                    {/* 3. LINK PARA DOCUMENTOS FINANCEIROS */}
                     <Link as={NextLink} href="/meus-documentos" _hover={{ textDecoration: 'none' }}>
                         <Flex
                             w="100%" p={4} borderRadius="lg" gap={4} align="center"

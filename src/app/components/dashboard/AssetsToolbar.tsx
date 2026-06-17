@@ -15,26 +15,24 @@ import { PiArrowDownDuotone, PiCaretDoubleDownDuotone, PiFunction, PiSquaresFour
 import { useMemo, useState, useEffect } from 'react';
 import { AssetSummary } from '@/types/api';
 
-// Props atualizadas com o onTypeChange
 interface AssetsToolbarProps {
     assets: AssetSummary[];
     viewMode: 'grid' | 'list';
     onViewChange: (mode: 'grid' | 'list') => void;
     onFilterChange: (status: string) => void;
     onSearch: (query: string) => void;
-    onTypeChange?: (type: string) => void; // NOVO FILTRO DE TIPO
+    onTypeChange?: (type: string) => void;
 }
 
 const statusOptions = createListCollection({
     items: [
-        { label: "Todos os Status", value: "" }, // Adicionado para permitir limpar o filtro
+        { label: "Todos os Status", value: "" },
         { label: "Ativo", value: "Ativo" },
         { label: "Em Negociação", value: "Em Negociação" },
         { label: "Liquidado", value: "Liquidado" },
     ]
 });
 
-// NOVA COLEÇÃO PARA O TIPO DE PROCESSO
 const typeOptions = createListCollection({
     items: [
         { label: "Todos os Tipos", value: "ALL" },
@@ -124,8 +122,6 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
             </Combobox.Root>
 
             <Flex gap={4} wrap="wrap">
-                
-                {/* NOVO SELECT: Tipo de Processo */}
                 {onTypeChange && (
                     <Select.Root
                         collection={typeOptions}
@@ -153,7 +149,6 @@ export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, 
                     </Select.Root>
                 )}
 
-                {/* Select com a sintaxe V3 (Status) */}
                 <Select.Root
                     collection={statusOptions}
                     onValueChange={(details) => onFilterChange(details.value[0] || '')}

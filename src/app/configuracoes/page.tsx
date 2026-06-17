@@ -152,7 +152,6 @@ function ConfiguracoesContent() {
         <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={8} maxW="860px">
             <Toaster />
 
-            {/* Header */}
             <HStack gap={3}>
                 <Flex w={10} h={10} borderRadius="lg" bg="brand.900" align="center" justify="center"
                     border="1px solid" borderColor="brand.700">
@@ -164,7 +163,6 @@ function ConfiguracoesContent() {
                 </VStack>
             </HStack>
 
-            {/* ── Seção: Malha Fina ── */}
             <VStack align="stretch" gap={3}>
                 <HStack gap={2} mb={1}>
                     <Icon as={PiRobot} color="gray.400" boxSize={4} />
@@ -206,7 +204,6 @@ function ConfiguracoesContent() {
                 )}
             </VStack>
 
-            {/* ── Seção: Importação Manual ── */}
             <VStack align="stretch" gap={3}>
                 <HStack gap={2} mb={1}>
                     <Icon as={PiDownloadSimple} color="gray.400" boxSize={4} />
@@ -257,7 +254,6 @@ function ConfiguracoesContent() {
                     </HStack>
                 </Box>
 
-                {/* Tabela de histórico */}
                 <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
                     <HStack px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60" justify="space-between">
                         <Text fontSize="sm" fontWeight="semibold" color="gray.300">Histórico de Importações</Text>

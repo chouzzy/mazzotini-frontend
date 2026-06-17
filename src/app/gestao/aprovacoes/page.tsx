@@ -1,4 +1,3 @@
-// /src/app/gestao/aprovacoes/page.tsx
 'use client';
 
 import {
@@ -40,7 +39,7 @@ export default function ApprovalQueuePage() {
     if (error) {
         return (
             <Flex w="100%" flex={1} justify="center" align="center" p={4}>
-                <VStack gap={4} bg="red.900" p={8} borderRadius="md">
+                <VStack gap={4} bg="red.900" p={{ base: 4, md: 8 }} borderRadius="md">
                     <Icon as={PiWarningCircle} boxSize={10} color="red.300" />
                     <Heading size="md">Ocorreu um Erro</Heading>
                     <Text>Não foi possível carregar os perfis pendentes.</Text>
@@ -56,7 +55,6 @@ export default function ApprovalQueuePage() {
             <RoleGuard>
                 <VStack gap={10} align="stretch" w="100%">
 
-                    {/* ── SEÇÃO 1: NOVOS CADASTROS ── */}
                     <Box>
                         <Flex align="center" gap={3} mb={2}>
                             <Heading as="h1" size="xl">Novos Cadastros</Heading>
@@ -115,7 +113,6 @@ export default function ApprovalQueuePage() {
 
                     <Separator borderColor="gray.700" />
 
-                    {/* ── SEÇÃO 2: ALTERAÇÕES DE PERFIL ── */}
                     <Box>
                         <Flex align="center" gap={3} mb={2}>
                             <Heading as="h2" size="xl">Alterações de Perfil</Heading>
@@ -178,7 +175,6 @@ export default function ApprovalQueuePage() {
 
                 </VStack>
 
-                {/* Dialogs */}
                 <ApprovalDialog
                     user={selectedUser}
                     isOpen={openApproval}
