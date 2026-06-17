@@ -127,7 +127,7 @@ export default function FoldersPage() {
 
     return (
         <AuthenticationGuard>
-            <VStack gap={8} align="stretch" w="100%" p={{ base: 4, md: 8 }}>
+            <VStack gap={8} align="stretch">
 
                 <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
                     <Box>
@@ -198,20 +198,20 @@ export default function FoldersPage() {
                                                             <HStack bg="blackAlpha.600" px={{ base: 3, md: 6 }} py={2} borderBottom="1px solid" borderColor="gray.800">
                                                                 <Icon as={PiScalesDuotone} color="brand.400" /><Text fontSize="xs" fontWeight="bold" color="brand.400" textTransform="uppercase">Processos Principais ({mainList.length})</Text>
                                                             </HStack>
-                                                            <Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{mainList.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box>
+                                                            <Box overflowX="auto" maxW="100%"><Table.Root size="sm" variant="line"><Table.Body>{mainList.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box>
                                                         </Box>
                                                     )}
                                                     <Accordion.Root multiple collapsible variant="plain" spaceY={0}>
                                                         {appeals.length > 0 && (
                                                             <Accordion.Item value="appeals" borderTop="1px solid" borderColor="gray.700">
                                                                 <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiFilesDuotone} color="orange.400" /><Text fontSize="xs" fontWeight="bold" color="orange.400" textTransform="uppercase">Recursos ({appeals.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="orange.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
-                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
+                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto" maxW="100%"><Table.Root size="sm" variant="line"><Table.Body>{appeals.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
                                                         {incidents.length > 0 && (
                                                             <Accordion.Item value="incidents" borderTop="1px solid" borderColor="gray.700">
                                                                 <Accordion.ItemTrigger px={{ base: 3, md: 6 }} py={3} _hover={{ bg: 'whiteAlpha.100' }}><Flex justify="space-between" w="100%" align="center"><HStack gap={2}><Icon as={PiGavelDuotone} color="purple.400" /><Text fontSize="xs" fontWeight="bold" color="purple.400" textTransform="uppercase">Incidentes ({incidents.length})</Text></HStack><Accordion.ItemIndicator><Icon as={PiCaretDownBold} color="purple.600" boxSize={3} /></Accordion.ItemIndicator></Flex></Accordion.ItemTrigger>
-                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
+                                                                <Accordion.ItemContent bg="blackAlpha.400"><Box overflowX="auto" maxW="100%"><Table.Root size="sm" variant="line"><Table.Body>{incidents.map(asset => <AssetTableRow key={asset.id} asset={asset} />)}</Table.Body></Table.Root></Box></Accordion.ItemContent>
                                                             </Accordion.Item>
                                                         )}
                                                     </Accordion.Root>
