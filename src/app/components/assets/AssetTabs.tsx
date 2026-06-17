@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, Box } from '@chakra-ui/react';
+import { Tabs, Box, VStack } from '@chakra-ui/react';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { OverviewTab } from './tabs/OverviewTab';
 import { UpdatesTab } from './tabs/UpdatesTab';
@@ -28,9 +28,8 @@ export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false
   ];
 
   return (
-    <Tabs.Root value={activeTab} onValueChange={(d) => setActiveTab(d.value)} variant="enclosed" w="100%" minW={0}>
-
-      {/* Mobile: select nativo */}
+    <VStack align="stretch" gap={0} minW={0}>
+      {/* Mobile: select fora do Tabs.Root — evita pointer-events bloqueados pelo variant="enclosed" */}
       <Box display={{ base: 'block', md: 'none' }} mb={4}>
         <select
           value={activeTab}
@@ -46,6 +45,7 @@ export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false
             outline: 'none',
             cursor: 'pointer',
             appearance: 'none',
+            WebkitAppearance: 'none',
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23B8A76E'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E")`,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 12px center',
@@ -60,34 +60,36 @@ export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false
         </select>
       </Box>
 
-      {/* Desktop: tab list */}
-      <Tabs.List display={{ base: 'none', md: 'flex' }}>
-        {tabs.map(tab => (
-          <Tabs.Trigger key={tab.value} value={tab.value} _selected={{ bgColor: 'brand.800', color: 'white' }}>
-            {tab.label}
-          </Tabs.Trigger>
-        ))}
-      </Tabs.List>
+      <Tabs.Root value={activeTab} onValueChange={(d) => setActiveTab(d.value)} variant="enclosed" w="100%" minW={0}>
+        {/* Desktop: tab list */}
+        <Tabs.List display={{ base: 'none', md: 'flex' }}>
+          {tabs.map(tab => (
+            <Tabs.Trigger key={tab.value} value={tab.value} _selected={{ bgColor: 'brand.800', color: 'white' }}>
+              {tab.label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
 
-      <Tabs.Content value="overview" pt={{ base: 4, md: 6 }} overflow="hidden">
-        <OverviewTab asset={asset} />
-      </Tabs.Content>
-      <Tabs.Content value="strategy" pt={{ base: 4, md: 6 }} overflow="hidden">
-        <StrategyTab asset={asset} />
-      </Tabs.Content>
-      <Tabs.Content value="updates" pt={{ base: 4, md: 6 }} overflow="hidden">
-        <UpdatesTab asset={asset} />
-      </Tabs.Content>
-      {!hideDocuments && (
-        <Tabs.Content value="documents" pt={{ base: 4, md: 6 }} overflow="hidden">
-          <DocumentsTab asset={asset} onRefresh={onRefresh} />
+        <Tabs.Content value="overview" pt={{ base: 4, md: 6 }} overflow="hidden">
+          <OverviewTab asset={asset} />
         </Tabs.Content>
-      )}
-      {!hideCalculator && (
-        <Tabs.Content value="calculator" pt={{ base: 4, md: 6 }} overflow="hidden">
-          <CalculatorTab asset={asset} onRefresh={onRefresh} />
+        <Tabs.Content value="strategy" pt={{ base: 4, md: 6 }} overflow="hidden">
+          <StrategyTab asset={asset} />
         </Tabs.Content>
-      )}
-    </Tabs.Root>
+        <Tabs.Content value="updates" pt={{ base: 4, md: 6 }} overflow="hidden">
+          <UpdatesTab asset={asset} />
+        </Tabs.Content>
+        {!hideDocuments && (
+          <Tabs.Content value="documents" pt={{ base: 4, md: 6 }} overflow="hidden">
+            <DocumentsTab asset={asset} onRefresh={onRefresh} />
+          </Tabs.Content>
+        )}
+        {!hideCalculator && (
+          <Tabs.Content value="calculator" pt={{ base: 4, md: 6 }} overflow="hidden">
+            <CalculatorTab asset={asset} onRefresh={onRefresh} />
+          </Tabs.Content>
+        )}
+      </Tabs.Root>
+    </VStack>
   );
 }

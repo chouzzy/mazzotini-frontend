@@ -314,7 +314,7 @@ export default function DashboardPage() {
                         ) : (
                             <Box opacity={isLoading ? 0.5 : 1} transition="opacity 0.2s">
                                 {viewMode === 'grid' ? (
-                                    <Flex gap={8} align="stretch" wrap="wrap" w='100%'>
+                                    <Flex gap={{ base: 5, md: 10 }} align="stretch" wrap="wrap" w='100%'>
                                         {assets.map((asset) => (
                                             <CreditAssetCard key={asset.processNumber} asset={asset} />
                                         ))}
