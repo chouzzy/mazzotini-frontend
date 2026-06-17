@@ -17,7 +17,7 @@ interface AssetTabsProps {
 
 export function AssetTabs({ asset, hideDocuments = false, hideCalculator = false, onRefresh = () => {} }: AssetTabsProps) {
   return (
-    <Tabs.Root defaultValue="overview" variant={'enclosed'}>
+    <Tabs.Root defaultValue="overview" variant={'enclosed'} w="100%" minW={0}>
       <Tabs.List overflowX="auto" whiteSpace="nowrap">
         <Tabs.Trigger _selected={{ bgColor: 'brand.800', color: 'white' }} value="overview">Visão Geral</Tabs.Trigger>
         <Tabs.Trigger _selected={{ bgColor: 'brand.800', color: 'white' }} value="strategy">Estratégia</Tabs.Trigger>

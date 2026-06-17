@@ -117,7 +117,7 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     };
 
     return (
-        <VStack align="stretch" gap={6}>
+        <VStack align="stretch" gap={6} minW={0}>
 
             <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={4}>
                 <VStack align="start" gap={2} minW={0} flex={1}>
