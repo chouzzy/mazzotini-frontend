@@ -69,8 +69,8 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
     const isMain = !isAppeal && !isIncident;
 
     return (
-        <Link as={NextLink} href={`/processos/${asset.legalOneId}`} _hover={{ textDecoration: 'none' }}>
-            <Box w={'100%'} minW={{ base: '100%', md: 'xl' }} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'brand.500', transform: 'translateY(-4px)', shadow: 'lg' }}>
+        <Link as={NextLink} href={`/processos/${asset.legalOneId}`} _hover={{ textDecoration: 'none' }} w={{ base: '100%', md: 'auto' }} display="block">
+            <Box w={'100%'} minW={{ md: 'xl' }} borderWidth="1px" borderRadius="lg" p={6} bg="gray.950" borderColor="gray.700" transition="all 0.2s" _hover={{ bgColor:'gray.800',borderColor: 'brand.500', transform: 'translateY(-4px)', shadow: 'lg' }}>
                 <VStack align="stretch" gap={4}>
                     <Flex justify="space-between" align="start">
                         <HStack wrap="wrap" gap={2}>

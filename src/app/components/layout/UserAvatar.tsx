@@ -1,9 +1,4 @@
-// /src/components/layout/Header.tsx
 'use client';
-
-// ============================================================================
-//  IMPORTS
-// ============================================================================
 
 import {
     Flex,
@@ -19,12 +14,9 @@ import {
 import { useAuth0 } from '@auth0/auth0-react';
 import { PiSignOut } from "react-icons/pi";
 import { MotionButton } from "../ui/MotionButton";
-import { useApi } from "@/hooks/useApi"; 
-// CORREÇÃO: Importando as duas funções de 'masks'
+import { useApi } from "@/hooks/useApi";
 import { translateRole, getRoleColorScheme } from "@/utils/masks";
 
-// Tipagem para os dados do perfil que vêm do nosso endpoint /api/users/me
-// CORREÇÃO: Removido o campo 'role', que não vem daqui.
 interface MazzotiniUser {
     name: string;
     email: string;
@@ -34,49 +26,34 @@ interface MazzotiniUser {
 export function UserAvatar() {
     const { isAuthenticated, user: auth0User, logout } = useAuth0();
 
-    // Abordagem Sénior: Buscamos o perfil do *nosso* backend para ter a foto atualizada
     const { data: userProfile, isLoading: isProfileLoading } = useApi<MazzotiniUser>(
         isAuthenticated ? '/api/users/me' : null
     );
 
-    // 1. Enquanto o perfil está a ser carregado, mostramos um Skeleton
     if (isProfileLoading) {
-        return <SkeletonCircle size="10" />; // "10" é o tamanho 'md' do Avatar
+        return <SkeletonCircle size="10" />;
     }
 
-    // 2. Determina qual foto de perfil e nome usar
     const profilePicture = userProfile?.profilePictureUrl || auth0User?.picture;
     const profileName = userProfile?.name || auth0User?.name;
 
-    // ============================================================================
-    //  A CORREÇÃO (Pegando o Role do Auth0)
-    // ============================================================================
-    // O 'role' vem do token do Auth0, não do nosso banco /api/users/me.
-    // O Auth0 armazena-os num array de strings.
     const roles = auth0User?.['https://mazzotini.awer.co/roles'] || [];
-    const primaryRole = roles[0]; // Pega o primeiro (principal) role
-    // ============================================================================
+    const primaryRole = roles[0];
 
     return (
         <>
             {
                 isAuthenticated ? (
-                    <Flex gap={4} alignItems="center"> {/* Trocado para Flex e alignItems center */}
-                        
-                        {/* TAG DE ROLE (Atualizada) */}
+                    <Flex gap={{ base: 1, md: 4 }} alignItems="center" flexDir={{ base: 'column-reverse', md: 'row' }}>
                         {primaryRole && (
-                            <Tag.Root 
-                                size="lg" // Tamanho maior
-                                variant="subtle" 
-                                // Aplica a cor baseada na role
+                            <Tag.Root
+                                size={{ base: 'sm', md: 'lg' }}
+                                variant="subtle"
                                 colorPalette={getRoleColorScheme(primaryRole)}
                             >
-                                {/* Traduz o nome da role */}
-                                <Tag.Label>{translateRole(primaryRole)}</Tag.Label>
+                                <Tag.Label fontSize={{ base: '2xs', md: 'xs' }}>{translateRole(primaryRole)}</Tag.Label>
                             </Tag.Root>
                         )}
-                        
-                        {/* MENU DO AVATAR */}
                         <Menu.Root >
                             <Menu.Trigger asChild>
                                 <Button h="auto" p="0" borderRadius="full" border="2px solid"

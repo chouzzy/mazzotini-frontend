@@ -1,5 +1,3 @@
-// src\app\components\layout\AppLayout.tsx
-
 'use client';
 
 import {
@@ -43,18 +41,12 @@ import { useApi } from '@/hooks/useApi';
 import { useViewMode, ViewMode } from '@/context/ViewModeContext';
 import { useEffect } from 'react';
 
-// ============================================================================
-//  DEFINIÇÃO DOS ITENS DA SIDEBAR
-// ============================================================================
 interface NavItemProps {
     icon: IconType;
     children: React.ReactNode;
     href: string;
 }
 
-// ============================================================================
-//  COMPONENTE: Sidebar
-// ============================================================================
 const SidebarContent = ({ onClose }: { onClose: () => void }) => {
     const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
     const { viewMode } = useViewMode();
@@ -113,9 +105,6 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
     );
 };
 
-// ============================================================================
-//  COMPONENTE: Item de Navegação
-// ============================================================================
 const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: () => void }) => {
     const pathname = usePathname();
 
@@ -157,9 +146,6 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
     );
 };
 
-// ============================================================================
-//  COMPONENTE: Toggle de Área (dual-role)
-// ============================================================================
 function ViewModeToggle() {
     const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
     const { data: myInvestments } = useApi<any[]>(
@@ -180,7 +166,6 @@ function ViewModeToggle() {
 
     const handleToggle = () => {
         toggleViewMode();
-        // Redireciona para o início da área correspondente
         router.push(isClientView ? '/associado/dashboard' : '/dashboard');
     };
 
@@ -217,9 +202,6 @@ function ViewModeToggle() {
     );
 }
 
-// ============================================================================
-//  COMPONENTE: Barra de Navegação Superior (Header)
-// ============================================================================
 export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProps) => {
     const { isAuthenticated, loginWithRedirect } = useAuth0();
     return (
@@ -264,9 +246,6 @@ export const HeaderNav = ({ onOpen, ...rest }: { onOpen: () => void } & FlexProp
     );
 };
 
-// ============================================================================
-//  COMPONENTE PRINCIPAL: AppLayout (Estrutura Final Corrigida)
-// ============================================================================
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { open, onOpen, onClose } = useDisclosure();
 
