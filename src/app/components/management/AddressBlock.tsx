@@ -2,7 +2,7 @@
 
 import { VStack, SimpleGrid, Field, Input, Spinner } from '@chakra-ui/react';
 import { Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, FieldValues } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { maskCEP, unmask } from '@/utils/masks';
 import { toaster } from '@/components/ui/toaster';
@@ -19,28 +19,43 @@ export interface AddressBlockProps {
 
 export function AddressBlock({ type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
     const [isCepLoading, setIsCepLoading] = useState(false);
-    // true após um CEP válido ser consultado com sucesso
     const [cepResolved, setCepResolved] = useState(false);
-    // false quando o ViaCEP não retornou o campo — usuário precisa preencher manualmente
     const [streetLocked, setStreetLocked] = useState(true);
     const [neighborhoodLocked, setNeighborhoodLocked] = useState(true);
+
+    // Ref estável para setValue — evita que o effect re-execute quando
+    // o react-hook-form recria a referência após chamar setValue internamente
+    const setValueRef = useRef(setValue);
+    setValueRef.current = setValue;
 
     const cepValue = watch(`${type}Cep`);
 
     useEffect(() => {
-        const fetchAddress = async (cep: string) => {
+        const unmaskedCep = unmask(cepValue || '');
+
+        if (unmaskedCep.length !== 8) {
+            setCepResolved(false);
+            setStreetLocked(true);
+            setNeighborhoodLocked(true);
+            return;
+        }
+
+        setCepResolved(false);
+        setStreetLocked(true);
+        setNeighborhoodLocked(true);
+
+        const fetchAddress = async () => {
             setIsCepLoading(true);
             try {
-                const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+                const response = await axios.get(`https://viacep.com.br/ws/${unmaskedCep}/json/`);
                 const { logradouro, bairro, localidade, uf, erro } = response.data;
                 if (erro) { toaster.create({ title: 'CEP não encontrado.', type: 'error' }); return; }
-                setValue(`${type}Street`, logradouro || '');
-                setValue(`${type}Neighborhood`, bairro || '');
-                setValue(`${type}City`, localidade);
-                setValue(`${type}State`, uf);
+                setValueRef.current(`${type}Street`, logradouro || '');
+                setValueRef.current(`${type}Neighborhood`, bairro || '');
+                setValueRef.current(`${type}City`, localidade);
+                setValueRef.current(`${type}State`, uf);
+                // Campos que voltaram vazios ficam editáveis (CEP de cidade pequena)
                 setCepResolved(true);
-                // Se o ViaCEP não devolveu o logradouro/bairro (CEP de cidade pequena),
-                // libera o campo para preenchimento manual
                 setStreetLocked(!!logradouro);
                 setNeighborhoodLocked(!!bairro);
             } catch (error) {
@@ -49,13 +64,11 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
                 setIsCepLoading(false);
             }
         };
-        // Reseta estado quando o CEP é alterado
-        setCepResolved(false);
-        setStreetLocked(true);
-        setNeighborhoodLocked(true);
-        const unmaskedCep = unmask(cepValue || '');
-        if (unmaskedCep.length === 8) fetchAddress(unmaskedCep);
-    }, [cepValue, setValue, type]);
+
+        fetchAddress();
+    // setValue está no ref — não precisa ser dep; type é prop estática
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cepValue, type]);
 
     const isRequired = type === 'residential' || !isDisabled;
 
