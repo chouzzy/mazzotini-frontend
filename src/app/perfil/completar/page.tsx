@@ -126,35 +126,73 @@ interface AddressBlockProps {
 
 function AddressBlock({ type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
     const [isCepLoading, setIsCepLoading] = useState(false);
+    const [cepFound, setCepFound] = useState(false);
+    const [ibgeStates, setIbgeStates] = useState<{ label: string; value: string }[]>([]);
+    const [ibgeCities, setIbgeCities] = useState<{ label: string; value: string }[]>([]);
+    const [stateFilter, setStateFilter] = useState('');
+    const [cityFilter, setCityFilter] = useState('');
+
+    const setValueRef = useRef(setValue);
+    setValueRef.current = setValue;
+
     const cepValue = watch(`${type}Cep` as const);
+    const stateValue = watch(`${type}State` as const);
+
+    const stateCollection = useMemo(() => {
+        const lower = stateFilter.toLowerCase();
+        const filtered = !lower ? ibgeStates : ibgeStates.filter(s => s.label.toLowerCase().includes(lower));
+        return createListCollection({ items: filtered });
+    }, [ibgeStates, stateFilter]);
+
+    const cityCollection = useMemo(() => {
+        const lower = cityFilter.toLowerCase();
+        const filtered = !lower ? ibgeCities : ibgeCities.filter(c => c.label.toLowerCase().includes(lower));
+        return createListCollection({ items: filtered });
+    }, [ibgeCities, cityFilter]);
 
     useEffect(() => {
-        const fetchAddress = async (cep: string) => {
+        axios.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome')
+            .then(r => setIbgeStates(r.data.map((s: any) => ({ label: `${s.nome} (${s.sigla})`, value: s.sigla }))))
+            .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        if (!stateValue || cepFound) return;
+        setIbgeCities([]);
+        axios.get(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateValue}/municipios?orderBy=nome`)
+            .then(r => setIbgeCities(r.data.map((c: any) => ({ label: c.nome, value: c.nome }))))
+            .catch(() => {});
+    }, [stateValue, cepFound]);
+
+    useEffect(() => {
+        const unmaskedCep = unmask(cepValue || '');
+        if (unmaskedCep.length !== 8) { setCepFound(false); return; }
+
+        const fetchAddress = async () => {
             setIsCepLoading(true);
             try {
-                const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+                const response = await axios.get(`https://viacep.com.br/ws/${unmaskedCep}/json/`);
                 const { logradouro, bairro, localidade, uf, erro } = response.data;
                 if (erro) {
-                    toaster.create({ title: "CEP não encontrado.", type: "error" });
+                    toaster.create({ title: "CEP não encontrado. Selecione o estado e cidade manualmente.", type: "warning" });
+                    setCepFound(false);
                     return;
-                };
-
-                setValue(`${type}Street`, logradouro);
-                setValue(`${type}Neighborhood`, bairro);
-                setValue(`${type}City`, localidade);
-                setValue(`${type}State`, uf);
-            } catch (error) {
-                console.error("Erro ao buscar CEP:", error);
+                }
+                setValueRef.current(`${type}Street`, logradouro || '');
+                setValueRef.current(`${type}Neighborhood`, bairro || '');
+                setValueRef.current(`${type}City`, localidade);
+                setValueRef.current(`${type}State`, uf);
+                setCepFound(true);
+            } catch {
+                setCepFound(false);
             } finally {
                 setIsCepLoading(false);
             }
         };
 
-        const unmaskedCep = unmask(cepValue || '');
-        if (unmaskedCep.length === 8) {
-            fetchAddress(unmaskedCep);
-        }
-    }, [cepValue, setValue, type]);
+        fetchAddress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cepValue, type]);
 
     const isRequired = type === 'residential' || !isDisabled;
 
@@ -167,18 +205,99 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
                         <Input disabled={isDisabled} bgColor={'gray.700'} value={field.value ? maskCEP(field.value) : ''} onChange={field.onChange} maxLength={10} />
                     )} />
                 </Field.Root>
+
                 <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
                     <Field.Label>Estado</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}State`, { required: isRequired })} readOnly />
+                    {cepFound ? (
+                        <Input disabled readOnly bgColor={'gray.700'} {...register(`${type}State`, { required: isRequired })} />
+                    ) : (
+                        <Controller name={`${type}State`} control={control} rules={{ required: isRequired ? 'Estado é obrigatório' : false }}
+                            render={({ field }) => (
+                                <Combobox.Root
+                                    collection={stateCollection}
+                                    value={field.value ? [field.value] : []}
+                                    onValueChange={(e) => {
+                                        field.onChange(e.value[0] || '');
+                                        setValueRef.current(`${type}City`, '');
+                                        setCityFilter('');
+                                    }}
+                                    onInputValueChange={(e) => setStateFilter(e.inputValue)}
+                                    disabled={isDisabled}
+                                    size="md"
+                                >
+                                    <Combobox.Control bgColor='gray.700'>
+                                        <Combobox.Input placeholder="Digite ou selecione" />
+                                        <Combobox.IndicatorGroup>
+                                            <Combobox.ClearTrigger />
+                                            <Combobox.Trigger />
+                                        </Combobox.IndicatorGroup>
+                                    </Combobox.Control>
+                                    <Portal>
+                                        <Combobox.Positioner>
+                                            <Combobox.Content>
+                                                <Combobox.Empty>Nenhum estado encontrado</Combobox.Empty>
+                                                {stateCollection.items.map(item => (
+                                                    <Combobox.Item item={item} key={item.value}>
+                                                        {item.label}
+                                                        <Combobox.ItemIndicator />
+                                                    </Combobox.Item>
+                                                ))}
+                                            </Combobox.Content>
+                                        </Combobox.Positioner>
+                                    </Portal>
+                                </Combobox.Root>
+                            )}
+                        />
+                    )}
+                    {errors[`${type}State`] && <Field.ErrorText>Selecione o estado ou preencha o CEP</Field.ErrorText>}
                 </Field.Root>
+
                 <Field.Root invalid={!!errors[`${type}City`]} required={isRequired}>
                     <Field.Label>Cidade</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}City`, { required: isRequired })} readOnly />
+                    {cepFound ? (
+                        <Input disabled readOnly bgColor={'gray.700'} {...register(`${type}City`, { required: isRequired })} />
+                    ) : (
+                        <Controller name={`${type}City`} control={control} rules={{ required: isRequired ? 'Cidade é obrigatória' : false }}
+                            render={({ field }) => (
+                                <Combobox.Root
+                                    collection={cityCollection}
+                                    value={field.value ? [field.value] : []}
+                                    onValueChange={(e) => field.onChange(e.value[0] || '')}
+                                    onInputValueChange={(e) => setCityFilter(e.inputValue)}
+                                    disabled={isDisabled || !stateValue}
+                                    size="md"
+                                >
+                                    <Combobox.Control bgColor='gray.700'>
+                                        <Combobox.Input placeholder={stateValue ? "Digite ou selecione" : "Selecione o estado primeiro"} />
+                                        <Combobox.IndicatorGroup>
+                                            <Combobox.ClearTrigger />
+                                            <Combobox.Trigger />
+                                        </Combobox.IndicatorGroup>
+                                    </Combobox.Control>
+                                    <Portal>
+                                        <Combobox.Positioner>
+                                            <Combobox.Content>
+                                                <Combobox.Empty>Nenhuma cidade encontrada</Combobox.Empty>
+                                                {cityCollection.items.map(item => (
+                                                    <Combobox.Item item={item} key={item.value}>
+                                                        {item.label}
+                                                        <Combobox.ItemIndicator />
+                                                    </Combobox.Item>
+                                                ))}
+                                            </Combobox.Content>
+                                        </Combobox.Positioner>
+                                    </Portal>
+                                </Combobox.Root>
+                            )}
+                        />
+                    )}
+                    {errors[`${type}City`] && <Field.ErrorText>Selecione a cidade ou preencha o CEP</Field.ErrorText>}
                 </Field.Root>
             </SimpleGrid>
+
             <Field.Root invalid={!!errors[`${type}Street`]} required={isRequired}>
                 <Field.Label>Rua / Logradouro</Field.Label>
-                <Input disabled bgColor={'gray.700'} {...register(`${type}Street`, { required: isRequired })} readOnly />
+                <Input disabled={isDisabled} bgColor={'gray.700'} placeholder="Preenchido pelo CEP ou digite manualmente" {...register(`${type}Street`, { required: isRequired })} />
             </Field.Root>
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
@@ -191,7 +310,7 @@ function AddressBlock({ type, control, register, errors, watch, setValue, isDisa
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}Neighborhood`]} required={isRequired}>
                     <Field.Label>Bairro</Field.Label>
-                    <Input disabled bgColor={'gray.700'} {...register(`${type}Neighborhood`, { required: isRequired })} readOnly />
+                    <Input disabled={isDisabled} bgColor={'gray.700'} placeholder="Preenchido pelo CEP ou digite manualmente" {...register(`${type}Neighborhood`, { required: isRequired })} />
                 </Field.Root>
             </SimpleGrid>
         </VStack>
