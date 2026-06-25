@@ -19,12 +19,7 @@ export interface AddressBlockProps {
 
 export function AddressBlock({ type, control, register, errors, watch, setValue, isDisabled }: AddressBlockProps) {
     const [isCepLoading, setIsCepLoading] = useState(false);
-    const [cepResolved, setCepResolved] = useState(false);
-    const [streetLocked, setStreetLocked] = useState(true);
-    const [neighborhoodLocked, setNeighborhoodLocked] = useState(true);
 
-    // Ref estável para setValue — evita que o effect re-execute quando
-    // o react-hook-form recria a referência após chamar setValue internamente
     const setValueRef = useRef(setValue);
     setValueRef.current = setValue;
 
@@ -32,17 +27,7 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
 
     useEffect(() => {
         const unmaskedCep = unmask(cepValue || '');
-
-        if (unmaskedCep.length !== 8) {
-            setCepResolved(false);
-            setStreetLocked(true);
-            setNeighborhoodLocked(true);
-            return;
-        }
-
-        setCepResolved(false);
-        setStreetLocked(true);
-        setNeighborhoodLocked(true);
+        if (unmaskedCep.length !== 8) return;
 
         const fetchAddress = async () => {
             setIsCepLoading(true);
@@ -54,10 +39,6 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
                 setValueRef.current(`${type}Neighborhood`, bairro || '');
                 setValueRef.current(`${type}City`, localidade);
                 setValueRef.current(`${type}State`, uf);
-                // Campos que voltaram vazios ficam editáveis (CEP de cidade pequena)
-                setCepResolved(true);
-                setStreetLocked(!!logradouro);
-                setNeighborhoodLocked(!!bairro);
             } catch (error) {
                 console.error('Erro ao buscar CEP:', error);
             } finally {
@@ -66,7 +47,6 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
         };
 
         fetchAddress();
-    // setValue está no ref — não precisa ser dep; type é prop estática
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cepValue, type]);
 
@@ -82,42 +62,56 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
                         control={control}
                         rules={{ required: isRequired ? 'CEP é obrigatório' : false }}
                         render={({ field }) => (
-                            <Input disabled={isDisabled} bgColor="gray.700" value={field.value ? maskCEP(field.value) : ''} onChange={field.onChange} maxLength={10} />
+                            <Input
+                                disabled={isDisabled}
+                                bgColor="gray.700"
+                                value={field.value ? maskCEP(field.value) : ''}
+                                onChange={field.onChange}
+                                maxLength={10}
+                            />
                         )}
                     />
                     {errors[`${type}Cep`] && <Field.ErrorText>{(errors[`${type}Cep`] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}State`]} required={isRequired}>
                     <Field.Label>Estado</Field.Label>
-                    <Input disabled bgColor="gray.700" {...register(`${type}State`, { required: isRequired ? 'Estado é obrigatório' : false })} readOnly />
-                    {errors[`${type}State`] && <Field.ErrorText>Preencha o CEP para auto-completar</Field.ErrorText>}
+                    <Input
+                        disabled
+                        readOnly
+                        bgColor="gray.700"
+                        {...register(`${type}State`, { required: isRequired ? 'Estado é obrigatório' : false })}
+                    />
+                    {errors[`${type}State`] && <Field.ErrorText>Preenchido automaticamente pelo CEP</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}City`]} required={isRequired}>
                     <Field.Label>Cidade</Field.Label>
-                    <Input disabled bgColor="gray.700" {...register(`${type}City`, { required: isRequired ? 'Cidade é obrigatória' : false })} readOnly />
+                    <Input
+                        disabled
+                        readOnly
+                        bgColor="gray.700"
+                        {...register(`${type}City`, { required: isRequired ? 'Cidade é obrigatória' : false })}
+                    />
+                    {errors[`${type}City`] && <Field.ErrorText>Preenchido automaticamente pelo CEP</Field.ErrorText>}
                 </Field.Root>
             </SimpleGrid>
             <Field.Root invalid={!!errors[`${type}Street`]} required={isRequired}>
-                <Field.Label>
-                    Rua / Logradouro
-                    {cepResolved && !streetLocked && <span style={{ color: '#B8A76E', fontSize: '12px', marginLeft: '8px' }}>Preencha manualmente</span>}
-                </Field.Label>
+                <Field.Label>Rua / Logradouro</Field.Label>
                 <Input
-                    disabled={isDisabled || !cepResolved || streetLocked}
-                    readOnly={streetLocked && cepResolved}
+                    disabled={isDisabled}
                     bgColor="gray.700"
+                    placeholder="Preenchido automaticamente ou digite manualmente"
                     {...register(`${type}Street`, { required: isRequired ? 'Rua é obrigatória' : false })}
                 />
-                {errors[`${type}Street`] && (
-                    <Field.ErrorText>
-                        {streetLocked || !cepResolved ? 'Preencha o CEP para auto-completar' : (errors[`${type}Street`] as any)?.message}
-                    </Field.ErrorText>
-                )}
+                {errors[`${type}Street`] && <Field.ErrorText>{(errors[`${type}Street`] as any)?.message}</Field.ErrorText>}
             </Field.Root>
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                 <Field.Root invalid={!!errors[`${type}Number`]} required={isRequired}>
                     <Field.Label>Número</Field.Label>
-                    <Input disabled={isDisabled} bgColor="gray.700" {...register(`${type}Number`, { required: isRequired ? 'Número é obrigatório' : false })} />
+                    <Input
+                        disabled={isDisabled}
+                        bgColor="gray.700"
+                        {...register(`${type}Number`, { required: isRequired ? 'Número é obrigatório' : false })}
+                    />
                     {errors[`${type}Number`] && <Field.ErrorText>{(errors[`${type}Number`] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
                 <Field.Root>
@@ -125,16 +119,14 @@ export function AddressBlock({ type, control, register, errors, watch, setValue,
                     <Input disabled={isDisabled} bgColor="gray.700" {...register(`${type}Complement`)} />
                 </Field.Root>
                 <Field.Root invalid={!!errors[`${type}Neighborhood`]} required={isRequired}>
-                    <Field.Label>
-                        Bairro
-                        {cepResolved && !neighborhoodLocked && <span style={{ color: '#B8A76E', fontSize: '12px', marginLeft: '8px' }}>Preencha manualmente</span>}
-                    </Field.Label>
+                    <Field.Label>Bairro</Field.Label>
                     <Input
-                        disabled={isDisabled || !cepResolved || neighborhoodLocked}
-                        readOnly={neighborhoodLocked && cepResolved}
+                        disabled={isDisabled}
                         bgColor="gray.700"
+                        placeholder="Preenchido automaticamente ou digite manualmente"
                         {...register(`${type}Neighborhood`, { required: isRequired ? 'Bairro é obrigatório' : false })}
                     />
+                    {errors[`${type}Neighborhood`] && <Field.ErrorText>{(errors[`${type}Neighborhood`] as any)?.message}</Field.ErrorText>}
                 </Field.Root>
             </SimpleGrid>
         </VStack>
