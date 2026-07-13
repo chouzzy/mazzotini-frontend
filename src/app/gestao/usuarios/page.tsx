@@ -231,119 +231,124 @@ export default function UserManagementPage() {
                         </Flex>
                     </Flex>
 
-                    <Flex gap={4} p={4} bg={tableBgColor} borderRadius="md" border="1px solid" borderColor="gray.700" wrap="wrap" align="flex-end">
-                        <Box flex={1} minW={{ base: 'full', md: '200px' }}>
-                            <Field.Root>
-                                <Field.Label fontSize="sm" color="gray.400">Busca por Nome ou E-mail</Field.Label>
-                                <Input
-                                    placeholder="Comece a digitar para pesquisar..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    bgColor="gray.800"
-                                    borderColor="gray.700"
-                                />
-                            </Field.Root>
-                        </Box>
-                        <Box flex={1} minW={{ base: 'full', md: '200px' }}>
-                            <Field.Root>
-                                <Field.Label fontSize="sm" color="gray.400">
-                                    <HStack gap={2} align="center">
-                                        <Text>Busca por Associado</Text>
-                                        <Badge colorPalette="purple" variant="solid" fontSize="2xs" px={2}>Associado</Badge>
-                                    </HStack>
-                                </Field.Label>
-                                <Input
-                                    placeholder="Nome do associado vinculado..."
-                                    value={associateQuery}
-                                    onChange={(e) => setAssociateQuery(e.target.value)}
-                                    bgColor="gray.800"
-                                    borderColor={associateQuery ? "purple.500" : "gray.700"}
-                                    _focus={{ borderColor: "purple.400", boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)" }}
-                                />
-                            </Field.Root>
-                        </Box>
-                        <Box flex={1} minW={{ base: 'full', md: '150px' }} maxW={{ base: 'full', md: '180px' }}>
-                            <Field.Root>
-                                <Field.Label fontSize="sm" color="gray.400">
-                                    <HStack gap={2} align="center">
-                                        <Text>Aprovado de</Text>
-                                        <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
-                                    </HStack>
-                                </Field.Label>
-                                <Input
-                                    type="date"
-                                    value={approvedFrom}
-                                    onChange={(e) => { setApprovedFrom(e.target.value); setPage(1); }}
-                                    bgColor="gray.800"
-                                    borderColor={approvedFrom ? "green.500" : "gray.700"}
-                                    _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
-                                />
-                            </Field.Root>
-                        </Box>
-                        <Box flex={1} minW={{ base: 'full', md: '150px' }} maxW={{ base: 'full', md: '180px' }}>
-                            <Field.Root>
-                                <Field.Label fontSize="sm" color="gray.400">
-                                    <HStack gap={2} align="center">
-                                        <Text>Aprovado até</Text>
-                                        <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
-                                    </HStack>
-                                </Field.Label>
-                                <Input
-                                    type="date"
-                                    value={approvedTo}
-                                    onChange={(e) => { setApprovedTo(e.target.value); setPage(1); }}
-                                    bgColor="gray.800"
-                                    borderColor={approvedTo ? "green.500" : "gray.700"}
-                                    _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
-                                />
-                            </Field.Root>
-                        </Box>
-                        <Box w={{ base: "100%", md: "180px" }}>
-                            <Field.Root><Field.Label fontSize="sm" color="gray.400">Cargo</Field.Label>
-                                <Select.Root collection={roleOptions} value={[filterRole]} onValueChange={(d) => { setFilterRole(d.value[0]); setPage(1); }}>
-                                    <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
-                                    <Portal><Select.Positioner><Select.Content bg="gray.800">{roleOptions.items.map(i => <Select.Item key={i.value} item={i}>{i.label}</Select.Item>)}</Select.Content></Select.Positioner></Portal>
-                                </Select.Root>
-                            </Field.Root>
-                        </Box>
-                        <Box w={{ base: "100%", md: "180px" }}>
-                            <Field.Root><Field.Label fontSize="sm" color="gray.400">Status</Field.Label>
-                                <Select.Root collection={statusOptions} value={[filterStatus]} onValueChange={(d) => { setFilterStatus(d.value[0]); setPage(1); }}>
-                                    <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
-                                    <Portal><Select.Positioner><Select.Content bg="gray.800">{statusOptions.items.map(i => <Select.Item key={i.value} item={i}>{i.label}</Select.Item>)}</Select.Content></Select.Positioner></Portal>
-                                </Select.Root>
-                            </Field.Root>
-                        </Box>
-                        
-                        <Flex gap={2} ml="auto" wrap="wrap">
-                            <Button 
-                                variant={filterOnlyShadow ? "solid" : "outline"} 
-                                colorPalette={filterOnlyShadow ? "yellow" : "gray"}
-                                onClick={() => { setFilterOnlyShadow(!filterOnlyShadow); setPage(1); }}
-                                gap={2}
-                                h="40px"
-                                _hover={{ bg: filterOnlyShadow ? "yellow.600" : "gray.700" }}
-                            >
-                                <Icon as={PiUserCircleMinus} />
-                                {filterOnlyShadow ? "Ver Todos" : "Filtrar @mazzotini.placeholder"}
-                            </Button>
-
-                            <Button 
-                                variant="solid"
-                                colorPalette="green"
-                                onClick={handleExportExcel}
-                                loading={isExporting}
-                                loadingText="Exportando..."
-                                gap={2}
-                                h="40px"
-                                _hover={{ bg: "green.700", color: "white" }}
-                                title="Baixar listagem atual em formato Excel (CSV)"
-                            >
-                                <Icon as={PiDownloadSimple} />
-                                Exportar Excel
-                            </Button>
+                    <VStack gap={3} p={4} bg={tableBgColor} borderRadius="md" border="1px solid" borderColor="gray.700" align="stretch">
+                        {/* Linha 1: buscas por texto */}
+                        <Flex gap={4} wrap="wrap">
+                            <Box flex={1} minW={{ base: 'full', md: '200px' }}>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">Busca por Nome ou E-mail</Field.Label>
+                                    <Input
+                                        placeholder="Comece a digitar para pesquisar..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        bgColor="gray.800"
+                                        borderColor="gray.700"
+                                    />
+                                </Field.Root>
+                            </Box>
+                            <Box flex={1} minW={{ base: 'full', md: '200px' }}>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        <HStack gap={2} align="center">
+                                            <Text>Busca por Associado</Text>
+                                            <Badge colorPalette="purple" variant="solid" fontSize="2xs" px={2}>Associado</Badge>
+                                        </HStack>
+                                    </Field.Label>
+                                    <Input
+                                        placeholder="Nome do associado vinculado..."
+                                        value={associateQuery}
+                                        onChange={(e) => setAssociateQuery(e.target.value)}
+                                        bgColor="gray.800"
+                                        borderColor={associateQuery ? "purple.500" : "gray.700"}
+                                        _focus={{ borderColor: "purple.400", boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)" }}
+                                    />
+                                </Field.Root>
+                            </Box>
                         </Flex>
-                    </Flex>
+
+                        {/* Linha 2: filtros avançados + ações */}
+                        <Flex gap={4} wrap="wrap" align="flex-end">
+                            <Box minW={{ base: 'full', md: '160px' }}>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        <HStack gap={2} align="center">
+                                            <Text>Aprovado de</Text>
+                                            <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
+                                        </HStack>
+                                    </Field.Label>
+                                    <Input
+                                        type="date"
+                                        value={approvedFrom}
+                                        onChange={(e) => { setApprovedFrom(e.target.value); setPage(1); }}
+                                        bgColor="gray.800"
+                                        borderColor={approvedFrom ? "green.500" : "gray.700"}
+                                        _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
+                                    />
+                                </Field.Root>
+                            </Box>
+                            <Box minW={{ base: 'full', md: '160px' }}>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm" color="gray.400">
+                                        <HStack gap={2} align="center">
+                                            <Text>Aprovado até</Text>
+                                            <Badge colorPalette="green" variant="solid" fontSize="2xs" px={2}>Data</Badge>
+                                        </HStack>
+                                    </Field.Label>
+                                    <Input
+                                        type="date"
+                                        value={approvedTo}
+                                        onChange={(e) => { setApprovedTo(e.target.value); setPage(1); }}
+                                        bgColor="gray.800"
+                                        borderColor={approvedTo ? "green.500" : "gray.700"}
+                                        _focus={{ borderColor: "green.400", boxShadow: "0 0 0 1px var(--chakra-colors-green-400)" }}
+                                    />
+                                </Field.Root>
+                            </Box>
+                            <Box w={{ base: "100%", md: "180px" }}>
+                                <Field.Root><Field.Label fontSize="sm" color="gray.400">Cargo</Field.Label>
+                                    <Select.Root collection={roleOptions} value={[filterRole]} onValueChange={(d) => { setFilterRole(d.value[0]); setPage(1); }}>
+                                        <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
+                                        <Portal><Select.Positioner><Select.Content bg="gray.800">{roleOptions.items.map(i => <Select.Item key={i.value} item={i}>{i.label}</Select.Item>)}</Select.Content></Select.Positioner></Portal>
+                                    </Select.Root>
+                                </Field.Root>
+                            </Box>
+                            <Box w={{ base: "100%", md: "180px" }}>
+                                <Field.Root><Field.Label fontSize="sm" color="gray.400">Status</Field.Label>
+                                    <Select.Root collection={statusOptions} value={[filterStatus]} onValueChange={(d) => { setFilterStatus(d.value[0]); setPage(1); }}>
+                                        <Select.Control><Select.Trigger bgColor="gray.800"><Select.ValueText /></Select.Trigger></Select.Control>
+                                        <Portal><Select.Positioner><Select.Content bg="gray.800">{statusOptions.items.map(i => <Select.Item key={i.value} item={i}>{i.label}</Select.Item>)}</Select.Content></Select.Positioner></Portal>
+                                    </Select.Root>
+                                </Field.Root>
+                            </Box>
+                            <Flex gap={2} ml="auto" wrap="wrap" align="flex-end">
+                                <Button
+                                    variant={filterOnlyShadow ? "solid" : "outline"}
+                                    colorPalette={filterOnlyShadow ? "yellow" : "gray"}
+                                    onClick={() => { setFilterOnlyShadow(!filterOnlyShadow); setPage(1); }}
+                                    gap={2}
+                                    h="40px"
+                                    _hover={{ bg: filterOnlyShadow ? "yellow.600" : "gray.700" }}
+                                >
+                                    <Icon as={PiUserCircleMinus} />
+                                    {filterOnlyShadow ? "Ver Todos" : "Filtrar @mazzotini.placeholder"}
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    colorPalette="green"
+                                    onClick={handleExportExcel}
+                                    loading={isExporting}
+                                    loadingText="Exportando..."
+                                    gap={2}
+                                    h="40px"
+                                    _hover={{ bg: "green.700", color: "white" }}
+                                    title="Baixar listagem atual em formato Excel (CSV)"
+                                >
+                                    <Icon as={PiDownloadSimple} />
+                                    Exportar Excel
+                                </Button>
+                            </Flex>
+                        </Flex>
+                    </VStack>
 
                     <Box position="relative">
                         {isLoading && (
