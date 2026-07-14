@@ -107,20 +107,21 @@ const SidebarContent = ({ onClose }: { onClose: () => void }) => {
 const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: () => void }) => {
     const pathname = usePathname();
 
-    // Regra base: exact match
     let isActive = pathname === href;
 
-    // Sub-rotas: ativa se o pathname começa com href + '/' (evita falsos positivos entre rotas irmãs)
-    if (!isActive && href !== '/' && pathname.startsWith(href + '/')) {
+    if (href === '/processos' && pathname.startsWith('/processos/')) {
         isActive = true;
     }
-
-    // Exceção: /processos/novo NÃO deve ativar o item /processos
-    if (href === '/processos' && pathname.startsWith('/processos/novo')) {
+    if (pathname.startsWith('/processos/novo') && href === '/processos') {
         isActive = false;
     }
-
-    // Exceção: /associado/clientes/* ativa o item /associado (Meus Clientes)
+    if (pathname.startsWith('/perfil') && href.startsWith('/perfil')) {
+        isActive = true;
+    }
+    if (href.startsWith('/gestao') && pathname.startsWith('/gestao')) {
+        isActive = true;
+    }
+    // /associado (Meus Clientes) ativa também em /associado/clientes/...
     if (href === '/associado' && pathname.startsWith('/associado/clientes')) {
         isActive = true;
     }

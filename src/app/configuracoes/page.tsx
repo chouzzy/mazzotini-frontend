@@ -7,7 +7,7 @@ import {
 import {
     PiGear, PiRobot, PiCheckCircle, PiProhibit,
     PiDownloadSimple, PiCalendar, PiArrowClockwise,
-    PiCheckFat, PiX, PiCircleNotch, PiHandshake,
+    PiCheckFat, PiX, PiCircleNotch,
 } from 'react-icons/pi';
 import { useApi } from '@/hooks/useApi';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -100,8 +100,6 @@ function ConfiguracoesContent() {
     const [savingSettings, setSavingSettings] = useState(false);
     const [importing, setImporting] = useState(false);
     const [sinceDate, setSinceDate] = useState('');
-    const [syncingContracts, setSyncingContracts] = useState(false);
-    const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
 
     const handleSettingChange = async (field: keyof SystemSettings, value: boolean) => {
         setSavingSettings(true);
@@ -137,29 +135,6 @@ function ConfiguracoesContent() {
             toaster.create({ title: 'Erro ao iniciar importação.', type: 'error' });
         } finally {
             setImporting(false);
-        }
-    };
-
-    const handleSyncContracts = async () => {
-        setSyncingContracts(true);
-        setSyncResult(null);
-        try {
-            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-            const res = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/sync-fee-contracts`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setSyncResult({
-                imported: res.data.documentsImported ?? 0,
-                skipped:  res.data.documentsSkipped  ?? 0,
-                errors:   res.data.errors            ?? [],
-            });
-            toaster.create({ title: 'Sincronização concluída!', type: 'success' });
-        } catch {
-            toaster.create({ title: 'Erro ao sincronizar contratos.', type: 'error' });
-        } finally {
-            setSyncingContracts(false);
         }
     };
 
@@ -352,57 +327,6 @@ function ConfiguracoesContent() {
                             </Table.Root>
                         </Box>
                     )}
-                </Box>
-            </VStack>
-            {/* ── Contratos de Honorários ────────────────────────────────── */}
-            <VStack align="stretch" gap={3}>
-                <HStack gap={2} mb={1}>
-                    <Icon as={PiHandshake} color="gray.400" boxSize={4} />
-                    <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
-                        Contratos de Honorários
-                    </Text>
-                </HStack>
-
-                <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
-                    <Box px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60">
-                        <Text fontSize="sm" color="gray.400">
-                            Sincroniza documentos do GED dos Contratos de Honorários do Legal One. Para cada documento
-                            com vínculo de Contato (cliente), o sistema localiza o usuário pelo CPF/CNPJ e disponibiliza
-                            o documento na área privada do cliente em <strong>Meus Documentos</strong>.
-                        </Text>
-                    </Box>
-
-                    <HStack px={5} py={5} gap={4} wrap="wrap" align="center">
-                        <Button
-                            colorPalette="purple"
-                            variant="solid"
-                            loading={syncingContracts}
-                            onClick={handleSyncContracts}
-                            gap={2}
-                            size="sm"
-                        >
-                            <Icon as={PiHandshake} boxSize={4} />
-                            Sincronizar contratos de honorários
-                        </Button>
-
-                        {syncResult && (
-                            <HStack gap={3}>
-                                <Badge colorPalette="green" variant="solid" gap={1}>
-                                    <Icon as={PiCheckFat} />
-                                    {syncResult.imported} importado{syncResult.imported !== 1 ? 's' : ''}
-                                </Badge>
-                                <Badge colorPalette="gray" variant="outline">
-                                    {syncResult.skipped} pulado{syncResult.skipped !== 1 ? 's' : ''}
-                                </Badge>
-                                {syncResult.errors.length > 0 && (
-                                    <Badge colorPalette="red" variant="solid" gap={1}>
-                                        <Icon as={PiX} />
-                                        {syncResult.errors.length} erro{syncResult.errors.length !== 1 ? 's' : ''}
-                                    </Badge>
-                                )}
-                            </HStack>
-                        )}
-                    </HStack>
                 </Box>
             </VStack>
         </Flex>

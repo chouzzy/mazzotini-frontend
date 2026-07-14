@@ -4,7 +4,6 @@ import { VStack, Heading, Flex, Icon, Separator } from '@chakra-ui/react';
 import { PiFolderOpen } from 'react-icons/pi';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import { StagingDocumentsSection } from '@/app/components/documents/StagingDocumentsSection';
-import { PrivateDocumentsSection } from '@/app/components/documents/PrivateDocumentsSection';
 import { Toaster } from '@/components/ui/toaster';
 
 export default function MeusDocumentosPage() {
@@ -20,10 +19,6 @@ export default function MeusDocumentosPage() {
                 <Separator borderColor="gray.700" />
 
                 <StagingDocumentsSection />
-
-                <Separator borderColor="gray.700" />
-
-                <PrivateDocumentsSection />
             </VStack>
         </AuthenticationGuard>
     );

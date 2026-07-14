@@ -2,15 +2,21 @@
 
 import system from "@/theme"
 import { ChakraProvider } from "@chakra-ui/react"
+import { ThemeProvider } from "next-themes"
 import { SWRConfig } from "swr"
 import { Auth0ProviderWithHistory } from "./components/providers/Auth0ProviderWithHistory"
 import { ViewModeProvider } from "@/context/ViewModeContext"
-import { EmotionRegistry } from "./components/providers/EmotionRegistry"
 
 export default function Providers(props: { children: React.ReactNode }) {
   return (
-    <EmotionRegistry>
-      <ChakraProvider value={system}>
+    <ChakraProvider value={system}>
+      <ThemeProvider
+        attribute="class"
+        disableTransitionOnChange
+        defaultTheme="dark"
+        enableSystem={false}
+        forcedTheme="dark"
+      >
         <Auth0ProviderWithHistory>
           <SWRConfig value={{
             revalidateOnFocus: false,
@@ -18,11 +24,11 @@ export default function Providers(props: { children: React.ReactNode }) {
             dedupingInterval: 5000,
           }}>
             <ViewModeProvider>
-              {props.children}
+                {props.children}
             </ViewModeProvider>
           </SWRConfig>
         </Auth0ProviderWithHistory>
-      </ChakraProvider>
-    </EmotionRegistry>
+      </ThemeProvider>
+    </ChakraProvider>
   )
 }

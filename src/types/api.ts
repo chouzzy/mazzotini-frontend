@@ -44,20 +44,6 @@ export interface ProcessDocument {
     createdAt?: string | null;
 }
 
-export interface PrivateDocument {
-    id: string;
-    name: string;
-    url: string;
-    section: 'PRIVADO_FINANCEIRO';
-    category: string;
-    sourceType: string;
-    assetId?: string | null;
-    investorUserId?: string | null;
-    legalOneDocumentId?: number | null;
-    legalOneServiceId?: number | null;
-    createdAt?: string | null;
-}
-
 export interface UserStagingDocument {
     id: string;
     userId: string;
