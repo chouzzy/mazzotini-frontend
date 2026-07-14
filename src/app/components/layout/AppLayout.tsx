@@ -118,7 +118,7 @@ const NavItem = ({ icon, children, href, onClick }: NavItemProps & { onClick?: (
     if (pathname.startsWith('/perfil') && href.startsWith('/perfil')) {
         isActive = true;
     }
-    if (href.startsWith('/gestao') && pathname.startsWith('/gestao')) {
+    if (!isActive && href !== '/' && pathname.startsWith(href + '/')) {
         isActive = true;
     }
     // /associado (Meus Clientes) ativa também em /associado/clientes/...
