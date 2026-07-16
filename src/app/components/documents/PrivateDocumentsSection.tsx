@@ -1,11 +1,14 @@
 'use client';
 
 import {
-    Box, Heading, Text, Flex, Icon, Spinner, VStack, Badge, HStack, Button, Link,
+    Box, Heading, Text, Flex, Icon, Spinner, VStack, Badge, HStack, Button,
 } from '@chakra-ui/react';
 import {
     PiLockKey, PiFilePdf, PiDownloadDuotone, PiFileText,
 } from 'react-icons/pi';
+import { useState } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import axios from 'axios';
 import { useApi } from '@/hooks/useApi';
 import { PrivateDocument } from '@/types/api';
 
@@ -20,6 +23,26 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function DocRow({ doc }: { doc: PrivateDocument }) {
     const label = CATEGORY_LABELS[doc.category] || doc.category;
+    const [loading, setLoading] = useState(false);
+    const { getAccessTokenSilently } = useAuth0();
+
+    const handleDownload = async () => {
+        setLoading(true);
+        try {
+            const token = await getAccessTokenSilently({
+                authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
+            });
+            const res = await axios.get<{ url: string }>(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/documents/${doc.id}/download-url`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            window.open(res.data.url, '_blank');
+        } catch {
+            // silently fail — link inativo
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <Flex
@@ -40,13 +63,9 @@ function DocRow({ doc }: { doc: PrivateDocument }) {
             <Badge variant="subtle" colorPalette="purple" size="sm" flexShrink={0}>
                 {label}
             </Badge>
-            {doc.url && (
-                <Link href={doc.url} target="_blank" _hover={{ textDecoration: 'none' }}>
-                    <Button size="xs" variant="ghost" colorPalette="brand">
-                        <Icon as={PiDownloadDuotone} />
-                    </Button>
-                </Link>
-            )}
+            <Button size="xs" variant="ghost" colorPalette="brand" onClick={handleDownload} loading={loading}>
+                <Icon as={PiDownloadDuotone} />
+            </Button>
         </Flex>
     );
 }
