@@ -58,10 +58,10 @@ export function PrivateDocumentsSection() {
         <Box>
             <HStack mb={1} align="center" gap={2}>
                 <Icon as={PiLockKey} color="purple.400" boxSize={5} />
-                <Heading size="md" color="gray.300">Contratos de Honorários</Heading>
+                <Heading size="md" color="gray.300">Contratos de Cessões e Honorários Unificados</Heading>
             </HStack>
             <Text fontSize="xs" color="gray.500" mb={4}>
-                Documentos do seu contrato de honorários, sincronizados automaticamente pelo sistema.
+                Documentos do seu contrato, sincronizados automaticamente pelo sistema.
             </Text>
 
             {isLoading && (

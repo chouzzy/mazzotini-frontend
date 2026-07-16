@@ -91,13 +91,6 @@ export function OverviewTab({ asset }: TabProps) {
                                 <Text fontWeight="medium" textAlign="right" minW={0}>{myAcquisitionDate}</Text>
                             </Flex>
                         )}
-                        <Flex justify="space-between" gap={3} pb={2}>
-                            <Text color="gray.400" fontSize="sm" flexShrink={0}>Índice de Correção</Text>
-                            <Text fontWeight="medium" textAlign="right" minW={0}>
-                                {asset.updateIndexType}
-                                {asset.contractualIndexRate ? ` + ${asset.contractualIndexRate}%` : ''}
-                            </Text>
-                        </Flex>
                     </VStack>
                 </Card.Body>
             </Card.Root>

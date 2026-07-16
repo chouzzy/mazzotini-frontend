@@ -25,7 +25,7 @@ export const STAGING_CATEGORIES = [
 ];
 
 // Categorias visíveis para o cliente — o restante é enviado pelo admin
-const CLIENT_UPLOAD_CATEGORIES = ['COMPROVANTE', 'NOTA_FISCAL'];
+const CLIENT_UPLOAD_CATEGORIES = ['COMPROVANTE'];
 
 const CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
     STAGING_CATEGORIES.map(c => [c.value, c.label])
