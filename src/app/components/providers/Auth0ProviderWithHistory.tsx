@@ -29,8 +29,10 @@ export const Auth0ProviderWithHistory = ({ children }: { children: React.ReactNo
       clientId={clientId}
       authorizationParams={{
         redirect_uri: typeof window !== 'undefined' ? window.location.origin : undefined,
-        audience: audience, // Pede o token para a nossa API
+        audience: audience,
       }}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
       onRedirectCallback={onRedirectCallback}
     >
       {children}
