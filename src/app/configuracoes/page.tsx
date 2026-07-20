@@ -94,6 +94,7 @@ function StatusBadge({ status }: { status: ImportLog['status'] }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 function ConfiguracoesContent() {
     const { getAccessTokenSilently } = useAuth0();
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<{ role: string }>('/api/users/me');
     const { data: settings, isLoading: isLoadingSettings, mutate: mutateSettings } = useApi<SystemSettings>('/api/admin/settings');
     const { data: logs, isLoading: isLoadingLogs, mutate: mutateLogs } = useApi<ImportLog[]>('/api/admin/import-logs');
 
@@ -169,8 +170,16 @@ function ConfiguracoesContent() {
         return `${Math.round(ms / 60000)}min`;
     };
 
-    if (isLoadingSettings) {
+    if (isLoadingProfile || isLoadingSettings) {
         return <Flex justify="center" align="center" h="40vh"><Spinner size="xl" /></Flex>;
+    }
+
+    if (myProfile?.role !== 'ADMIN') {
+        return (
+            <Flex justify="center" align="center" h="40vh">
+                <Text color="gray.500">Acesso restrito a administradores.</Text>
+            </Flex>
+        );
     }
 
     return (
