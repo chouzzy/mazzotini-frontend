@@ -7,7 +7,7 @@ import {
 import {
     PiGear, PiRobot, PiCheckCircle, PiProhibit,
     PiDownloadSimple, PiCalendar, PiArrowClockwise,
-    PiCheckFat, PiX, PiCircleNotch, PiHandshake,
+    PiCheckFat, PiX, PiCircleNotch, PiHandshake, PiUsersThree,
 } from 'react-icons/pi';
 import { useApi } from '@/hooks/useApi';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -103,6 +103,7 @@ function ConfiguracoesContent() {
     const [sinceDate, setSinceDate] = useState('');
     const [syncingContracts, setSyncingContracts] = useState(false);
     const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+    const [backfillingInvestors, setBackfillingInvestors] = useState(false);
 
     const handleSettingChange = async (field: keyof SystemSettings, value: boolean) => {
         setSavingSettings(true);
@@ -138,6 +139,27 @@ function ConfiguracoesContent() {
             toaster.create({ title: 'Erro ao iniciar importação.', type: 'error' });
         } finally {
             setImporting(false);
+        }
+    };
+
+    const handleBackfillInvestors = async () => {
+        setBackfillingInvestors(true);
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toaster.create({
+                title: 'Backfill iniciado!',
+                description: 'Vinculação de clientes rodando em segundo plano. Verifique os processos em alguns minutos.',
+                type: 'success',
+            });
+        } catch {
+            toaster.create({ title: 'Erro ao iniciar backfill.', type: 'error' });
+        } finally {
+            setBackfillingInvestors(false);
         }
     };
 
@@ -361,6 +383,43 @@ function ConfiguracoesContent() {
                             </Table.Root>
                         </Box>
                     )}
+                </Box>
+            </VStack>
+
+            {/* ── Vinculação de Clientes ──────────────────────────────── */}
+            <VStack align="stretch" gap={3}>
+                <HStack gap={2} mb={1}>
+                    <Icon as={PiUsersThree} color="gray.400" boxSize={4} />
+                    <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+                        Vinculação de Clientes aos Processos
+                    </Text>
+                </HStack>
+
+                <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
+                    <Box px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60">
+                        <Text fontSize="sm" color="gray.400">
+                            Percorre todos os processos cadastrados, cruza os participantes do tipo <strong>Cliente</strong> no
+                            Legal One com o CPF dos usuários Mazzotini e cria as participações que estiverem faltando.
+                            Use para corrigir processos que foram importados sem vínculo de cotista.
+                            O percentual de participação ficará em <strong>0%</strong> — preencha manualmente depois em cada processo.
+                        </Text>
+                    </Box>
+                    <HStack px={5} py={5} gap={4} wrap="wrap" align="center">
+                        <Button
+                            colorPalette="blue"
+                            variant="solid"
+                            loading={backfillingInvestors}
+                            onClick={handleBackfillInvestors}
+                            gap={2}
+                            size="sm"
+                        >
+                            <Icon as={PiUsersThree} boxSize={4} />
+                            Vincular clientes aos processos
+                        </Button>
+                        <Text fontSize="xs" color="gray.500">
+                            Roda em segundo plano · pode levar alguns minutos dependendo do número de processos
+                        </Text>
+                    </HStack>
                 </Box>
             </VStack>
 
