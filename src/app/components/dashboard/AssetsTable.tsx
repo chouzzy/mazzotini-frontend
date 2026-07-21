@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react';
 import NextLink from 'next/link';
 import { AssetSummary } from '@/types/api';
+import { useApi } from '@/hooks/useApi';
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
@@ -25,6 +26,9 @@ interface AssetsTableProps {
 }
 
 export function AssetsTable({ assets }: AssetsTableProps) {
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+
     return (
         <Box overflowX="auto" w="100%">
         <Table.Root variant="line">
@@ -34,7 +38,7 @@ export function AssetsTable({ assets }: AssetsTableProps) {
                     <Table.ColumnHeader>Credor</Table.ColumnHeader>
                     <Table.ColumnHeader>Valor Investido</Table.ColumnHeader>
                     <Table.ColumnHeader>Saldo Atual</Table.ColumnHeader>
-                    <Table.ColumnHeader>Status</Table.ColumnHeader>
+                    {isAdminOrOperator && <Table.ColumnHeader>Status</Table.ColumnHeader>}
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -45,11 +49,13 @@ export function AssetsTable({ assets }: AssetsTableProps) {
                             <Table.Cell>{asset.originalCreditor}</Table.Cell>
                             <Table.Cell>{formatCurrency(asset.investedValue)}</Table.Cell>
                             <Table.Cell>{formatCurrency(asset.currentValue)}</Table.Cell>
-                            <Table.Cell>
-                                <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
-                                    <Tag.Label>{asset.status}</Tag.Label>
-                                </Tag.Root>
-                            </Table.Cell>
+                            {isAdminOrOperator && (
+                                <Table.Cell>
+                                    <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
+                                        <Tag.Label>{asset.status}</Tag.Label>
+                                    </Tag.Root>
+                                </Table.Cell>
+                            )}
                         </Link>
                     </Table.Row>
                 ))}

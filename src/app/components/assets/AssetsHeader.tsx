@@ -163,9 +163,11 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                         </>
                     )}
 
-                    <Tag.Root size="lg" variant="solid" colorPalette={getStatusColorPalette(asset.status)}>
-                        <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
-                    </Tag.Root>
+                    {isAdminOrOperator && (
+                        <Tag.Root size="lg" variant="solid" colorPalette={getStatusColorPalette(asset.status)}>
+                            <Tag.Label>{translateStatus(asset.status)}</Tag.Label>
+                        </Tag.Root>
+                    )}
                 </Flex>
             </Flex>
 

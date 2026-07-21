@@ -26,6 +26,7 @@ import {
     PiGavelDuotone 
 } from 'react-icons/pi';
 import NextLink from 'next/link';
+import { useApi } from '@/hooks/useApi';
 
 export type InvestorCreditAsset = {
     legalOneId: number;
@@ -47,6 +48,8 @@ const formatCurrency = (value: number) => {
 };
 
 export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
     const yieldValue = asset.currentValue - asset.investedValue;
     const yieldPercentage = asset.investedValue > 0 ? (yieldValue / asset.investedValue) * 100 : 0;
 
@@ -90,9 +93,11 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                                 </Badge>
                             )}
                         </HStack>
-                        <Tag.Root colorPalette={getStatusColorScheme(asset.status)} variant={'subtle'} size="sm">
-                            <Tag.Label>{asset.status}</Tag.Label>
-                        </Tag.Root>
+                        {isAdminOrOperator && (
+                            <Tag.Root colorPalette={getStatusColorScheme(asset.status)} variant={'subtle'} size="sm">
+                                <Tag.Label>{asset.status}</Tag.Label>
+                            </Tag.Root>
+                        )}
                     </Flex>
 
                     <VStack align="start" gap={1}>

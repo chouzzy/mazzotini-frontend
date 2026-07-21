@@ -62,28 +62,35 @@ const statusColor = (s: string) => {
 };
 
 // ── sub-componente: linha da tabela dentro do accordion ───────────────────────
-const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => (
-    <Table.Row _hover={{ bg: 'whiteAlpha.50' }} borderBottom="1px solid" borderColor="gray.800">
-        <Table.Cell pl={6}>
-            <VStack align="start" gap={1}>
-                <Text fontWeight="medium" color="white" fontSize="sm">{asset.processNumber}</Text>
-                {asset.nickname && <Text fontSize="xs" color="brand.300">{asset.nickname}</Text>}
-            </VStack>
-        </Table.Cell>
-        <Table.Cell fontSize="sm">{asset.originalCreditor}</Table.Cell>
-        <Table.Cell fontSize="sm">{formatBRL(asset.currentValue)}</Table.Cell>
-        <Table.Cell>
-            <Tag.Root size="sm" variant="solid" colorPalette={statusColor(asset.status)}>
-                <Tag.Label>{asset.status}</Tag.Label>
-            </Tag.Root>
-        </Table.Cell>
-        <Table.Cell textAlign="right" pr={6}>
-            <Link as={NextLink} href={`/processos/${asset.legalOneId}`}>
-                <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
-            </Link>
-        </Table.Cell>
-    </Table.Row>
-);
+const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => {
+    const { data: myProfile } = useApi<{ role: string }>('/api/users/me');
+    const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+
+    return (
+        <Table.Row _hover={{ bg: 'whiteAlpha.50' }} borderBottom="1px solid" borderColor="gray.800">
+            <Table.Cell pl={6}>
+                <VStack align="start" gap={1}>
+                    <Text fontWeight="medium" color="white" fontSize="sm">{asset.processNumber}</Text>
+                    {asset.nickname && <Text fontSize="xs" color="brand.300">{asset.nickname}</Text>}
+                </VStack>
+            </Table.Cell>
+            <Table.Cell fontSize="sm">{asset.originalCreditor}</Table.Cell>
+            <Table.Cell fontSize="sm">{formatBRL(asset.currentValue)}</Table.Cell>
+            {isAdminOrOperator && (
+                <Table.Cell>
+                    <Tag.Root size="sm" variant="solid" colorPalette={statusColor(asset.status)}>
+                        <Tag.Label>{asset.status}</Tag.Label>
+                    </Tag.Root>
+                </Table.Cell>
+            )}
+            <Table.Cell textAlign="right" pr={6}>
+                <Link as={NextLink} href={`/processos/${asset.legalOneId}`}>
+                    <Button size="xs" variant="solid" colorPalette="blue"><Icon as={PiArrowRight} /></Button>
+                </Link>
+            </Table.Cell>
+        </Table.Row>
+    );
+};
 
 // ── sub-componente: seção de pastas na home ───────────────────────────────────
 function FoldersSection() {
