@@ -33,6 +33,7 @@ export const Auth0ProviderWithHistory = ({ children }: { children: React.ReactNo
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
+      useRefreshTokensFallbackToIframe={true}
       onRedirectCallback={onRedirectCallback}
     >
       {children}

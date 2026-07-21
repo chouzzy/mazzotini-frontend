@@ -56,7 +56,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                 mutate('/api/users/me');
             } catch (error) {
                 console.error('[LayoutController] Erro na sincronização silenciosa:', error);
-                hasSynced.current = false;
+                // Não reseta hasSynced — evita loop infinito em caso de refresh token inválido
             }
         };
 
