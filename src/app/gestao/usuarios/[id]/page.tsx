@@ -405,6 +405,7 @@ export default function EditUserPage() {
     const userId = params.id as string;
 
     // 1. Busca dados do usuário e solicitações pendentes
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<{ role: string }>('/api/users/me');
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
     const { data: pendingChanges, mutate: mutatePendingChanges } = useApi<any[]>('/api/management/profile-changes');
@@ -538,8 +539,16 @@ export default function EditUserPage() {
         }
     };
 
-    if (isLoadingUser || isLoadingAssociates) {
+    if (isLoadingProfile || isLoadingUser || isLoadingAssociates) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
+    }
+
+    if (myProfile?.role !== 'ADMIN' && myProfile?.role !== 'OPERATOR') {
+        return (
+            <Flex w="100%" h="50vh" justify="center" align="center">
+                <Text color="gray.400">Acesso restrito a administradores e operadores.</Text>
+            </Flex>
+        );
     }
 
     return (

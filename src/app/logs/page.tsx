@@ -123,6 +123,19 @@ function LogsContent() {
     const { getAccessTokenSilently } = useAuth0();
     const [isRunning, setIsRunning] = useState(false);
     const { data: logs, isLoading, mutate } = useApi<HealthLog[]>('/api/admin/health-logs?limit=30');
+    const { data: myProfile, isLoading: isLoadingProfile } = useApi<{ role: string }>('/api/users/me');
+
+    if (isLoadingProfile) {
+        return <Flex justify="center" align="center" h="100vh"><Spinner /></Flex>;
+    }
+
+    if (myProfile?.role !== 'ADMIN') {
+        return (
+            <Flex justify="center" align="center" h="100vh">
+                <Text color="gray.400">Acesso restrito a administradores.</Text>
+            </Flex>
+        );
+    }
 
     const lastLog = logs?.[0];
     const bannerCfg = lastLog ? (statusConfig[lastLog.status] ?? statusConfig.error) : null;
