@@ -21,7 +21,7 @@ interface MazzotiniUser {
 const PUBLIC_ROUTES = ['/politica-privacidade', '/termos-de-uso'];
 
 export function LayoutController({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, user } = useAuth0();
+    const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, logout, user } = useAuth0();
     const router = useRouter();
     const pathname = usePathname();
     const { mutate } = useSWRConfig();
@@ -54,9 +54,16 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
                     picture: user.picture,
                 }, { headers: { Authorization: `Bearer ${token}` } });
                 mutate('/api/users/me');
-            } catch (error) {
+            } catch (error: any) {
+                const msg = error?.error || error?.message || '';
+                const isStaleToken = msg.includes('Missing Refresh Token') || msg.includes('missing_refresh_token') || msg.includes('login_required');
+                if (isStaleToken) {
+                    console.warn('[LayoutController] Refresh token inválido — fazendo logout para limpar sessão corrompida.');
+                    logout({ logoutParams: { returnTo: window.location.origin } });
+                    return;
+                }
                 console.error('[LayoutController] Erro na sincronização silenciosa:', error);
-                // Não reseta hasSynced — evita loop infinito em caso de refresh token inválido
+                // Não reseta hasSynced — evita loop infinito
             }
         };
 
