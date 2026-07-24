@@ -35,6 +35,7 @@ interface ImportLog {
     status: 'running' | 'completed' | 'failed';
     finishedAt: string | null;
     durationMs: number | null;
+    errorMessage: string | null;
 }
 
 // ─── Toggle Card ─────────────────────────────────────────────────────────────
@@ -375,7 +376,14 @@ function ConfiguracoesContent() {
                                                 </Text>
                                             </Table.Cell>
                                             <Table.Cell px={4} py={3}>
-                                                <StatusBadge status={log.status} />
+                                                <VStack align="start" gap={1}>
+                                                    <StatusBadge status={log.status} />
+                                                    {log.status === 'failed' && log.errorMessage && (
+                                                        <Text fontSize="2xs" color="red.400" maxW="260px" lineClamp={2} title={log.errorMessage}>
+                                                            {log.errorMessage}
+                                                        </Text>
+                                                    )}
+                                                </VStack>
                                             </Table.Cell>
                                         </Table.Row>
                                     ))}
@@ -398,7 +406,7 @@ function ConfiguracoesContent() {
                 <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
                     <Box px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60">
                         <Text fontSize="sm" color="gray.400">
-                            Percorre todos os processos cadastrados, cruza os participantes do tipo <strong>Cliente</strong> no
+                            Percorre todos os processos cadastrados, cruza todos os participantes (Cessionário, Exequente, etc.) do
                             Legal One com o CPF dos usuários Mazzotini e cria as participações que estiverem faltando.
                             Use para corrigir processos que foram importados sem vínculo de cotista.
                             O percentual de participação ficará em <strong>0%</strong> — preencha manualmente depois em cada processo.
