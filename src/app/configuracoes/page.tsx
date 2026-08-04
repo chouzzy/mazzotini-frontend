@@ -14,7 +14,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface SystemSettings {
@@ -36,6 +36,19 @@ interface ImportLog {
     finishedAt: string | null;
     durationMs: number | null;
     errorMessage: string | null;
+}
+
+interface BackfillStatus {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    processed: number;
+    linked: number;
+    alreadyLinked: number;
+    skipped: number;
+    errors: number;
+    currentProcess: string | null;
+    startedAt: string | null;
+    finishedAt: string | null;
 }
 
 // ─── Toggle Card ─────────────────────────────────────────────────────────────
@@ -105,6 +118,29 @@ function ConfiguracoesContent() {
     const [syncingContracts, setSyncingContracts] = useState(false);
     const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
     const [backfillingInvestors, setBackfillingInvestors] = useState(false);
+    const [backfillStatus, setBackfillStatus] = useState<BackfillStatus | null>(null);
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const startPolling = () => {
+        if (pollRef.current) return;
+        pollRef.current = setInterval(async () => {
+            try {
+                const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+                const res = await axios.get<BackfillStatus>(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors/status`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setBackfillStatus(res.data);
+                if (res.data.status !== 'running') {
+                    clearInterval(pollRef.current!);
+                    pollRef.current = null;
+                    setBackfillingInvestors(false);
+                }
+            } catch { /* silencia erros de polling */ }
+        }, 3000);
+    };
+
+    useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
     const handleSettingChange = async (field: keyof SystemSettings, value: boolean) => {
         setSavingSettings(true);
@@ -145,6 +181,7 @@ function ConfiguracoesContent() {
 
     const handleBackfillInvestors = async () => {
         setBackfillingInvestors(true);
+        setBackfillStatus(null);
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
             await axios.post(
@@ -152,14 +189,10 @@ function ConfiguracoesContent() {
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            toaster.create({
-                title: 'Backfill iniciado!',
-                description: 'Vinculação de clientes rodando em segundo plano. Verifique os processos em alguns minutos.',
-                type: 'success',
-            });
+            toaster.create({ title: 'Backfill iniciado!', type: 'success' });
+            startPolling();
         } catch {
             toaster.create({ title: 'Erro ao iniciar backfill.', type: 'error' });
-        } finally {
             setBackfillingInvestors(false);
         }
     };
@@ -412,22 +445,84 @@ function ConfiguracoesContent() {
                             O percentual de participação ficará em <strong>0%</strong> — preencha manualmente depois em cada processo.
                         </Text>
                     </Box>
-                    <HStack px={5} py={5} gap={4} wrap="wrap" align="center">
-                        <Button
-                            colorPalette="blue"
-                            variant="solid"
-                            loading={backfillingInvestors}
-                            onClick={handleBackfillInvestors}
-                            gap={2}
-                            size="sm"
-                        >
-                            <Icon as={PiUsersThree} boxSize={4} />
-                            Vincular clientes aos processos
-                        </Button>
-                        <Text fontSize="xs" color="gray.500">
-                            Roda em segundo plano · pode levar alguns minutos dependendo do número de processos
-                        </Text>
-                    </HStack>
+                    <VStack px={5} py={5} gap={3} align="stretch">
+                        <HStack gap={4} wrap="wrap" align="center">
+                            <Button
+                                colorPalette="blue"
+                                variant="solid"
+                                loading={backfillingInvestors}
+                                onClick={handleBackfillInvestors}
+                                gap={2}
+                                size="sm"
+                            >
+                                <Icon as={PiUsersThree} boxSize={4} />
+                                Vincular clientes aos processos
+                            </Button>
+                            <Text fontSize="xs" color="gray.500">
+                                Roda em segundo plano · pode levar alguns minutos
+                            </Text>
+                        </HStack>
+
+                        {backfillStatus && backfillStatus.status !== 'idle' && (
+                            <Box bg="gray.800" borderRadius="lg" border="1px solid" borderColor="gray.700" p={4}>
+                                <HStack justify="space-between" mb={2}>
+                                    <HStack gap={2}>
+                                        {backfillStatus.status === 'running' && <Spinner size="xs" color="blue.400" />}
+                                        {backfillStatus.status === 'completed' && <Icon as={PiCheckFat} color="green.400" />}
+                                        {backfillStatus.status === 'error' && <Icon as={PiX} color="red.400" />}
+                                        <Text fontSize="sm" fontWeight="medium" color={
+                                            backfillStatus.status === 'completed' ? 'green.400' :
+                                            backfillStatus.status === 'error' ? 'red.400' : 'blue.400'
+                                        }>
+                                            {backfillStatus.status === 'running' ? 'Vinculando...' :
+                                             backfillStatus.status === 'completed' ? 'Concluído' : 'Erro'}
+                                        </Text>
+                                    </HStack>
+                                    <Text fontSize="xs" color="gray.500">
+                                        {backfillStatus.processed} / {backfillStatus.total} processos
+                                    </Text>
+                                </HStack>
+
+                                <Box w="100%" bg="gray.700" borderRadius="full" h="6px" mb={3}>
+                                    <Box
+                                        bg={backfillStatus.status === 'completed' ? 'green.500' :
+                                            backfillStatus.status === 'error' ? 'red.500' : 'blue.500'}
+                                        h="6px"
+                                        borderRadius="full"
+                                        w={`${backfillStatus.total > 0 ? Math.round(((backfillStatus.processed + backfillStatus.skipped) / backfillStatus.total) * 100) : 0}%`}
+                                        transition="width 0.4s ease"
+                                    />
+                                </Box>
+
+                                <HStack gap={4} wrap="wrap">
+                                    <HStack gap={1}>
+                                        <Text fontSize="xs" color="green.400" fontWeight="bold">{backfillStatus.linked}</Text>
+                                        <Text fontSize="xs" color="gray.500">vinculados</Text>
+                                    </HStack>
+                                    <HStack gap={1}>
+                                        <Text fontSize="xs" color="gray.400" fontWeight="bold">{backfillStatus.alreadyLinked}</Text>
+                                        <Text fontSize="xs" color="gray.500">já vinculados</Text>
+                                    </HStack>
+                                    <HStack gap={1}>
+                                        <Text fontSize="xs" color="gray.500" fontWeight="bold">{backfillStatus.skipped}</Text>
+                                        <Text fontSize="xs" color="gray.500">pulados</Text>
+                                    </HStack>
+                                    {backfillStatus.errors > 0 && (
+                                        <HStack gap={1}>
+                                            <Text fontSize="xs" color="red.400" fontWeight="bold">{backfillStatus.errors}</Text>
+                                            <Text fontSize="xs" color="gray.500">erros</Text>
+                                        </HStack>
+                                    )}
+                                </HStack>
+
+                                {backfillStatus.status === 'running' && backfillStatus.currentProcess && (
+                                    <Text fontSize="2xs" color="gray.600" mt={2} fontFamily="mono">
+                                        {backfillStatus.currentProcess}
+                                    </Text>
+                                )}
+                            </Box>
+                        )}
+                    </VStack>
                 </Box>
             </VStack>
 
