@@ -206,7 +206,7 @@ function ConfiguracoesContent() {
     }
 
     return (
-        <Flex w="100%" p={{ base: 4, md: 8 }} flexDir="column" gap={8} maxW="860px" mx="auto">
+        <Flex w="100%" flexDir="column" gap={8}>
             <Toaster />
 
             <HStack gap={3}>
