@@ -119,6 +119,7 @@ function ConfiguracoesContent() {
     const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
     const [backfillingInvestors, setBackfillingInvestors] = useState(false);
     const [backfillStatus, setBackfillStatus] = useState<BackfillStatus | null>(null);
+    const [backfillTarget, setBackfillTarget] = useState('');
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const startPolling = () => {
@@ -184,12 +185,17 @@ function ConfiguracoesContent() {
         setBackfillStatus(null);
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            const target = backfillTarget.trim();
+            const body = target ? { processNumbers: [target] } : {};
             await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors`,
-                {},
+                body,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            toaster.create({ title: 'Backfill iniciado!', type: 'success' });
+            toaster.create({
+                title: target ? `Backfill iniciado para ${target}` : 'Backfill iniciado!',
+                type: 'success',
+            });
             startPolling();
         } catch {
             toaster.create({ title: 'Erro ao iniciar backfill.', type: 'error' });
@@ -445,8 +451,28 @@ function ConfiguracoesContent() {
                             O percentual de participação ficará em <strong>0%</strong> — preencha manualmente depois em cada processo.
                         </Text>
                     </Box>
-                    <VStack px={5} py={5} gap={3} align="stretch">
-                        <HStack gap={4} wrap="wrap" align="center">
+                    <VStack px={5} py={5} gap={4} align="stretch">
+                        <HStack gap={4} wrap="wrap" align="flex-end">
+                            <Field.Root flex={1} minW="220px" maxW="380px">
+                                <Field.Label fontSize="xs" color="gray.400">
+                                    Processo específico (opcional)
+                                </Field.Label>
+                                <Input
+                                    placeholder="Ex: 1017936-75.2024.8.26.0100"
+                                    value={backfillTarget}
+                                    onChange={e => setBackfillTarget(e.target.value)}
+                                    bgColor="gray.800"
+                                    borderColor="gray.600"
+                                    size="sm"
+                                    fontFamily="mono"
+                                    fontSize="xs"
+                                    _focus={{ borderColor: 'blue.500' }}
+                                />
+                                <Field.HelperText fontSize="2xs" color="gray.600">
+                                    Vazio = percorre todos os processos
+                                </Field.HelperText>
+                            </Field.Root>
+
                             <Button
                                 colorPalette="blue"
                                 variant="solid"
@@ -454,13 +480,11 @@ function ConfiguracoesContent() {
                                 onClick={handleBackfillInvestors}
                                 gap={2}
                                 size="sm"
+                                mb={5}
                             >
                                 <Icon as={PiUsersThree} boxSize={4} />
-                                Vincular clientes aos processos
+                                {backfillTarget.trim() ? 'Vincular processo específico' : 'Vincular todos os processos'}
                             </Button>
-                            <Text fontSize="xs" color="gray.500">
-                                Roda em segundo plano · pode levar alguns minutos
-                            </Text>
                         </HStack>
 
                         {backfillStatus && backfillStatus.status !== 'idle' && (
