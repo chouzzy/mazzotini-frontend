@@ -31,9 +31,17 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
 
     // 1. Busca o perfil do nosso DB
-    const { data: userProfile, isLoading: isProfileLoading } = useApi<MazzotiniUser>(
+    const { data: userProfile, isLoading: isProfileLoading, mutate: mutateProfile } = useApi<MazzotiniUser>(
         isAuthenticated ? '/api/users/me' : null
     );
+
+    // Polling de 30s quando pendente: revalidateOnFocus está desabilitado globalmente
+    // (providers.tsx), então sem isso o status nunca atualizaria após aprovação admin.
+    useEffect(() => {
+        if (userProfile?.status !== 'PENDING_REVIEW') return;
+        const id = setInterval(() => mutateProfile(), 30_000);
+        return () => clearInterval(id);
+    }, [userProfile?.status, mutateProfile]);
 
     const isLoading = isAuthLoading || (isAuthenticated && isProfileLoading);
 
