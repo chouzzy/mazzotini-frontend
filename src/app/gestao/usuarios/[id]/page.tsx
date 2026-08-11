@@ -395,6 +395,7 @@ export default function EditUserPage() {
     // Estados para seção de segurança
     const [isSendingReset, setIsSendingReset] = useState(false);
     const [resetLink, setResetLink] = useState<string | null>(null);
+    const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
     const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
     const [newEmail, setNewEmail] = useState('');
     const [confirmEmail, setConfirmEmail] = useState('');
@@ -599,6 +600,24 @@ export default function EditUserPage() {
                                 </Button>
                                 <Button variant="solid" colorPalette="blue" gap={2} onClick={() => { setNewEmail(''); setConfirmEmail(''); setIsEmailDialogOpen(true); }}>
                                     <Icon as={PiEnvelope} /> Alterar E-mail
+                                </Button>
+                                <Button
+                                    variant="solid" colorPalette="green" color="white" gap={2}
+                                    loading={isVerifyingEmail}
+                                    onClick={async () => {
+                                        setIsVerifyingEmail(true);
+                                        try {
+                                            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+                                            await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userData?.auth0UserId}/verify-email`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                                            toaster.create({ title: 'E-mail verificado!', description: 'O e-mail foi marcado como verificado. O usuário pode acessar normalmente.', type: 'success' });
+                                        } catch {
+                                            toaster.create({ title: 'Erro ao verificar e-mail.', type: 'error' });
+                                        } finally {
+                                            setIsVerifyingEmail(false);
+                                        }
+                                    }}
+                                >
+                                    <Icon as={PiCheckCircle} /> Verificar E-mail Manualmente
                                 </Button>
                             </HStack>
                             {resetLink && (
