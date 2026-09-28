@@ -27,6 +27,7 @@ import {
 } from 'react-icons/pi';
 import NextLink from 'next/link';
 import { useApi } from '@/hooks/useApi';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 export type InvestorCreditAsset = {
     legalOneId: number;
@@ -53,19 +54,8 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
     const yieldValue = asset.currentValue - asset.investedValue;
     const yieldPercentage = asset.investedValue > 0 ? (yieldValue / asset.investedValue) * 100 : 0;
 
-    const getStatusColorScheme = (status: string) => {
-        switch (status) {
-            case 'ACTIVE':
-            case 'Ativo':
-                return 'green';
-            case 'Liquidado':
-                return 'gray';
-            case 'Em Negociação':
-                return 'yellow';
-            default:
-                return 'blue';
-        }
-    };
+    // O badge só aparece para admin/operador (ver isAdminOrOperator abaixo).
+    const getStatusColorScheme = (status: string) => getStatusColor(status, 'internal');
 
     const isAppeal = asset.legalOneType?.toLowerCase() === 'appeal';
     const isIncident = asset.legalOneType?.toLowerCase() === 'proceduralissue';
@@ -95,7 +85,7 @@ export function CreditAssetCard({ asset }: { asset: AssetSummary }) {
                         </HStack>
                         {isAdminOrOperator && (
                             <Tag.Root colorPalette={getStatusColorScheme(asset.status)} variant={'subtle'} size="sm">
-                                <Tag.Label>{asset.status}</Tag.Label>
+                                <Tag.Label>{getStatusLabel(asset.status, 'internal')}</Tag.Label>
                             </Tag.Root>
                         )}
                     </Flex>

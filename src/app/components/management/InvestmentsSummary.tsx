@@ -4,6 +4,7 @@ import { Box, Flex, Heading, Text, Icon, Button, Tag, Badge } from '@chakra-ui/r
 import { PiChartLineUp, PiArrowRight } from 'react-icons/pi';
 import Link from 'next/link';
 import { useState } from 'react';
+import { getStatusLabel, getStatusColor as getStatusColorCentral } from '@/utils/assetStatus';
 
 const INITIAL_VISIBLE = 3;
 const LOAD_MORE_STEP = 10;
@@ -13,31 +14,10 @@ interface InvestmentsSummaryProps {
     investments: any[];
 }
 
-const translateStatus = (status: string) => {
-    switch (status) {
-        case 'ACTIVE':
-        case 'Ativo': return 'Ativo';
-        case 'CLOSED':
-        case 'Liquidado': return 'Liquidado';
-        case 'Em Negociação': return 'Em Negociação';
-        case 'PENDING_ENRICHMENT': return 'Em Análise';
-        case 'FAILED_ENRICHMENT': return 'Falha';
-        default: return status;
-    }
-};
-
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'ACTIVE':
-        case 'Ativo': return 'green';
-        case 'CLOSED':
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
-        default: return 'blue';
-    }
-};
+// Componente do painel de gestão (/gestao/usuarios/[id]), acessível apenas a
+// admin/operador — por isso exibe o status interno.
+const translateStatus = (status: string) => getStatusLabel(status, 'internal');
+const getStatusColor = (status: string) => getStatusColorCentral(status, 'internal');
 
 export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryProps) {
     const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);

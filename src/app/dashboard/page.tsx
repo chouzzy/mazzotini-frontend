@@ -16,6 +16,7 @@ import { AssetsTable } from '../components/dashboard/AssetsTable';
 import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 import {
     PiScalesDuotone, PiWarningCircle, PiCaretLeftBold, PiCaretRightBold,
     PiFolderOpen, PiArrowRight, PiFilesDuotone, PiGavelDuotone, PiCaretDownBold,
@@ -50,16 +51,9 @@ interface PaginatedFoldersResponse {
 const formatBRL = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const statusColor = (s: string) => {
-    switch (s) {
-        case 'Ativo': return 'green';
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
-        default: return 'blue';
-    }
-};
+// Este badge é renderizado apenas para admin/operador (ver isAdminOrOperator
+// abaixo), por isso usa o rótulo interno.
+const statusColor = (s: string) => getStatusColor(s, 'internal');
 
 // ── sub-componente: linha da tabela dentro do accordion ───────────────────────
 const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => {
@@ -79,7 +73,7 @@ const FolderAssetRow = ({ asset }: { asset: FolderAsset }) => {
             {isAdminOrOperator && (
                 <Table.Cell>
                     <Tag.Root size="sm" variant="solid" colorPalette={statusColor(asset.status)}>
-                        <Tag.Label>{asset.status}</Tag.Label>
+                        <Tag.Label>{getStatusLabel(asset.status, 'internal')}</Tag.Label>
                     </Tag.Root>
                 </Table.Cell>
             )}

@@ -12,6 +12,7 @@ import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import { formatCurrency } from '@/utils';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 interface AssociateProcessRow {
     investmentId: string;
@@ -30,11 +31,10 @@ interface AssociateProcessRow {
     lastUpdateDescription: string | null;
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-    ACTIVE:             { label: 'Ativo',      color: 'green'  },
-    PENDING_ENRICHMENT: { label: 'Em análise', color: 'yellow' },
-    CLOSED:             { label: 'Encerrado',  color: 'gray'   },
-};
+// Substituído pelo mapa central em @/utils/assetStatus. O mapa local usava chaves
+// que o backend nunca grava (ACTIVE/CLOSED — o valor real é "Ativo"), então tanto
+// "Ativo" quanto "FAILED_ENRICHMENT" caíam no fallback e o enum cru ia para a tela.
+// Associado é público externo: recebe rótulo neutro, não jargão da integração.
 
 function MeusClientesContent() {
     const [search, setSearch] = useState('');
@@ -109,7 +109,10 @@ function MeusClientesContent() {
                         </Table.Header>
                         <Table.Body>
                             {filtered.map(row => {
-                                const st = statusConfig[row.status] ?? { label: row.status, color: 'gray' };
+                                const st = {
+                                    label: getStatusLabel(row.status, 'client'),
+                                    color: getStatusColor(row.status, 'client'),
+                                };
                                 const title = row.nickname || row.originalCreditor;
                                 return (
                                     <Table.Row key={row.investmentId} _hover={{ bg: 'whiteAlpha.50' }}>

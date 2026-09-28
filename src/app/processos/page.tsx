@@ -20,6 +20,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useState, useEffect } from 'react';
 
 import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
@@ -44,28 +45,10 @@ interface PaginatedResponse {
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-const translateStatus = (status: string) => {
-    switch (status) {
-        case 'Ativo': return 'Ativo';
-        case 'Liquidado': return 'Liquidado';
-        case 'Em Negociação': return 'Em Negociação';
-        case 'PENDING_ENRICHMENT': return 'Aguardando Legal One';
-        case 'FAILED_ENRICHMENT': return 'Falha no Legal One';
-        default:
-            return status.toString().replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-    }
-};
-
-const getStatusColorScheme = (status: string) => {
-    switch (status) {
-        case 'Ativo': return 'green';
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
-        default: return 'blue';
-    }
-};
+// Gestão de Processos é tela de admin/operador: mostra o status interno real,
+// porque essa página é justamente a fila de trabalho de quem corrige as falhas.
+const translateStatus = (status: string) => getStatusLabel(status, 'internal');
+const getStatusColorScheme = (status: string) => getStatusColor(status, 'internal');
 
 export default function OperatorAssetsPage() {
     const { user } = useAuth0();
@@ -185,6 +168,7 @@ export default function OperatorAssetsPage() {
                         onFilterChange={setFilterStatus}
                         onSearch={setSearchQuery}
                         onTypeChange={setFilterType}
+                        showInternalStatuses
                     />
 
                     <Box position="relative" overflowX="auto" borderRadius="md" mt={4} minH="200px">

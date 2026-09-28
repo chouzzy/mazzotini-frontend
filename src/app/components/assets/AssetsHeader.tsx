@@ -23,37 +23,16 @@ import { Toaster, toaster } from '@/components/ui/toaster';
 import { useRouter } from 'next/navigation'; 
 import { Tooltip } from '@/components/ui/tooltip';
 import { useApi } from '@/hooks/useApi'; // <-- Importar o hook da API
+import { getStatusLabel, getStatusColor, type StatusAudience } from '@/utils/assetStatus';
 
 // Funções auxiliares
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-const translateStatus = (status: string) => {
-    switch (status) {
-        case 'ACTIVE':
-        case 'Ativo': return 'Ativo';
-        case 'CLOSED':
-        case 'Liquidado': return 'Liquidado';
-        case 'Em Negociação': return 'Em Negociação';
-        case 'PENDING_ENRICHMENT': return 'Em Análise';
-        case 'FAILED_ENRICHMENT': return 'Falha no Legal One';
-        default: return status;
-    }
-};
-
-const getStatusColorPalette = (status: string) => {
-    switch (status) {
-        case 'ACTIVE':
-        case 'Ativo': return 'green';
-        case 'CLOSED':
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
-        default: return 'blue';
-    }
-};
+// Sem mapa local aqui: esta página de detalhe é aberta tanto por admin/operador
+// quanto pelo investidor (o dashboard do cliente linka para /processos/[legalOneId]),
+// então o público é resolvido em tempo de render pela role — ver `audience` abaixo.
 
 interface AssetHeaderProps {
     asset: DetailedCreditAsset;
@@ -67,6 +46,12 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     // Busca o perfil para saber se é Admin ou Operador
     const { data: myProfile } = useApi<any>('/api/users/me');
     const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+
+    // Enquanto o perfil não chega, trata como cliente: é o padrão seguro, pois
+    // um flash de "Falha no Legal One" para o investidor é pior que o inverso.
+    const audience: StatusAudience = isAdminOrOperator ? 'internal' : 'client';
+    const translateStatus = (status: string) => getStatusLabel(status, audience);
+    const getStatusColorPalette = (status: string) => getStatusColor(status, audience);
 
     const handleSync = async () => {
         setIsSyncing(true);

@@ -8,16 +8,8 @@ import { FolderAsset } from '@/types/folders';
 export const formatBRL = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-export const statusColor = (s: string) => {
-    switch (s) {
-        case 'Ativo': return 'green';
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT': return 'purple';
-        case 'FAILED_ENRICHMENT': return 'red';
-        default: return 'blue';
-    }
-};
+// statusColor foi removido daqui: era exportado mas nenhum arquivo o importava,
+// e duplicava o mapeamento de status. A fonte única agora é @/utils/assetStatus.
 
 export function FolderAssetRow({ asset }: { asset: FolderAsset }) {
     return (

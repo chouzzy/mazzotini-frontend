@@ -22,15 +22,31 @@ interface AssetsToolbarProps {
     onFilterChange: (status: string) => void;
     onSearch: (query: string) => void;
     onTypeChange?: (type: string) => void;
+    /**
+     * Habilita o filtro pelos status internos da integração com o Legal One.
+     * Só deve ser ligado em telas de admin/operador: esta toolbar também é usada
+     * no dashboard do investidor, onde esse jargão não pode aparecer.
+     */
+    showInternalStatuses?: boolean;
 }
 
-const statusOptions = createListCollection({
-    items: [
-        { label: "Todos os Status", value: "" },
-        { label: "Ativo", value: "Ativo" },
-        { label: "Em Negociação", value: "Em Negociação" },
-        { label: "Liquidado", value: "Liquidado" },
-    ]
+const BASE_STATUS_ITEMS = [
+    { label: "Todos os Status", value: "" },
+    { label: "Ativo", value: "Ativo" },
+    { label: "Em Negociação", value: "Em Negociação" },
+    { label: "Liquidado", value: "Liquidado" },
+];
+
+// Status da nossa integração, não do processo do cliente. Ficam atrás da flag
+// porque é por eles que a operação precisa filtrar para achar o que quebrou.
+const INTERNAL_STATUS_ITEMS = [
+    { label: "Falha no Legal One", value: "FAILED_ENRICHMENT" },
+    { label: "Aguardando Legal One", value: "PENDING_ENRICHMENT" },
+];
+
+const publicStatusOptions = createListCollection({ items: BASE_STATUS_ITEMS });
+const internalStatusOptions = createListCollection({
+    items: [...BASE_STATUS_ITEMS, ...INTERNAL_STATUS_ITEMS],
 });
 
 const typeOptions = createListCollection({
@@ -42,9 +58,10 @@ const typeOptions = createListCollection({
     ]
 });
 
-export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, onSearch, onTypeChange }: AssetsToolbarProps) {
+export function AssetsToolbar({ assets, viewMode, onViewChange, onFilterChange, onSearch, onTypeChange, showInternalStatuses = false }: AssetsToolbarProps) {
     const { contains } = useFilter({ sensitivity: "base" });
     const [inputValue, setInputValue] = useState('');
+    const statusOptions = showInternalStatuses ? internalStatusOptions : publicStatusOptions;
 
     const searchItems = useMemo(() => assets.map(asset => ({
         label: `${asset.processNumber}`,

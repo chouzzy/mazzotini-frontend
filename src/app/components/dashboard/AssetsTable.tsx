@@ -9,17 +9,13 @@ import {
 import NextLink from 'next/link';
 import { AssetSummary } from '@/types/api';
 import { useApi } from '@/hooks/useApi';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-const getStatusColorScheme = (status: string) => {
-    switch (status) {
-      case 'Ativo': return 'green';
-      case 'Liquidado': return 'gray';
-      case 'Em Negociação': return 'yellow';
-      default: return 'blue';
-    }
-};
+// A coluna de status só é renderizada para admin/operador (ver isAdminOrOperator
+// abaixo), então usa o rótulo interno.
+const getStatusColorScheme = (status: string) => getStatusColor(status, 'internal');
 
 interface AssetsTableProps {
     assets: AssetSummary[];
@@ -52,7 +48,7 @@ export function AssetsTable({ assets }: AssetsTableProps) {
                             {isAdminOrOperator && (
                                 <Table.Cell>
                                     <Tag.Root variant="subtle" colorPalette={getStatusColorScheme(asset.status)}>
-                                        <Tag.Label>{asset.status}</Tag.Label>
+                                        <Tag.Label>{getStatusLabel(asset.status, 'internal')}</Tag.Label>
                                     </Tag.Root>
                                 </Table.Cell>
                             )}

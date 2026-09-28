@@ -18,6 +18,7 @@ import {
 } from 'react-icons/pi';
 import { useState, useEffect } from 'react';
 import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
+import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 interface AssetSummary {
     id: string;
@@ -49,27 +50,10 @@ interface PaginatedFoldersResponse {
     };
 }
 
-const translateStatus = (status: string) => {
-    switch (status) {
-        case 'Ativo': return 'Ativo';
-        case 'Liquidado': return 'Liquidado';
-        case 'Em Negociação': return 'Em Negociação';
-        case 'PENDING_ENRICHMENT':
-        case 'FAILED_ENRICHMENT': return 'Em Análise';
-        default: return status;
-    }
-};
-
-const getStatusColorScheme = (status: string) => {
-    switch (status) {
-        case 'Ativo': return 'green';
-        case 'Liquidado': return 'gray';
-        case 'Em Negociação': return 'yellow';
-        case 'PENDING_ENRICHMENT':
-        case 'FAILED_ENRICHMENT': return 'yellow';
-        default: return 'blue';
-    }
-};
+// Pastas fica na navegação do investidor, então é tela voltada ao cliente:
+// nunca expõe o estado da integração com o Legal One.
+const translateStatus = (status: string) => getStatusLabel(status, 'client');
+const getStatusColorScheme = (status: string) => getStatusColor(status, 'client');
 
 const AssetTableRow = ({ asset }: { asset: AssetSummary }) => (
     <Table.Row key={asset.id} _hover={{ bg: 'whiteAlpha.50' }} borderBottom="1px solid" borderColor="gray.800">
