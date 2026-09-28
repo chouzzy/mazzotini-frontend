@@ -118,6 +118,7 @@ function ConfiguracoesContent() {
     const [syncingContracts, setSyncingContracts] = useState(false);
     const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
     const [backfillingInvestors, setBackfillingInvestors] = useState(false);
+    const [retryingEnrichments, setRetryingEnrichments] = useState(false);
     const [backfillStatus, setBackfillStatus] = useState<BackfillStatus | null>(null);
     const [backfillTarget, setBackfillTarget] = useState('');
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -177,6 +178,27 @@ function ConfiguracoesContent() {
             toaster.create({ title: 'Erro ao iniciar importação.', type: 'error' });
         } finally {
             setImporting(false);
+        }
+    };
+
+    const handleRetryEnrichments = async () => {
+        setRetryingEnrichments(true);
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/retry-enrichments`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toaster.create({
+                title: 'Reprocessamento iniciado!',
+                description: 'Até 100 processos por execução. Acompanhe os logs do servidor (RetryEnrich).',
+                type: 'success',
+            });
+        } catch {
+            toaster.create({ title: 'Erro ao iniciar reprocessamento.', type: 'error' });
+        } finally {
+            setRetryingEnrichments(false);
         }
     };
 
@@ -436,6 +458,41 @@ function ConfiguracoesContent() {
             {/* ── Vinculação de Clientes ──────────────────────────────── */}
             <VStack align="stretch" gap={3}>
                 <HStack gap={2} mb={1}>
+                    <Icon as={PiArrowClockwise} color="gray.400" boxSize={4} />
+                    <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+                        Processos Travados na Sincronização
+                    </Text>
+                </HStack>
+
+                <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
+                    <Box px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60">
+                        <Text fontSize="sm" color="gray.400">
+                            Reprocessa os ativos parados em <strong>Falha no Legal One</strong> e <strong>Aguardando Legal One</strong>.
+                            Roda automaticamente todo dia às 3h — use este botão para não esperar.
+                            Processa até <strong>100 processos por execução</strong>, com pausa entre cada um para respeitar a
+                            cota do Legal One. Ativos já tentados nas últimas 6h são ignorados.
+                        </Text>
+                    </Box>
+                    <VStack px={5} py={5} gap={4} align="stretch">
+                        <Button
+                            colorPalette="orange"
+                            variant="solid"
+                            loading={retryingEnrichments}
+                            onClick={handleRetryEnrichments}
+                            gap={2}
+                            size="sm"
+                            alignSelf="flex-start"
+                        >
+                            <Icon as={PiArrowClockwise} boxSize={4} />
+                            Reprocessar processos travados
+                        </Button>
+                        <Text fontSize="2xs" color="gray.600">
+                            O resultado aparece nos logs do servidor: <Text as="span" fontFamily="mono">pm2 logs | grep RetryEnrich</Text>
+                        </Text>
+                    </VStack>
+                </Box>
+
+                <HStack gap={2} mb={1} mt={6}>
                     <Icon as={PiUsersThree} color="gray.400" boxSize={4} />
                     <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
                         Vinculação de Clientes aos Processos
