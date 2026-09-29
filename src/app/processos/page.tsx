@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 
 import { AssetsToolbar } from '../components/dashboard/AssetsToolbar';
 import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
+import { Pagination } from '@/components/ui/Pagination';
 import { EmptyState } from '../components/dashboard/EmptyState';
 
 import { useApi } from '@/hooks/useApi';
@@ -238,46 +239,7 @@ export default function OperatorAssetsPage() {
                                         <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>
                                             Mostrando <b>{assets.length}</b> de <b>{meta.total}</b> processos
                                         </Text>
-                                        <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
-                                            <Button
-                                                size="sm"
-                                                variant="solid"
-                                                colorPalette="gray"
-                                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                                disabled={page === 1}
-                                            >
-                                                <Icon as={PiCaretLeftBold} mr={1} /> Anterior
-                                            </Button>
-                                            
-                                            <HStack gap={1} display={{ base: 'none', sm: 'flex' }}>
-                                                {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
-                                                    .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
-                                                    .map((p, i, arr) => (
-                                                        <Box key={p}>
-                                                            {i > 0 && arr[i-1] !== p - 1 && <Text color="gray.600">...</Text>}
-                                                            <Button
-                                                                size="sm"
-                                                                variant="solid"
-                                                                colorPalette={page === p ? "brand" : "gray"}
-                                                                onClick={() => setPage(p)}
-                                                            >
-                                                                {p}
-                                                            </Button>
-                                                        </Box>
-                                                    ))
-                                                }
-                                            </HStack>
-
-                                            <Button
-                                                size="sm"
-                                                variant="solid"
-                                                colorPalette="gray"
-                                                onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                                                disabled={page === meta.totalPages}
-                                            >
-                                                Próximo <Icon as={PiCaretRightBold} ml={1} />
-                                            </Button>
-                                        </HStack>
+                                        <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
                                     </Flex>
                                 )}
                             </Box>

@@ -18,6 +18,7 @@ import {
 } from 'react-icons/pi';
 import { useState, useEffect } from 'react';
 import { AuthenticationGuard } from '../components/auth/AuthenticationGuard';
+import { Pagination } from '@/components/ui/Pagination';
 import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 interface AssetSummary {
@@ -209,21 +210,7 @@ export default function FoldersPage() {
                             {meta && meta.totalPages > 1 && (
                                 <Flex justify="space-between" align="center" mt={6} px={4} pb={10}>
                                     <Text fontSize="sm" color="gray.400" display={{ base: 'none', md: 'block' }}>Mostrando <b>{folders.length}</b> de <b>{meta.total}</b> pastas</Text>
-                                    <HStack gap={2} mx={{ base: 'auto', md: '0' }}>
-                                        <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><Icon as={PiCaretLeftBold} /> Anterior</Button>
-                                        <HStack gap={1}>
-                                            {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
-                                                .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
-                                                .map((p, i, arr) => (
-                                                    <Flex key={p}>
-                                                        {i > 0 && arr[i - 1] !== p - 1 && <Text color="gray.600">...</Text>}
-                                                        <Button size="sm" variant="solid" colorPalette={page === p ? "brand" : "gray"} onClick={() => setPage(p)}>{p}</Button>
-                                                    </Flex>
-                                                ))
-                                            }
-                                        </HStack>
-                                        <Button size="sm" variant="solid" colorPalette="gray" onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))} disabled={page === meta.totalPages}>Próximo <Icon as={PiCaretRightBold} /></Button>
-                                    </HStack>
+                                    <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
                                 </Flex>
                             )}
                         </Box>
