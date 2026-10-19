@@ -17,7 +17,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
-import { useListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
+import { createListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
 import { PaginatedAssetsResponse } from "@/types/api";
 
 // ============================================================================
@@ -59,8 +59,13 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
 
+    // A lista é recriada a partir das opções atuais. O useListCollection guardava só as
+    // opções do primeiro render e não enxergava as que chegavam depois.
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: assetOptions, filter: contains });
+    const [filterText, setFilterText] = useState('');
+    const collection = useMemo(() => createListCollection({
+        items: filterText ? assetOptions.filter(item => contains(item.label, filterText)) : assetOptions,
+    }), [assetOptions, filterText, contains]);
 
     return (
         <Controller
@@ -72,9 +77,9 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
                     <Combobox.Root
                         collection={collection}
                         value={field.value ? [field.value] : []}
-                        onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label); }}
+                        onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label ?? ''); }}
                         inputValue={inputValue}
-                        onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}
+                        onInputValueChange={(d) => { setInputValue(d.inputValue); setFilterText(d.inputValue); }}
                     >
                         <Combobox.Control>
                             <Combobox.Input asChild autoComplete="off">
@@ -84,7 +89,7 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
                                     placeholder="Buscar processo..."
                                     onPaste={(e) => {
                                         const text = e.clipboardData.getData('text/plain').trim();
-                                        setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                                        setTimeout(() => { setInputValue(text); setFilterText(text); }, 0);
                                     }}
                                 />
                             </Combobox.Input>
@@ -216,8 +221,12 @@ function AssociateCombobox({ index, control, associateOptions }: {
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
 
+    // Mesma abordagem do campo de processo: lista recriada a partir das opções atuais.
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: associateOptions, filter: contains });
+    const [filterText, setFilterText] = useState('');
+    const collection = useMemo(() => createListCollection({
+        items: filterText ? associateOptions.filter(item => contains(item.label, filterText)) : associateOptions,
+    }), [associateOptions, filterText, contains]);
 
     return (
         <Field.Root w="100%">
@@ -226,7 +235,7 @@ function AssociateCombobox({ index, control, associateOptions }: {
                 value={field.value ? [field.value] : []}
                 onValueChange={(d) => { field.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }}
                 inputValue={inputValue}
-                onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) field.onChange(""); }}
+                onInputValueChange={(d) => { setInputValue(d.inputValue); setFilterText(d.inputValue); if (!d.inputValue) field.onChange(""); }}
             >
                 <Combobox.Control>
                     <Combobox.Input asChild autoComplete="off">
@@ -236,7 +245,7 @@ function AssociateCombobox({ index, control, associateOptions }: {
                             placeholder="Nenhum associado..."
                             onPaste={(e) => {
                                 const text = e.clipboardData.getData('text/plain').trim();
-                                setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                                setTimeout(() => { setInputValue(text); setFilterText(text); }, 0);
                             }}
                         />
                     </Combobox.Input>
