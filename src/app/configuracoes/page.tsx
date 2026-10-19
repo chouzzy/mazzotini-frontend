@@ -625,7 +625,7 @@ function ConfiguracoesContent() {
                             #Nfs-e (notas fiscais). O cliente é localizado pelo CPF/CNPJ do contato vinculado.
                         </Text>
                         <Text fontSize="xs" color="gray.500" mt={2}>
-                            Roda sozinha todos os dias às 2h. Use o botão para não esperar.
+                            Roda sozinha todos os dias às 5h. Use o botão para não esperar.
                         </Text>
                     </Box>
                     <HStack px={5} py={5} gap={4} wrap="wrap" align="center">
