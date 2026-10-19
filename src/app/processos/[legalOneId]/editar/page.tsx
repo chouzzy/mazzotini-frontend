@@ -423,6 +423,9 @@ export default function EditAssetPage() {
                                         <Select.Control><Select.Trigger bgColor={'gray.700'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{indexTypesCollection.items.map((item) => (<Select.Item key={item.value} item={item}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
+                                    <Field.HelperText fontSize="xs" color="gray.500">
+                                        A correção mensal do dia 1 só aplica IPCA e os marcados como correção antiga. Os demais índices são os da calculadora, definidos na aba Cálculo Judicial.
+                                    </Field.HelperText>
                                 </Field.Root>
                             )} />
                             <Field.Root invalid={!!errors.contractualIndexRate}>
