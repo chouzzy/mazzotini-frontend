@@ -6,10 +6,11 @@ import { Footer } from './Footer';
 import { AppLayout, HeaderNav } from './AppLayout';
 import { useApi } from '@/hooks/useApi';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Flex, Spinner, Text, VStack } from '@chakra-ui/react';
 import axios from 'axios'; // Import necessário para o POST
 import { useSWRConfig } from 'swr'; // Para atualizar o cache após o sync
+import { VerifyEmailScreen } from '@/app/components/auth/AuthenticationGuard';
 
 // Tipagem para os dados do nosso próprio utilizador
 interface MazzotiniUser {
@@ -26,6 +27,8 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { mutate } = useSWRConfig();
     const hasSynced = useRef(false);
+    // O backend só vincula o login a um cadastro existente se o e-mail estiver verificado
+    const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
     // Verifica se a página atual é pública teste
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
@@ -49,35 +52,46 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     //  ETAPA 4: SINCRONIZAÇÃO (MERGE) AO LOGAR
     // =================================================================
     
+    const syncUser = async () => {
+        try {
+            const token = await getAccessTokenSilently();
+            await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/sync`, {
+                email: user?.email,
+                name: user?.name,
+                picture: user?.picture,
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setNeedsEmailVerification(false);
+            mutate('/api/users/me');
+        } catch (error: any) {
+            if (error?.response?.status === 403 && error?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+                setNeedsEmailVerification(true);
+                return;
+            }
+            const msg = error?.error || error?.message || '';
+            const isStaleToken = msg.includes('Missing Refresh Token') || msg.includes('missing_refresh_token') || msg.includes('login_required');
+            if (isStaleToken) {
+                console.warn('[LayoutController] Refresh token inválido — fazendo logout para limpar sessão corrompida.');
+                logout({ logoutParams: { returnTo: window.location.origin } });
+                return;
+            }
+            console.error('[LayoutController] Erro na sincronização silenciosa:', error);
+            // Não reseta hasSynced — evita loop infinito
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated || !user || hasSynced.current) return;
         hasSynced.current = true;
-
-        const syncUser = async () => {
-            try {
-                const token = await getAccessTokenSilently();
-                await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/sync`, {
-                    email: user.email,
-                    name: user.name,
-                    picture: user.picture,
-                }, { headers: { Authorization: `Bearer ${token}` } });
-                mutate('/api/users/me');
-            } catch (error: any) {
-                const msg = error?.error || error?.message || '';
-                const isStaleToken = msg.includes('Missing Refresh Token') || msg.includes('missing_refresh_token') || msg.includes('login_required');
-                if (isStaleToken) {
-                    console.warn('[LayoutController] Refresh token inválido — fazendo logout para limpar sessão corrompida.');
-                    logout({ logoutParams: { returnTo: window.location.origin } });
-                    return;
-                }
-                console.error('[LayoutController] Erro na sincronização silenciosa:', error);
-                // Não reseta hasSynced — evita loop infinito
-            }
-        };
-
         syncUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated]);
+
+    // A tela de verificação renova o token a cada 60 s. Quando o e-mail é confirmado,
+    // o SDK atualiza `user.email_verified` e o sync é refeito.
+    useEffect(() => {
+        if (needsEmailVerification && user?.email_verified) syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [needsEmailVerification, user?.email_verified]);
 
     // =================================================================
 
@@ -150,7 +164,16 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // 2. Se ESTIVER autenticado
+    // 2. Autenticado com o e-mail de um cadastro existente, mas ainda sem confirmar
+    if (needsEmailVerification) {
+        return (
+            <Flex direction="column" w="100%" minH="100vh">
+                <VerifyEmailScreen />
+            </Flex>
+        );
+    }
+
+    // 3. Se ESTIVER autenticado
     if (userProfile) {
         const status = userProfile.status;
         const isOnOnboardingPage = pathname === '/perfil/completar';
