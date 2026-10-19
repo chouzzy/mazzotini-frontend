@@ -509,7 +509,8 @@ export default function EditUserPage() {
                 residentialCity: data.residentialCity,
                 residentialState: data.residentialState,
                 correspondenceAddress: data.correspondenceAddress,
-                ...(data.useCommercialAddress && {
+                // Sem endereço comercial, os campos vão como null para o backend apagar o antigo
+                ...(data.useCommercialAddress ? {
                     commercialCep: unmask(data.commercialCep || ''),
                     commercialStreet: data.commercialStreet,
                     commercialNumber: data.commercialNumber,
@@ -517,6 +518,14 @@ export default function EditUserPage() {
                     commercialNeighborhood: data.commercialNeighborhood,
                     commercialCity: data.commercialCity,
                     commercialState: data.commercialState,
+                } : {
+                    commercialCep: null,
+                    commercialStreet: null,
+                    commercialNumber: null,
+                    commercialComplement: null,
+                    commercialNeighborhood: null,
+                    commercialCity: null,
+                    commercialState: null,
                 }),
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
