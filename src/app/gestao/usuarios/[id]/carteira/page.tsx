@@ -272,11 +272,11 @@ export default function UserCarteiraPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [investmentSearch, setInvestmentSearch] = useState('');
 
-    const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
+    const { data: userData, isLoading: isLoadingUser, error: userError } = useApi<any>(`/api/management/users/${userId}`);
     // Lista de todos os processos: só é necessária para adicionar um processo novo.
     // É pesada, então a tela não espera por ela.
     const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
-    const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<AssociateOption[]>('/api/users/associates');
+    const { data: associatesRaw, isLoading: isLoadingAssociates, error: associatesError } = useApi<AssociateOption[]>('/api/users/associates');
     const associateOptions: AssociateOption[] = associatesRaw || [];
 
     // Os processos da carteira entram primeiro, com o rótulo vindo do próprio investimento:
@@ -327,7 +327,17 @@ export default function UserCarteiraPage() {
         }
     };
 
-    if (isLoadingUser || isLoadingAssociates) {
+    // Sem os dados do usuário a carteira apareceria vazia, e salvar apagaria os processos dele.
+    // Sem a lista de associados, os campos de associado apareceriam em branco.
+    if (userError || associatesError) {
+        return (
+            <Flex w="100%" h="50vh" justify="center" align="center">
+                <Text color="red.300">Não foi possível carregar a carteira deste usuário. Recarregue a página.</Text>
+            </Flex>
+        );
+    }
+
+    if (isLoadingUser || isLoadingAssociates || !userData) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
