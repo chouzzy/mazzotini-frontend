@@ -6,10 +6,11 @@ import { Footer } from './Footer';
 import { AppLayout, HeaderNav } from './AppLayout';
 import { useApi } from '@/hooks/useApi';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
-import { Flex, Spinner, Text, VStack } from '@chakra-ui/react';
+import { useEffect, useRef, useState } from 'react';
+import { Button, Flex, Heading, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import axios from 'axios'; // Import necessário para o POST
 import { useSWRConfig } from 'swr'; // Para atualizar o cache após o sync
+import { VerifyEmailScreen } from '@/app/components/auth/AuthenticationGuard';
 
 // Tipagem para os dados do nosso próprio utilizador
 interface MazzotiniUser {
@@ -20,12 +21,61 @@ interface MazzotiniUser {
 // Lista de rotas que podem ser acessadas mesmo sem perfil
 const PUBLIC_ROUTES = ['/politica-privacidade', '/termos-de-uso'];
 
+// Tela mostrada quando o sync falha e o perfil não carrega. Sem ela, o usuário
+// ficaria parado no spinner, sem saber o que fazer.
+function SyncErrorScreen({ onRetry }: { onRetry: () => Promise<void> }) {
+    const { logout } = useAuth0();
+    const [isRetrying, setIsRetrying] = useState(false);
+
+    const handleRetry = async () => {
+        setIsRetrying(true);
+        await onRetry();
+        setIsRetrying(false);
+    };
+
+    return (
+        <Flex w="100%" flex={1} justify="center" align="center" color="white" p={4}>
+            <VStack gap={6} p={10} bg="gray.800" borderRadius="lg" boxShadow="lg" textAlign="center">
+                <Heading size="lg">Não foi possível carregar sua conta</Heading>
+                <Text maxW="md">
+                    Tivemos um problema ao preparar o seu acesso. Tente novamente em alguns instantes.
+                </Text>
+                <HStack gap={3}>
+                    <Button
+                        color='white'
+                        onClick={handleRetry}
+                        loading={isRetrying}
+                        loadingText="Tentando..."
+                        border={'1px solid'}
+                        borderColor={'brand.600'}
+                        bgColor={'gray.900'}
+                        _hover={{ bgColor: 'brand.600' }}
+                    >
+                        Tentar novamente
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        color="gray.300"
+                        onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                    >
+                        Sair
+                    </Button>
+                </HStack>
+            </VStack>
+        </Flex>
+    );
+}
+
 export function LayoutController({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, logout, user } = useAuth0();
     const router = useRouter();
     const pathname = usePathname();
     const { mutate } = useSWRConfig();
     const hasSynced = useRef(false);
+    // O backend só vincula o login a um cadastro existente se o e-mail estiver verificado
+    const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
+    // Falha do sync (ex.: Auth0 fora do ar). Sem perfil carregado, mostra a tela de erro
+    const [syncFailed, setSyncFailed] = useState(false);
 
     // Verifica se a página atual é pública teste
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
@@ -49,35 +99,51 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     //  ETAPA 4: SINCRONIZAÇÃO (MERGE) AO LOGAR
     // =================================================================
     
+    const syncUser = async () => {
+        try {
+            const token = await getAccessTokenSilently();
+            await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/sync`, {
+                email: user?.email,
+                name: user?.name,
+                picture: user?.picture,
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setNeedsEmailVerification(false);
+            setSyncFailed(false);
+            mutate('/api/users/me');
+        } catch (error: any) {
+            if (error?.response?.status === 403 && error?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+                setNeedsEmailVerification(true);
+                setSyncFailed(false);
+                return;
+            }
+            const msg = error?.error || error?.message || '';
+            const isStaleToken = msg.includes('Missing Refresh Token') || msg.includes('missing_refresh_token') || msg.includes('login_required');
+            if (isStaleToken) {
+                console.warn('[LayoutController] Refresh token inválido — fazendo logout para limpar sessão corrompida.');
+                logout({ logoutParams: { returnTo: window.location.origin } });
+                return;
+            }
+            console.error('[LayoutController] Erro na sincronização silenciosa:', error);
+            // Não reseta hasSynced — evita loop infinito. Sai da tela de verificação
+            // (se estava nela) e deixa o usuário tentar de novo pela tela de erro.
+            setNeedsEmailVerification(false);
+            setSyncFailed(true);
+        }
+    };
+
     useEffect(() => {
         if (!isAuthenticated || !user || hasSynced.current) return;
         hasSynced.current = true;
-
-        const syncUser = async () => {
-            try {
-                const token = await getAccessTokenSilently();
-                await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/sync`, {
-                    email: user.email,
-                    name: user.name,
-                    picture: user.picture,
-                }, { headers: { Authorization: `Bearer ${token}` } });
-                mutate('/api/users/me');
-            } catch (error: any) {
-                const msg = error?.error || error?.message || '';
-                const isStaleToken = msg.includes('Missing Refresh Token') || msg.includes('missing_refresh_token') || msg.includes('login_required');
-                if (isStaleToken) {
-                    console.warn('[LayoutController] Refresh token inválido — fazendo logout para limpar sessão corrompida.');
-                    logout({ logoutParams: { returnTo: window.location.origin } });
-                    return;
-                }
-                console.error('[LayoutController] Erro na sincronização silenciosa:', error);
-                // Não reseta hasSynced — evita loop infinito
-            }
-        };
-
         syncUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated]);
+
+    // A tela de verificação renova o token a cada 60 s. Quando o e-mail é confirmado,
+    // o SDK atualiza `user.email_verified` e o sync é refeito.
+    useEffect(() => {
+        if (needsEmailVerification && user?.email_verified) syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [needsEmailVerification, user?.email_verified]);
 
     // =================================================================
 
@@ -150,7 +216,25 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // 2. Se ESTIVER autenticado
+    // 2. Autenticado com o e-mail de um cadastro existente, mas ainda sem confirmar
+    if (needsEmailVerification) {
+        return (
+            <Flex direction="column" w="100%" minH="100vh">
+                <VerifyEmailScreen />
+            </Flex>
+        );
+    }
+
+    // 3. O sync falhou e o perfil não carregou: oferece tentar de novo
+    if (syncFailed && !userProfile) {
+        return (
+            <Flex direction="column" w="100%" minH="100vh">
+                <SyncErrorScreen onRetry={syncUser} />
+            </Flex>
+        );
+    }
+
+    // 4. Se ESTIVER autenticado
     if (userProfile) {
         const status = userProfile.status;
         const isOnOnboardingPage = pathname === '/perfil/completar';

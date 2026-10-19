@@ -46,7 +46,7 @@ function LoginScreen() {
 // ============================================================================
 //  SUB-COMPONENTE: Ecrã de Verificação de E-mail (LÓGICA CORRIGIDA)
 // ============================================================================
-function VerifyEmailScreen() {
+export function VerifyEmailScreen() {
     const { getAccessTokenSilently, user } = useAuth0();
     const [isResending, setIsResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
