@@ -19,6 +19,7 @@ import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
 import { createListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
 import { PaginatedAssetsResponse } from "@/types/api";
+import { AssetOption, buildAssetOptions } from "@/utils/assetOptions";
 
 // ============================================================================
 //  INTERFACES
@@ -30,11 +31,6 @@ interface InvestmentForm {
         documents: string[];
         associateId?: string;
     }[];
-}
-
-interface AssetOption {
-    label: string;
-    value: string;
 }
 
 interface AssociateOption {
@@ -281,13 +277,12 @@ export default function UserCarteiraPage() {
     const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<AssociateOption[]>('/api/users/associates');
     const associateOptions: AssociateOption[] = associatesRaw || [];
 
-    const assetOptions: AssetOption[] = useMemo(() => {
-        const items = allAssetsResponse?.items || [];
-        return items.map(asset => ({
-            label: `${asset.processNumber}${asset.nickname ? ` (${asset.nickname})` : ''}`,
-            value: asset.id,
-        }));
-    }, [allAssetsResponse]);
+    // Os processos da carteira entram primeiro, com o rótulo vindo do próprio investimento:
+    // cada linha mostra o seu processo mesmo que a lista geral falhe ou ainda não tenha chegado.
+    const assetOptions: AssetOption[] = useMemo(() => buildAssetOptions(
+        (userData?.investments || []).map((inv: any) => inv.asset),
+        allAssetsResponse?.items,
+    ), [userData, allAssetsResponse]);
 
     const { control, handleSubmit, setValue, getValues, reset, formState: { errors } } = useForm<InvestmentForm>({
         defaultValues: { investments: [] }
