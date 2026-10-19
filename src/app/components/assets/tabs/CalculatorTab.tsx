@@ -15,19 +15,12 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
+import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
 // ── constantes ────────────────────────────────────────────────────────────────
 
-const INDEX_OPTIONS = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (INPC/IPCA-15)', value: 'TJSP_LEI14905' },
-    { label: 'IPCA-E',                            value: 'IPCA_E'        },
-    { label: 'INPC',                              value: 'INPC'          },
-    { label: 'IPCA',                              value: 'IPCA'          },
-    { label: 'IGP-M',                             value: 'IGP_M'         },
-    { label: 'CDI Acumulado Mensal',              value: 'CDI_MENSAL'    },
-    { label: 'CDI Diária',                        value: 'CDI_DIARIA'    },
-]});
+const INDEX_OPTIONS = createListCollection({ items: CALCULATOR_INDEXES });
 
 const TYPE_OPTIONS = createListCollection({ items: [
     { label: 'Simples',  value: 'SIMPLES'  },

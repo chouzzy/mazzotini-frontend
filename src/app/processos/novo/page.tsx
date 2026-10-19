@@ -13,6 +13,7 @@ import { PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiFolderOpen, PiHash,
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
+import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
@@ -76,12 +77,7 @@ interface UserSelectItem {
     indication?: string | null;
     referredByName?: string | null;
 }
-const CALC_INDEX_COLLECTION = createListCollection({ items: [
-    { label: 'TJSP — Lei 14.905 (INPC/IPCA-15)', value: 'TJSP_LEI14905' },
-    { label: 'IPCA-E', value: 'IPCA_E' },
-    { label: 'INPC',   value: 'INPC'   },
-    { label: 'IPCA',   value: 'IPCA'   },
-]});
+const CALC_INDEX_COLLECTION = createListCollection({ items: CALCULATOR_INDEXES });
 
 const CALC_TYPE_COLLECTION = createListCollection({ items: [
     { label: 'Simples', value: 'SIMPLES' },
