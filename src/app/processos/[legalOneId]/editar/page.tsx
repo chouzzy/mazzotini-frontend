@@ -15,6 +15,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSWRConfig } from "swr";
 import { useApi } from '@/hooks/useApi';
+import { buildUpdateIndexTypeOptions, normalizeUpdateIndexType } from '@/utils/indexOptions';
 
 interface InvestorFormInput {
     userId: string;
@@ -46,26 +47,6 @@ interface UserSelectItem {
     indication?: string | null;
     referredByName?: string | null;
 }
-
-const indexTypesCollection = createListCollection({
-    items: [
-        { label: "SELIC", value: "SELIC" },
-        { label: "IPCA", value: "IPCA" },
-        { label: "CDI", value: "CDI" },
-        { label: "IGP-M", value: "IGP-M" },
-        { label: "Outro", value: "Outro" },
-    ],
-});
-
-// Normaliza valores do banco para os valores exatos da collection acima.
-// O robô de importação salva "OUTRO" (maiúsculo); o formulário precisa de "Outro".
-const VALID_INDEX_TYPES = indexTypesCollection.items.map(i => i.value);
-const normalizeIndexType = (val: string | undefined | null): string => {
-    if (!val) return "Outro";
-    if (VALID_INDEX_TYPES.includes(val)) return val;
-    const ci = VALID_INDEX_TYPES.find(v => v.toLowerCase() === val.toLowerCase());
-    return ci ?? "Outro";
-};
 
 function InvestorCombobox(props: { control: Control<FormValues>, index: number, allInvestors: UserSelectItem[] }) {
     const { control, index, allInvestors } = props;
@@ -230,6 +211,12 @@ export default function EditAssetPage() {
     const { data: assetData, isLoading: isLoadingAsset } = useApi<any>(
         legalOneId ? `/api/assets/${legalOneId}` : null
     );
+    // Índices da calculadora, os da correção antiga e "Outro", mais o valor atual
+    // do processo se ele não estiver entre eles (para não virar "Outro" ao salvar)
+    const indexTypesCollection = useMemo(
+        () => createListCollection({ items: buildUpdateIndexTypeOptions(assetData?.updateIndexType) }),
+        [assetData?.updateIndexType]
+    );
     // O controller já retorna { value, label } — usar direto sem remapear
     const { data: associates } = useApi<AssociateSelectItem[]>('/api/users/associates');
 
@@ -273,7 +260,7 @@ export default function EditAssetPage() {
 
                 investors: investorsFromApi.length > 0 ? investorsFromApi : [{ userId: "", share: 0, acquisitionDate: "" }],
 
-                updateIndexType: normalizeIndexType(assetData.updateIndexType),
+                updateIndexType: normalizeUpdateIndexType(assetData.updateIndexType),
                 contractualIndexRate: assetData.contractualIndexRate || 0,
                 legalOneId: assetData.legalOneId!,
                 legalOneType: assetData.legalOneType!,
@@ -432,7 +419,7 @@ export default function EditAssetPage() {
                             <Controller name="updateIndexType" control={control} rules={{ required: "Selecione um índice" }} render={({ field, fieldState: { error } }) => (
                                 <Field.Root invalid={!!error} required>
                                     <Field.Label>Índice de Correção</Field.Label>
-                                    <Select.Root collection={indexTypesCollection} value={field.value && VALID_INDEX_TYPES.includes(field.value) ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
+                                    <Select.Root collection={indexTypesCollection} value={field.value ? [field.value] : []} onValueChange={(details) => field.onChange(details.value[0])}>
                                         <Select.Control><Select.Trigger bgColor={'gray.700'} borderColor={'gray.600'}><Select.ValueText placeholder="Selecione..." /><PiCaretDownDuotone /></Select.Trigger></Select.Control>
                                         <Portal><Select.Positioner><Select.Content>{indexTypesCollection.items.map((item) => (<Select.Item key={item.value} item={item}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
