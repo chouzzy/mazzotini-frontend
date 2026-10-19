@@ -407,7 +407,7 @@ export default function EditUserPage() {
 
     // 1. Busca dados do usuário e solicitações pendentes
     const { data: myProfile, isLoading: isLoadingProfile } = useApi<{ role: string }>('/api/users/me');
-    const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
+    const { data: userData, isLoading: isLoadingUser, mutate: mutateUser } = useApi<any>(`/api/management/users/${userId}`);
     const { data: associates, isLoading: isLoadingAssociates } = useApi<Associate[]>('/api/users/associates');
     const { data: pendingChanges, mutate: mutatePendingChanges } = useApi<any[]>('/api/management/profile-changes');
     const pendingChange = pendingChanges?.find((r: any) => r.userId === userId) || null;
@@ -435,7 +435,9 @@ export default function EditUserPage() {
                 ...userData,
                 birthDate: userData.birthDate ? new Date(userData.birthDate).toISOString().split('T')[0] : '',
                 contactPreference: userData.contactPreference ? userData.contactPreference.split(',') : [],
-                unknownAssociate: !!userData.indication,
+                // Cadastros antigos podem ter os dois campos gravados. O associado cadastrado
+                // tem prioridade (como no resto do sistema); senão, salvar apagaria o vínculo.
+                unknownAssociate: !userData.referredById && !!userData.indication,
                 manualReferral: userData.indication,
                 useCommercialAddress: !!userData.commercialCep,
                 personalDocumentUrls: userData.personalDocumentUrls || []
@@ -507,7 +509,8 @@ export default function EditUserPage() {
                 residentialCity: data.residentialCity,
                 residentialState: data.residentialState,
                 correspondenceAddress: data.correspondenceAddress,
-                ...(data.useCommercialAddress && {
+                // Sem endereço comercial, os campos vão como null para o backend apagar o antigo
+                ...(data.useCommercialAddress ? {
                     commercialCep: unmask(data.commercialCep || ''),
                     commercialStreet: data.commercialStreet,
                     commercialNumber: data.commercialNumber,
@@ -515,25 +518,35 @@ export default function EditUserPage() {
                     commercialNeighborhood: data.commercialNeighborhood,
                     commercialCity: data.commercialCity,
                     commercialState: data.commercialState,
+                } : {
+                    commercialCep: null,
+                    commercialStreet: null,
+                    commercialNumber: null,
+                    commercialComplement: null,
+                    commercialNeighborhood: null,
+                    commercialCity: null,
+                    commercialState: null,
                 }),
                 nationality: data.nationality,
                 maritalStatus: data.maritalStatus,
             };
 
-            // Envia como solicitação de alteração — pendente até aprovação do ADM
-            await axios.post(`${apiBaseUrl}/api/management/users/${userId}/request-change`, payload, {
+            // Salva direto: a etapa de confirmação foi retirada a pedido do escritório (06/10).
+            // O backend descarta as solicitações antigas que ainda estiverem pendentes.
+            await axios.patch(`${apiBaseUrl}/api/management/users/${userId}`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            mutateUser();
             mutatePendingChanges();
             toaster.create({
-                title: "Solicitação enviada!",
-                description: "As alterações ficam pendentes até aprovação de outro administrador.",
+                title: "Cadastro atualizado!",
+                description: "As alterações já estão valendo.",
                 type: "success"
             });
 
         } catch (error: any) {
-            console.error("Erro ao solicitar alteração:", error);
+            console.error("Erro ao salvar o cadastro:", error);
             toaster.create({ title: "Erro ao Salvar", description: error.response?.data?.error || "Erro desconhecido", type: "error" });
         } finally {
             setIsSubmitting(false);
@@ -689,16 +702,16 @@ export default function EditUserPage() {
 
                 <Separator borderColor="gray.700" />
 
-                {/* BANNER: alteração pendente de aprovação */}
+                {/* BANNER: solicitação antiga, do tempo em que a edição precisava de aprovação */}
                 {pendingChange && (
                     <Alert.Root status="warning" borderRadius="md">
                         <Alert.Indicator><Icon as={PiWarningCircle} /></Alert.Indicator>
                         <Alert.Content>
-                            <Alert.Title>Alteração aguardando aprovação</Alert.Title>
+                            <Alert.Title>Solicitação de alteração antiga pendente</Alert.Title>
                             <Alert.Description>
-                                Existe uma solicitação de edição pendente para este perfil, enviada em{' '}
-                                {new Date(pendingChange.createdAt).toLocaleString('pt-BR')}.
-                                As alterações abaixo substituirão a solicitação anterior se submetidas novamente.
+                                Existe uma solicitação de edição deste perfil, enviada em{' '}
+                                {new Date(pendingChange.createdAt).toLocaleString('pt-BR')}, ainda aguardando aprovação.
+                                As edições agora valem na hora: ao salvar este formulário, essa solicitação é descartada.
                             </Alert.Description>
                         </Alert.Content>
                     </Alert.Root>
@@ -932,9 +945,9 @@ export default function EditUserPage() {
                     </VStack>
                     {/* ================================================================= */}
 
-                    <Button type="submit" colorPalette="yellow" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch" mt={8}>
+                    <Button type="submit" colorPalette="green" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch" mt={8}>
                         <Icon as={PiFloppyDisk} />
-                        Solicitar Alteração (Pendente de Aprovação)
+                        Salvar Alterações
                     </Button>
                 </form>
 
