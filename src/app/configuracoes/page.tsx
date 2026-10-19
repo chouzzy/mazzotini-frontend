@@ -242,7 +242,7 @@ function ConfiguracoesContent() {
             });
             toaster.create({ title: 'Sincronização concluída!', type: 'success' });
         } catch {
-            toaster.create({ title: 'Erro ao sincronizar contratos.', type: 'error' });
+            toaster.create({ title: 'Erro ao sincronizar os documentos.', type: 'error' });
         } finally {
             setSyncingContracts(false);
         }
@@ -607,21 +607,25 @@ function ConfiguracoesContent() {
                 </Box>
             </VStack>
 
-            {/* ── Contratos de Honorários ─────────────────────────────── */}
+            {/* ── Documentos financeiros dos contratos ────────────────── */}
             <VStack align="stretch" gap={3}>
                 <HStack gap={2} mb={1}>
                     <Icon as={PiHandshake} color="gray.400" boxSize={4} />
                     <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
-                        Contratos de Honorários
+                        Documentos Financeiros dos Contratos
                     </Text>
                 </HStack>
 
                 <Box bg="gray.900" borderRadius="xl" border="1px solid" borderColor="gray.700" overflow="hidden">
                     <Box px={5} py={4} borderBottom="1px solid" borderColor="gray.700/60">
                         <Text fontSize="sm" color="gray.400">
-                            Sincroniza documentos do GED dos Contratos de Honorários do Legal One. Para cada documento
-                            com vínculo de Contato (cliente), o sistema localiza o usuário pelo CPF/CNPJ e disponibiliza
-                            o documento na área privada do cliente em <strong>Meus Documentos</strong>.
+                            Sincroniza os documentos do GED anexados aos contratos no Legal One e os leva para a área
+                            privada do cliente em <strong>Meus Documentos</strong>, conforme a hashtag do tipo:
+                            #Cessão, #HO (honorários), #Orientação Financeira, #Orientação Fiscal, #Comprovantes e
+                            #Nfs-e (notas fiscais). O cliente é localizado pelo CPF/CNPJ do contato vinculado.
+                        </Text>
+                        <Text fontSize="xs" color="gray.500" mt={2}>
+                            Roda sozinha todos os dias às 2h. Use o botão para não esperar.
                         </Text>
                     </Box>
                     <HStack px={5} py={5} gap={4} wrap="wrap" align="center">
@@ -634,7 +638,7 @@ function ConfiguracoesContent() {
                             size="sm"
                         >
                             <Icon as={PiHandshake} boxSize={4} />
-                            Sincronizar contratos de honorários
+                            Sincronizar documentos agora
                         </Button>
 
                         {syncResult && (
