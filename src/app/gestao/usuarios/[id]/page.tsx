@@ -435,7 +435,9 @@ export default function EditUserPage() {
                 ...userData,
                 birthDate: userData.birthDate ? new Date(userData.birthDate).toISOString().split('T')[0] : '',
                 contactPreference: userData.contactPreference ? userData.contactPreference.split(',') : [],
-                unknownAssociate: !!userData.indication,
+                // Cadastros antigos podem ter os dois campos gravados. O associado cadastrado
+                // tem prioridade (como no resto do sistema); senão, salvar apagaria o vínculo.
+                unknownAssociate: !userData.referredById && !!userData.indication,
                 manualReferral: userData.indication,
                 useCommercialAddress: !!userData.commercialCep,
                 personalDocumentUrls: userData.personalDocumentUrls || []
