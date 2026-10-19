@@ -273,7 +273,9 @@ export default function UserCarteiraPage() {
     const [investmentSearch, setInvestmentSearch] = useState('');
 
     const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
-    const { data: allAssetsResponse, isLoading: isLoadingAssets } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
+    // Lista de todos os processos: só é necessária para adicionar um processo novo.
+    // É pesada, então a tela não espera por ela.
+    const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
     const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<AssociateOption[]>('/api/users/associates');
     const associateOptions: AssociateOption[] = associatesRaw || [];
 
@@ -325,7 +327,7 @@ export default function UserCarteiraPage() {
         }
     };
 
-    if (isLoadingUser || isLoadingAssets || isLoadingAssociates) {
+    if (isLoadingUser || isLoadingAssociates) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
@@ -408,11 +410,25 @@ export default function UserCarteiraPage() {
                             }}
                             type="button"
                             gap={2}
+                            disabled={!allAssetsResponse}
                         >
                             <Icon as={PiPlusCircle} boxSize={5} />
                             Adicionar Processo
                         </Button>
                     </Flex>
+
+                    {/* ── Lista geral de processos (usada só para adicionar novos) ── */}
+                    {isLoadingAssets && !assetsError && (
+                        <HStack gap={2} px={1} color="gray.500">
+                            <Spinner size="xs" />
+                            <Text fontSize="xs">Carregando a lista de processos para adicionar...</Text>
+                        </HStack>
+                    )}
+                    {assetsError && (
+                        <Text px={1} fontSize="xs" color="orange.300">
+                            Não foi possível carregar a lista completa de processos. Os processos da carteira continuam aparecendo; para adicionar um novo, recarregue a página.
+                        </Text>
+                    )}
 
                     {/* ── Lista vazia ── */}
                     {fields.length === 0 && (
