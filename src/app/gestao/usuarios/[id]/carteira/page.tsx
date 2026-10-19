@@ -17,8 +17,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
-import { useListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
+import { createListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
 import { PaginatedAssetsResponse } from "@/types/api";
+import { AssetOption, buildAssetOptions } from "@/utils/assetOptions";
 
 // ============================================================================
 //  INTERFACES
@@ -30,11 +31,6 @@ interface InvestmentForm {
         documents: string[];
         associateId?: string;
     }[];
-}
-
-interface AssetOption {
-    label: string;
-    value: string;
 }
 
 interface AssociateOption {
@@ -59,8 +55,13 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { if (defaultLabel) setInputValue(defaultLabel); }, [defaultLabel]);
 
+    // A lista é recriada a partir das opções atuais. O useListCollection guardava só as
+    // opções do primeiro render e não enxergava as que chegavam depois.
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: assetOptions, filter: contains });
+    const [filterText, setFilterText] = useState('');
+    const collection = useMemo(() => createListCollection({
+        items: filterText ? assetOptions.filter(item => contains(item.label, filterText)) : assetOptions,
+    }), [assetOptions, filterText, contains]);
 
     return (
         <Controller
@@ -72,9 +73,9 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
                     <Combobox.Root
                         collection={collection}
                         value={field.value ? [field.value] : []}
-                        onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label); }}
+                        onValueChange={(d) => { field.onChange(d.value[0]); setInputValue(d.items[0]?.label ?? ''); }}
                         inputValue={inputValue}
-                        onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); }}
+                        onInputValueChange={(d) => { setInputValue(d.inputValue); setFilterText(d.inputValue); }}
                     >
                         <Combobox.Control>
                             <Combobox.Input asChild autoComplete="off">
@@ -84,7 +85,7 @@ function AssetCombobox({ index, control, assetOptions, errors }: {
                                     placeholder="Buscar processo..."
                                     onPaste={(e) => {
                                         const text = e.clipboardData.getData('text/plain').trim();
-                                        setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                                        setTimeout(() => { setInputValue(text); setFilterText(text); }, 0);
                                     }}
                                 />
                             </Combobox.Input>
@@ -216,8 +217,12 @@ function AssociateCombobox({ index, control, associateOptions }: {
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
 
+    // Mesma abordagem do campo de processo: lista recriada a partir das opções atuais.
     const { contains } = useFilter({ sensitivity: "base" });
-    const { collection, filter } = useListCollection({ initialItems: associateOptions, filter: contains });
+    const [filterText, setFilterText] = useState('');
+    const collection = useMemo(() => createListCollection({
+        items: filterText ? associateOptions.filter(item => contains(item.label, filterText)) : associateOptions,
+    }), [associateOptions, filterText, contains]);
 
     return (
         <Field.Root w="100%">
@@ -226,7 +231,7 @@ function AssociateCombobox({ index, control, associateOptions }: {
                 value={field.value ? [field.value] : []}
                 onValueChange={(d) => { field.onChange(d.value[0] ?? ""); setInputValue(d.items[0]?.label ?? ""); }}
                 inputValue={inputValue}
-                onInputValueChange={(d) => { setInputValue(d.inputValue); filter(d.inputValue); if (!d.inputValue) field.onChange(""); }}
+                onInputValueChange={(d) => { setInputValue(d.inputValue); setFilterText(d.inputValue); if (!d.inputValue) field.onChange(""); }}
             >
                 <Combobox.Control>
                     <Combobox.Input asChild autoComplete="off">
@@ -236,7 +241,7 @@ function AssociateCombobox({ index, control, associateOptions }: {
                             placeholder="Nenhum associado..."
                             onPaste={(e) => {
                                 const text = e.clipboardData.getData('text/plain').trim();
-                                setTimeout(() => { setInputValue(text); filter(text); }, 0);
+                                setTimeout(() => { setInputValue(text); setFilterText(text); }, 0);
                             }}
                         />
                     </Combobox.Input>
@@ -267,18 +272,19 @@ export default function UserCarteiraPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [investmentSearch, setInvestmentSearch] = useState('');
 
-    const { data: userData, isLoading: isLoadingUser } = useApi<any>(`/api/management/users/${userId}`);
-    const { data: allAssetsResponse, isLoading: isLoadingAssets } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
-    const { data: associatesRaw, isLoading: isLoadingAssociates } = useApi<AssociateOption[]>('/api/users/associates');
+    const { data: userData, isLoading: isLoadingUser, error: userError } = useApi<any>(`/api/management/users/${userId}`);
+    // Lista de todos os processos: só é necessária para adicionar um processo novo.
+    // É pesada, então a tela não espera por ela.
+    const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
+    const { data: associatesRaw, isLoading: isLoadingAssociates, error: associatesError } = useApi<AssociateOption[]>('/api/users/associates');
     const associateOptions: AssociateOption[] = associatesRaw || [];
 
-    const assetOptions: AssetOption[] = useMemo(() => {
-        const items = allAssetsResponse?.items || [];
-        return items.map(asset => ({
-            label: `${asset.processNumber}${asset.nickname ? ` (${asset.nickname})` : ''}`,
-            value: asset.id,
-        }));
-    }, [allAssetsResponse]);
+    // Os processos da carteira entram primeiro, com o rótulo vindo do próprio investimento:
+    // cada linha mostra o seu processo mesmo que a lista geral falhe ou ainda não tenha chegado.
+    const assetOptions: AssetOption[] = useMemo(() => buildAssetOptions(
+        (userData?.investments || []).map((inv: any) => inv.asset),
+        allAssetsResponse?.items,
+    ), [userData, allAssetsResponse]);
 
     const { control, handleSubmit, setValue, getValues, reset, formState: { errors } } = useForm<InvestmentForm>({
         defaultValues: { investments: [] }
@@ -321,7 +327,17 @@ export default function UserCarteiraPage() {
         }
     };
 
-    if (isLoadingUser || isLoadingAssets || isLoadingAssociates) {
+    // Sem os dados do usuário a carteira apareceria vazia, e salvar apagaria os processos dele.
+    // Sem a lista de associados, os campos de associado apareceriam em branco.
+    if (userError || associatesError) {
+        return (
+            <Flex w="100%" h="50vh" justify="center" align="center">
+                <Text color="red.300">Não foi possível carregar a carteira deste usuário. Recarregue a página.</Text>
+            </Flex>
+        );
+    }
+
+    if (isLoadingUser || isLoadingAssociates || !userData) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
@@ -404,11 +420,25 @@ export default function UserCarteiraPage() {
                             }}
                             type="button"
                             gap={2}
+                            disabled={!allAssetsResponse}
                         >
                             <Icon as={PiPlusCircle} boxSize={5} />
                             Adicionar Processo
                         </Button>
                     </Flex>
+
+                    {/* ── Lista geral de processos (usada só para adicionar novos) ── */}
+                    {isLoadingAssets && !assetsError && (
+                        <HStack gap={2} px={1} color="gray.500">
+                            <Spinner size="xs" />
+                            <Text fontSize="xs">Carregando a lista de processos para adicionar...</Text>
+                        </HStack>
+                    )}
+                    {assetsError && (
+                        <Text px={1} fontSize="xs" color="orange.300">
+                            Não foi possível carregar a lista completa de processos. Os processos da carteira continuam aparecendo; para adicionar um novo, recarregue a página.
+                        </Text>
+                    )}
 
                     {/* ── Lista vazia ── */}
                     {fields.length === 0 && (
