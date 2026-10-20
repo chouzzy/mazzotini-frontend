@@ -62,6 +62,7 @@ const NOTIFICATION_TYPES = [
     { value: 'PROFILE_CHANGE_REQUESTED',  label: 'Alteração de perfil' },
     { value: 'FAILED_ENRICHMENT',         label: 'Falha no Legal One' },
     { value: 'ASSET_IMPORTED',            label: 'Processo importado' },
+    { value: 'CALCULATION',               label: 'Recálculo mensal' },
     { value: 'GENERAL',                   label: 'Geral' },
 ];
 
@@ -93,6 +94,7 @@ function getTypeBadge(notificationType: string) {
         PROFILE_CHANGE_REQUESTED:  { label: 'Alt. perfil',     color: 'purple' },
         FAILED_ENRICHMENT:         { label: 'Falha Legal One', color: 'red'    },
         ASSET_IMPORTED:            { label: 'Importado',       color: 'green'  },
+        CALCULATION:               { label: 'Cálculo',         color: 'orange' },
         GENERAL:                   { label: 'Geral',           color: 'gray'   },
     };
     const cfg = map[notificationType] ?? { label: notificationType, color: 'gray' };

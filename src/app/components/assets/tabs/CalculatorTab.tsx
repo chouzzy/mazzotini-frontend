@@ -415,7 +415,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             setCalcResult(res.data);
             mutateLogs();
             onRefresh();
-            toaster.create({ title: 'Cálculo realizado com sucesso!', type: 'success' });
+            if (res.data?.warnings?.length) {
+                toaster.create({ title: 'Cálculo feito, com avisos. Confira o quadro de atenção no resultado.', type: 'warning' });
+            } else {
+                toaster.create({ title: 'Cálculo realizado com sucesso!', type: 'success' });
+            }
         } catch (e: any) {
             toaster.create({ title: e?.response?.data?.error || 'Erro ao calcular.', type: 'error' });
         } finally { setIsCalculating(false); }
@@ -918,7 +922,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         max={new Date().toISOString().substring(0, 7)} />
                                 </Field.Root>
                                 <Text fontSize="xs" color="gray.500" pb={1}>
-                                    Vazio = mês atual. Use o último mês fechado para máxima precisão.
+                                    Vazio = mês atual. A correção e os juros vão até o mês anterior ao de referência, como no Dr. Calc.
                                 </Text>
                             </HStack>
 

@@ -285,6 +285,8 @@ describe('CalculatorTab: vários cálculos no mesmo processo', () => {
         await submit();
 
         expect(await screen.findByText(aviso)).toBeInTheDocument();
+        expect(toastTitles()).toContain('Cálculo feito, com avisos. Confira o quadro de atenção no resultado.');
+        expect(toastTitles()).not.toContain('Cálculo realizado com sucesso!');
     });
 
     it('sem avisos, não mostra o quadro de atenção', async () => {

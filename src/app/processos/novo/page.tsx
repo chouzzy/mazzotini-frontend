@@ -359,6 +359,7 @@ export default function CreateAssetPage() {
                     description: i.description || undefined,
                 }));
 
+            let calculationError: string | null = null;
             if (calcInstallments.length > 0) {
                 try {
                     await axios.put(
@@ -382,12 +383,20 @@ export default function CreateAssetPage() {
                         {},
                         { headers: { Authorization: `Bearer ${token}` } },
                     );
-                } catch {
-                    toaster.create({ title: 'Processo criado, mas houve um erro ao salvar os parâmetros de cálculo. Configure na aba Cálculo Judicial.', type: 'warning' });
+                } catch (e: any) {
+                    // O motivo vem do backend (por exemplo, índice sem dados para a data da parcela)
+                    calculationError = e?.response?.data?.error || 'Erro ao calcular.';
+                    toaster.create({
+                        title:       'Processo criado, mas o cálculo não foi feito',
+                        description: `${calculationError} Confira na aba Cálculo Judicial.`,
+                        type:        'warning',
+                    });
                 }
             }
 
             toaster.create({ title: "Processo Registrado!", type: "success" });
+            // Com erro no cálculo, dá tempo de ler o motivo antes de abrir o processo
+            if (calculationError) await new Promise(resolve => setTimeout(resolve, 4000));
             window.location.href = `/processos/${data.legalOneId}`;
         } catch (error: any) {
             toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
@@ -600,8 +609,9 @@ export default function CreateAssetPage() {
                                 <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcFeesPercentage")} />
                             </Field.Root>
                             <Field.Root>
-                                <Field.Label>Multa Art. 523 (%)</Field.Label>
+                                <Field.Label>HO e multa Art. 523 (%)</Field.Label>
                                 <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcPenaltyPercentage")} />
+                                <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                             </Field.Root>
                         </SimpleGrid>
 
