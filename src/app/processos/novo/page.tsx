@@ -14,6 +14,7 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
+import { parseBR } from '@/utils/calculationForm';
 import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
@@ -350,16 +351,10 @@ export default function CreateAssetPage() {
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             // Salva parâmetros de cálculo e dispara primeiro cálculo
-            const parseBRNumber = (s: string): number => {
-                // Suporta formato BR "1.150.972,30" e americano "1150972.30"
-                if (s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
-                return parseFloat(s.replace(/,/g, ''));
-            };
-
             const calcInstallments = data.calcInstallments
                 .filter(i => i.baseValue && i.baseDate)
                 .map(i => ({
-                    baseValue:   parseBRNumber(i.baseValue),
+                    baseValue:   parseBR(i.baseValue),
                     baseDate:    new Date(i.baseDate + 'T00:00:00Z').toISOString(),
                     description: i.description || undefined,
                 }));

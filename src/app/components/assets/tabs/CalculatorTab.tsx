@@ -17,7 +17,8 @@ import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import {
-    CalcDraft, DeductionPoint, EMPTY_INSTALLMENT, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
+    calculationError, CalcDraft, CalculationPayload, DeductionPoint, newCalculationFrom, nextCalculationLabel,
+    parseBR, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
 } from '@/utils/calculationForm';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
@@ -156,6 +157,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     // `drafts` guarda todos. O cálculo aberto em `drafts` só é atualizado ao trocar ou salvar.
     const [drafts, setDrafts]       = useState<CalcDraft[]>([]);
     const [activeIdx, setActiveIdx] = useState(0);
+    // Quantos cálculos salvos seriam apagados se o usuário confirmar o salvamento
+    const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
 
     // ── reabrir cálculo do histórico ──────────────────────────────────────────
     const reopenFromLog = (snapshot: any) => {
@@ -164,6 +167,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         const all = toDrafts(snapshot);
         setDrafts(all);
         setActiveIdx(0);
+        setPendingRemoval(null);
         reset({ ...all[0], referenceMonth: '' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         toaster.create({ title: 'Parâmetros carregados. Ajuste o que precisar e salve.', type: 'info' });
@@ -181,9 +185,12 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     const PERIOD_COLLECTION = PERIOD_OPTIONS;
 
-    const { data: savedParams, mutate: mutateParams } = useApi<any>(
+    const { data: savedParams, error: paramsError, mutate: mutateParams } = useApi<any>(
         `/api/calculator/${asset.legalOneId}/params`
     );
+    // A API devolve null quando o processo não tem parâmetros; undefined é que ainda não chegaram.
+    // Salvar antes disso sobrescreveria os cálculos salvos com o formulário em branco.
+    const paramsNotLoaded = savedParams === undefined;
     const { data: logs, mutate: mutateLogs } = useApi<CalcLog[]>(
         `/api/calculator/${asset.legalOneId}/log?limit=5`
     );
@@ -247,11 +254,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         reset({ ...list[idx], referenceMonth });
     };
 
-    // O cálculo novo copia os parâmetros do cálculo aberto, sem as parcelas
+    // O cálculo novo copia índice, juros e percentuais do aberto. Parcelas, datas de início e
+    // honorário fixo ficam em branco, porque costumam ser de cada contrato
     const addCalculation = () => {
         const list = currentDrafts();
-        list.push({ ...list[activeIdx], label: `Cálculo ${list.length + 1}`, installments: [{ ...EMPTY_INSTALLMENT }] });
+        const labels = list.map((d, i) => d.label || `Cálculo ${i + 1}`);
+        list.push(newCalculationFrom(list[activeIdx], nextCalculationLabel(labels)));
         switchTo(list.length - 1, list);
+        setPendingRemoval(null);
+        toaster.create({ title: 'Cálculo adicionado. Confira os honorários, as datas de início dos juros e as parcelas.', type: 'info' });
     };
 
     // A remoção só vale quando o cálculo é salvo
@@ -260,6 +271,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         if (list.length < 2) return;
         list.splice(activeIdx, 1);
         switchTo(Math.max(0, activeIdx - 1), list);
+        setPendingRemoval(null);
     };
 
     const calcLabels = (drafts.length > 0 ? drafts : [{ label: activeLabel }])
@@ -301,10 +313,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             const dateStr  = parts[0].trim();
             const valueStr = parts[1].trim().replace(/[^\d,.-]/g, '');
             const desc     = parts[2]?.trim() || '';
-            const value    = valueStr.includes(',')
-                ? parseFloat(valueStr.replace(/\./g, '').replace(',', '.'))
-                : parseFloat(valueStr);
-            if (!dateStr || isNaN(value)) continue;
+            const value    = parseBR(valueStr);
+            if (!dateStr || !Number.isFinite(value)) continue;
             const iso = parseDisplayDate(dateStr);
             if (!iso) continue;
             append({
@@ -325,28 +335,35 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     };
 
     // ── submit principal ──────────────────────────────────────────────────────
-    const onSaveAndCalculate = async (data: FormValues) => {
+    const onSaveAndCalculate = async (data: FormValues, removalConfirmed = false) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { referenceMonth, ...activeDraft } = data;
         const list = drafts.length > 0 ? [...drafts] : [activeDraft];
         list[activeIdx] = activeDraft;
         setDrafts(list);
 
-        const payloads = list.map(toPayload);
-        const invalidIdx = payloads.findIndex(p => p === null);
-        if (invalidIdx >= 0) {
-            const label = list[invalidIdx].label || `Cálculo ${invalidIdx + 1}`;
-            toaster.create({
-                title: list.length > 1
-                    ? `Em "${label}", informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).`
-                    : 'Informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).',
-                type: 'warning',
-            });
-            if (invalidIdx !== activeIdx) switchTo(invalidIdx, list);
-            return;
+        // Um erro em qualquer cálculo abre esse cálculo e diz o que corrigir
+        const payloads: CalculationPayload[] = [];
+        for (let i = 0; i < list.length; i++) {
+            const result = toPayload(list[i]);
+            if (!result.ok) {
+                const label = list.length > 1 ? (list[i].label || `Cálculo ${i + 1}`) : null;
+                toaster.create({ title: calculationError(result.error, label), type: 'warning' });
+                if (i !== activeIdx) switchTo(i, list);
+                return;
+            }
+            payloads.push(result.payload);
         }
 
-        const [main, ...extras] = payloads as NonNullable<ReturnType<typeof toPayload>>[];
+        // Menos cálculos do que os salvos: os que saíram da tela seriam apagados
+        const savedCount = 1 + (Array.isArray(savedParams?.extraCalculations) ? savedParams.extraCalculations.length : 0);
+        if (!removalConfirmed && savedParams && list.length < savedCount) {
+            setPendingRemoval(savedCount - list.length);
+            return;
+        }
+        setPendingRemoval(null);
+
+        const [main, ...extras] = payloads;
         const payload = {
             ...main,
             // Com um cálculo só, os campos vazios apagam cálculos extras salvos antes
@@ -357,12 +374,23 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         setIsSaving(true);
         try {
             const token = await getToken();
-            await axios.put(
+            const res = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${asset.legalOneId}/params`,
                 payload,
                 { headers: { Authorization: `Bearer ${token}` } },
             );
+            // O recarregamento dos parâmetros não deve trocar o cálculo aberto
+            hasInitialized.current = true;
             mutateParams();
+            // Servidor numa versão sem vários cálculos: os extras não foram gravados
+            const savedExtras = res.data?.extraCalculations;
+            if (extras.length > 0 && (!Array.isArray(savedExtras) || savedExtras.length !== extras.length)) {
+                toaster.create({
+                    title: 'O servidor não gravou os outros cálculos. Atualize a página e tente de novo; se continuar, avise o suporte.',
+                    type: 'error',
+                });
+                return;
+            }
             toaster.create({ title: 'Parâmetros salvos.', type: 'success' });
         } catch (e: any) {
             toaster.create({ title: e?.response?.data?.error || 'Erro ao salvar parâmetros.', type: 'error' });
@@ -474,8 +502,17 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                         )}
                     </Flex>
 
-                    <form onSubmit={handleSubmit(onSaveAndCalculate)}>
+                    <form onSubmit={handleSubmit(d => onSaveAndCalculate(d))}>
                         <VStack align="stretch" gap={5}>
+
+                            {paramsError && paramsNotLoaded && (
+                                <Box p={3} bg="red.950" borderRadius="md" border="1px solid" borderColor="red.700">
+                                    <Text fontSize="sm" color="red.200">
+                                        Não foi possível carregar os parâmetros salvos deste processo. Recarregue a página antes de
+                                        salvar, para não sobrescrever o que já está salvo.
+                                    </Text>
+                                </Box>
+                            )}
 
                             {/* Vários cálculos no mesmo processo */}
                             <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
@@ -882,7 +919,28 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 </Text>
                             </HStack>
 
-                            <Button type="submit" colorPalette="brand" size="md" loading={isSaving || isCalculating} gap={2}>
+                            {pendingRemoval !== null && (
+                                <Box p={3} bg="orange.950" borderRadius="md" border="1px solid" borderColor="orange.700">
+                                    <Text fontSize="sm" color="orange.200" mb={3}>
+                                        {pendingRemoval === 1
+                                            ? 'Um cálculo salvo neste processo não está mais na tela e será apagado.'
+                                            : `${pendingRemoval} cálculos salvos neste processo não estão mais na tela e serão apagados.`}
+                                        {' '}O valor do processo passa a ser só o dos cálculos que estão aqui.
+                                    </Text>
+                                    <HStack gap={2}>
+                                        <Button size="sm" colorPalette="orange" type="button"
+                                            onClick={() => handleSubmit(d => onSaveAndCalculate(d, true))()}>
+                                            Apagar e salvar
+                                        </Button>
+                                        <Button size="sm" variant="ghost" colorPalette="gray" type="button" onClick={() => setPendingRemoval(null)}>
+                                            Cancelar
+                                        </Button>
+                                    </HStack>
+                                </Box>
+                            )}
+
+                            <Button type="submit" colorPalette="brand" size="md" loading={isSaving || isCalculating} gap={2}
+                                disabled={paramsNotLoaded}>
                                 <Icon as={PiPlay} />
                                 {isSaving ? 'Salvando parâmetros...' : isCalculating ? 'Calculando...' : 'Salvar e Calcular'}
                             </Button>

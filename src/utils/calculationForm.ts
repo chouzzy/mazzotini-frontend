@@ -38,6 +38,33 @@ export interface CalcDraft {
     installments:           Installment[];
 }
 
+/** Corpo da API para um cálculo (PUT /api/calculator/:legalOneId/params). */
+export interface CalculationPayload {
+    correctionIndex:       string;
+    moratoryMode:          string;
+    moratoryRate:          number;
+    moratoryRateUnit:      string;
+    moratoryType:          string;
+    moratoryStartDate:     string | null;
+    compensatoryRate:      number;
+    compensatoryRateUnit:  string;
+    compensatoryType:      string;
+    compensatoryStartDate: string | null;
+    multaPercentage:       number;
+    feesMode:              string;
+    feesPercentage:        number;
+    feesFixedValue:        number;
+    penaltyPercentage:     number;
+    feesOnPenalty:         boolean;
+    installments: {
+        baseValue:       number;
+        baseDate:        string;
+        description?:    string;
+        type:            'DEBITO' | 'ABATIMENTO';
+        deductionPoint?: DeductionPoint;
+    }[];
+}
+
 export const EMPTY_INSTALLMENT: Installment = { baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' };
 
 /** ISO YYYY-MM-DD → DD/MM/AAAA (para exibição). */
@@ -48,19 +75,32 @@ export const toDisplayDate = (iso: string): string => {
     return `${d}/${m}/${y}`;
 };
 
-/** DD/MM/AAAA → ISO YYYY-MM-DD (para envio). */
+/**
+ * DD/MM/AAAA (ou AAAA-MM-DD) → ISO AAAA-MM-DD (para envio). Vazio quando o texto não é uma
+ * data ou a data não existe no calendário (31/02 não pode virar 03/03).
+ */
 export const parseDisplayDate = (display: string): string => {
     if (!display) return '';
-    const match = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(display)) return display;
-    return '';
+    const br  = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const iso = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!br && !iso) return '';
+    const [y, m, d] = br ? [Number(br[3]), Number(br[2]), Number(br[1])] : [Number(iso![1]), Number(iso![2]), Number(iso![3])];
+    const date = new Date(Date.UTC(y, m - 1, d));
+    if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return '';
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 };
 
-/** "1.150.972,30" ou "1150972.30" → número. */
-export const parseBR = (s: string) => s.includes(',')
-    ? parseFloat(s.replace(/\./g, '').replace(',', '.'))
-    : parseFloat(s);
+/**
+ * Valor digitado → número. Aceita "1.150.972,30", "150.000" (milhar sem centavos, em reais),
+ * "1150972.30" e "R$ 1.000,00". NaN quando não é um valor.
+ */
+export const parseBR = (s: string): number => {
+    const text = s.replace(/R\$/gi, '').replace(/\s/g, '');
+    const normalized = text.includes(',')
+        ? text.replace(/\./g, '').replace(',', '.')
+        : /^\d{1,3}(\.\d{3})+$/.test(text) ? text.replace(/\./g, '') : text;
+    return /^-?\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : NaN;
+};
 
 /** Parâmetros salvos, de um cálculo extra ou do snapshot de um log → valores do formulário. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,44 +146,99 @@ export const toDrafts = (p: any): CalcDraft[] => {
     ];
 };
 
-/** Valores do formulário → corpo da API. Null quando nenhuma parcela tem valor e data válida. */
-export const toPayload = (d: CalcDraft) => {
-    const installments = d.installments
-        .filter(i => i.baseValue && i.baseDate)
-        .map(i => {
-            const iso = parseDisplayDate(i.baseDate);
-            if (!iso) return null;
-            return {
-                baseValue:      parseBR(i.baseValue),
-                baseDate:       new Date(iso + 'T00:00:00Z').toISOString(),
-                description:    i.description || undefined,
-                type:           i.type,
-                deductionPoint: i.type === 'ABATIMENTO' ? i.deductionPoint : undefined,
-            };
-        })
-        .filter(Boolean);
+export type PayloadResult = { ok: true; payload: CalculationPayload } | { ok: false; error: string };
 
-    if (installments.length === 0) return null;
+/**
+ * Valores do formulário → corpo da API. Linha de parcela totalmente vazia é ignorada; valor
+ * ou data faltando, valor ou data inválidos, data de início inválida ou nenhuma parcela de
+ * débito viram erro, para nada ser descartado em silêncio.
+ */
+export const toPayload = (d: CalcDraft): PayloadResult => {
+    const invalid = (error: string): PayloadResult => ({ ok: false, error });
+
+    const installments: CalculationPayload['installments'] = [];
+    for (let i = 0; i < d.installments.length; i++) {
+        const row   = d.installments[i];
+        const what  = `parcela ${i + 1}`;
+        const value = (row.baseValue ?? '').trim();
+        const date  = (row.baseDate ?? '').trim();
+        if (!value && !date) continue;
+        if (!value) return invalid(`${what}: informe o valor.`);
+        if (!date) return invalid(`${what}: informe a data (DD/MM/AAAA).`);
+        const amount = parseBR(value);
+        if (!Number.isFinite(amount)) return invalid(`${what}: valor inválido (${value}).`);
+        const iso = parseDisplayDate(date);
+        if (!iso) return invalid(`${what}: data inválida (${date}).`);
+        installments.push({
+            baseValue:      amount,
+            baseDate:       `${iso}T00:00:00.000Z`,
+            description:    row.description || undefined,
+            type:           row.type,
+            deductionPoint: row.type === 'ABATIMENTO' ? row.deductionPoint : undefined,
+        });
+    }
+    if (!installments.some(i => i.type === 'DEBITO')) {
+        return invalid('informe ao menos uma parcela de débito com valor e data (DD/MM/AAAA).');
+    }
+
+    const moratoryStartDate     = d.moratoryStartDate ? parseDisplayDate(d.moratoryStartDate) : '';
+    const compensatoryStartDate = d.compensatoryStartDate ? parseDisplayDate(d.compensatoryStartDate) : '';
+    if (d.moratoryStartDate && !moratoryStartDate) {
+        return invalid(`início dos juros moratórios: data inválida (${d.moratoryStartDate}).`);
+    }
+    if (d.compensatoryStartDate && !compensatoryStartDate) {
+        return invalid(`início dos juros remuneratórios: data inválida (${d.compensatoryStartDate}).`);
+    }
+
+    const feesFixedValue = parseBR(d.feesFixedValue || '0');
+    if (!Number.isFinite(feesFixedValue)) return invalid(`honorários (R$): valor inválido (${d.feesFixedValue}).`);
 
     return {
-        correctionIndex:       d.correctionIndex,
-        moratoryMode:          d.moratoryMode,
-        moratoryRate:          parseFloat(d.moratoryRate   || '0'),
-        moratoryRateUnit:      d.moratoryRateUnit          || 'AM',
-        moratoryType:          d.moratoryType,
-        moratoryStartDate:     d.moratoryStartDate
-            ? (parseDisplayDate(d.moratoryStartDate) || null) : null,
-        compensatoryRate:      parseFloat(d.compensatoryRate || '0'),
-        compensatoryRateUnit:  d.compensatoryRateUnit       || 'AM',
-        compensatoryType:      d.compensatoryType           || 'SIMPLES',
-        compensatoryStartDate: d.compensatoryStartDate
-            ? (parseDisplayDate(d.compensatoryStartDate) || null) : null,
-        multaPercentage:       parseFloat(d.multaPercentage || '0'),
-        feesMode:              d.feesMode                   || 'PERCENTUAL',
-        feesPercentage:        parseFloat(d.feesPercentage  || '0'),
-        feesFixedValue:        parseBR(d.feesFixedValue     || '0'),
-        penaltyPercentage:     parseFloat(d.penaltyPercentage || '0'),
-        feesOnPenalty:         d.feesOnPenalty,
-        installments,
+        ok: true,
+        payload: {
+            correctionIndex:       d.correctionIndex,
+            moratoryMode:          d.moratoryMode,
+            moratoryRate:          parseFloat(d.moratoryRate   || '0'),
+            moratoryRateUnit:      d.moratoryRateUnit          || 'AM',
+            moratoryType:          d.moratoryType,
+            moratoryStartDate:     moratoryStartDate || null,
+            compensatoryRate:      parseFloat(d.compensatoryRate || '0'),
+            compensatoryRateUnit:  d.compensatoryRateUnit       || 'AM',
+            compensatoryType:      d.compensatoryType           || 'SIMPLES',
+            compensatoryStartDate: compensatoryStartDate || null,
+            multaPercentage:       parseFloat(d.multaPercentage || '0'),
+            feesMode:              d.feesMode                   || 'PERCENTUAL',
+            feesPercentage:        parseFloat(d.feesPercentage  || '0'),
+            feesFixedValue,
+            penaltyPercentage:     parseFloat(d.penaltyPercentage || '0'),
+            feesOnPenalty:         d.feesOnPenalty,
+            installments,
+        },
     };
 };
+
+/** Mensagem de erro de um cálculo, com o nome dele na frente quando o processo tem mais de um. */
+export const calculationError = (error: string, label: string | null): string =>
+    label ? `${label}: ${error}` : error.charAt(0).toUpperCase() + error.slice(1);
+
+/** Nome para um cálculo novo: "Cálculo N", sem repetir um nome que já existe. */
+export const nextCalculationLabel = (labels: string[]): string => {
+    for (let n = labels.length + 1; ; n++) {
+        const label = `Cálculo ${n}`;
+        if (!labels.includes(label)) return label;
+    }
+};
+
+/**
+ * Cálculo novo a partir do aberto: mesmo índice, juros e percentuais, sem parcelas. As datas
+ * de início e o honorário fixo ficam em branco, porque costumam ser de cada contrato e,
+ * copiados, somariam juros ou honorários a mais sem ninguém perceber.
+ */
+export const newCalculationFrom = (base: CalcDraft, label: string): CalcDraft => ({
+    ...base,
+    label,
+    moratoryStartDate:     '',
+    compensatoryStartDate: '',
+    feesFixedValue:        '',
+    installments:          [{ ...EMPTY_INSTALLMENT }],
+});
