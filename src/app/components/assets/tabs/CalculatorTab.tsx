@@ -16,6 +16,9 @@ import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
+import {
+    CalcDraft, DeductionPoint, EMPTY_INSTALLMENT, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
+} from '@/utils/calculationForm';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
 // ── constantes ────────────────────────────────────────────────────────────────
@@ -46,23 +49,6 @@ const formatPct = (v: number) =>
     new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(v) + '%';
 
 // ── helpers de data ───────────────────────────────────────────────────────────
-
-// ISO YYYY-MM-DD → DD/MM/AAAA (para exibição)
-const toDisplayDate = (iso: string): string => {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    if (!y || !m || !d) return '';
-    return `${d}/${m}/${y}`;
-};
-
-// DD/MM/AAAA → ISO YYYY-MM-DD (para envio)
-const parseDisplayDate = (display: string): string => {
-    if (!display) return '';
-    const match = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(display)) return display;
-    return '';
-};
 
 // Máscara DD/MM/AAAA — aplica barras automaticamente
 const applyDateMask = (raw: string): string => {
@@ -99,16 +85,6 @@ const addMonths = (isoDate: string, n: number): string => {
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
-type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MULTA' | 'APOS_TUDO';
-
-interface Installment {
-    baseValue:      string;
-    baseDate:       string;  // DD/MM/AAAA no form, convertido para ISO no submit
-    description:    string;
-    type:           'DEBITO' | 'ABATIMENTO';
-    deductionPoint: DeductionPoint;
-}
-
 const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
     { label: 'Do valor corrigido (antes dos honorários)', value: 'DO_VALOR_CORRIGIDO' },
     { label: 'Após os honorários advocatícios',           value: 'APOS_HONORARIOS'   },
@@ -116,26 +92,8 @@ const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
     { label: 'Após tudo (total final)',                   value: 'APOS_TUDO'         },
 ]});
 
-interface FormValues {
-    correctionIndex:        string;
-    moratoryMode:           string;
-    moratoryRate:           string;
-    moratoryRateUnit:       string;  // 'AM' | 'AA'
-    moratoryType:           string;
-    moratoryStartDate:      string;  // DD/MM/AAAA
-    compensatoryRate:       string;
-    compensatoryRateUnit:   string;  // 'AM' | 'AA'
-    compensatoryType:       string;
-    compensatoryStartDate:  string;  // DD/MM/AAAA
-    multaPercentage:        string;
-    feesMode:               string;  // 'PERCENTUAL' | 'FIXO'
-    feesPercentage:         string;
-    feesFixedValue:         string;
-    penaltyPercentage:      string;
-    feesOnPenalty:          boolean;
-    installments:           Installment[];
-    referenceMonth:         string;
-}
+// O formulário edita um dos cálculos do processo; o mês de referência vale para todos
+type FormValues = CalcDraft & { referenceMonth: string };
 
 interface CalcLog {
     id: string;
@@ -180,6 +138,7 @@ interface CalcResult {
     referenceMonth:       number;
     referenceYear:        number;
     installmentResults:   any[];
+    calculations?:        { label: string; baseTotal: number; correctedValue: number; totalValue: number }[];
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -193,41 +152,19 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     const [isSaving, setIsSaving]         = useState(false);
     const hasInitialized                  = useRef(false);
 
+    // Vários cálculos no mesmo processo: o formulário edita o cálculo aberto (activeIdx), e
+    // `drafts` guarda todos. O cálculo aberto em `drafts` só é atualizado ao trocar ou salvar.
+    const [drafts, setDrafts]       = useState<CalcDraft[]>([]);
+    const [activeIdx, setActiveIdx] = useState(0);
+
     // ── reabrir cálculo do histórico ──────────────────────────────────────────
     const reopenFromLog = (snapshot: any) => {
         if (!snapshot) return;
         hasInitialized.current = true; // impede o useEffect de sobrescrever
-        reset({
-            correctionIndex:       snapshot.correctionIndex      ?? 'TJSP_LEI14905',
-            moratoryMode:          snapshot.moratoryMode         ?? 'TAXA_LEGAL',
-            moratoryRate:          String(snapshot.moratoryRate  ?? 1),
-            moratoryRateUnit:      snapshot.moratoryRateUnit     ?? 'AM',
-            moratoryType:          snapshot.moratoryType         ?? 'SIMPLES',
-            moratoryStartDate:     snapshot.moratoryStartDate
-                ? toDisplayDate(snapshot.moratoryStartDate.substring(0, 10)) : '',
-            compensatoryRate:      String(snapshot.compensatoryRate ?? 0),
-            compensatoryRateUnit:  snapshot.compensatoryRateUnit  ?? 'AM',
-            compensatoryType:      snapshot.compensatoryType      ?? 'SIMPLES',
-            compensatoryStartDate: snapshot.compensatoryStartDate
-                ? toDisplayDate(snapshot.compensatoryStartDate.substring(0, 10)) : '',
-            multaPercentage:       String(snapshot.multaPercentage  ?? 0),
-            feesMode:              snapshot.feesMode              ?? 'PERCENTUAL',
-            feesPercentage:        String(snapshot.feesPercentage  ?? 10),
-            feesFixedValue:        snapshot.feesFixedValue
-                ? (snapshot.feesFixedValue as number).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '',
-            penaltyPercentage:     String(snapshot.penaltyPercentage ?? 10),
-            feesOnPenalty:         snapshot.feesOnPenalty          ?? false,
-            referenceMonth:        '',
-            installments: snapshot.installments?.length
-                ? snapshot.installments.map((i: any) => ({
-                    baseValue:      String(i.baseValue),
-                    baseDate:       i.baseDate ? toDisplayDate(i.baseDate.substring(0, 10)) : '',
-                    description:    i.description ?? '',
-                    type:           i.type ?? 'DEBITO',
-                    deductionPoint: i.deductionPoint ?? 'APOS_TUDO',
-                  }))
-                : [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
-        });
+        const all = toDrafts(snapshot);
+        setDrafts(all);
+        setActiveIdx(0);
+        reset({ ...all[0], referenceMonth: '' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         toaster.create({ title: 'Parâmetros carregados. Ajuste o que precisar e salve.', type: 'info' });
     };
@@ -251,8 +188,9 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         `/api/calculator/${asset.legalOneId}/log?limit=5`
     );
 
-    const { register, control, handleSubmit, reset, watch } = useForm<FormValues>({
+    const { register, control, handleSubmit, reset, watch, getValues } = useForm<FormValues>({
         defaultValues: {
+            label:                'Cálculo 1',
             correctionIndex:      'TJSP_LEI14905',
             moratoryMode:         'TAXA_LEGAL',
             moratoryRate:         '1',
@@ -278,36 +216,10 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     useEffect(() => {
         if (!savedParams || hasInitialized.current) return;
         hasInitialized.current = true;
-        reset({
-            correctionIndex:       savedParams.correctionIndex      ?? 'TJSP_LEI14905',
-            moratoryMode:          savedParams.moratoryMode         ?? 'TAXA_LEGAL',
-            moratoryRate:          String(savedParams.moratoryRate   ?? 1),
-            moratoryRateUnit:      savedParams.moratoryRateUnit     ?? 'AM',
-            moratoryType:          savedParams.moratoryType         ?? 'SIMPLES',
-            moratoryStartDate:     savedParams.moratoryStartDate
-                ? toDisplayDate(savedParams.moratoryStartDate.substring(0, 10)) : '',
-            compensatoryRate:      String(savedParams.compensatoryRate ?? 0),
-            compensatoryRateUnit:  savedParams.compensatoryRateUnit  ?? 'AM',
-            compensatoryType:      savedParams.compensatoryType      ?? 'SIMPLES',
-            compensatoryStartDate: savedParams.compensatoryStartDate
-                ? toDisplayDate(savedParams.compensatoryStartDate.substring(0, 10)) : '',
-            multaPercentage:       String(savedParams.multaPercentage  ?? 0),
-            feesMode:              savedParams.feesMode              ?? 'PERCENTUAL',
-            feesPercentage:        String(savedParams.feesPercentage   ?? 10),
-            feesFixedValue:        String(savedParams.feesFixedValue   ?? 0),
-            penaltyPercentage:     String(savedParams.penaltyPercentage ?? 10),
-            feesOnPenalty:         savedParams.feesOnPenalty          ?? false,
-            referenceMonth:        '',
-            installments: savedParams.installments?.length
-                ? savedParams.installments.map((i: any) => ({
-                    baseValue:      String(i.baseValue),
-                    baseDate:       i.baseDate ? toDisplayDate(i.baseDate.substring(0, 10)) : '',
-                    description:    i.description ?? '',
-                    type:           i.type ?? 'DEBITO',
-                    deductionPoint: i.deductionPoint ?? 'APOS_TUDO',
-                  }))
-                : [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
-        });
+        const all = toDrafts(savedParams);
+        setDrafts(all);
+        setActiveIdx(0);
+        reset({ ...all[0], referenceMonth: '' });
     }, [savedParams, reset]);
 
     const { fields, append, remove } = useFieldArray({ control, name: 'installments' });
@@ -316,6 +228,42 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     const moratoryRateUnit    = watch('moratoryRateUnit');
     const compensatoryRateUnit = watch('compensatoryRateUnit');
     const watchedInstallments = watch('installments');
+    const activeLabel         = watch('label');
+
+    // ── vários cálculos no mesmo processo ─────────────────────────────────────
+    /** Todos os cálculos, com o que está no formulário no lugar do cálculo aberto. */
+    const currentDrafts = (): CalcDraft[] => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { referenceMonth, ...draft } = getValues();
+        const list = drafts.length > 0 ? [...drafts] : [draft];
+        list[activeIdx] = draft;
+        return list;
+    };
+
+    const switchTo = (idx: number, list: CalcDraft[] = currentDrafts()) => {
+        const referenceMonth = getValues('referenceMonth');
+        setDrafts(list);
+        setActiveIdx(idx);
+        reset({ ...list[idx], referenceMonth });
+    };
+
+    // O cálculo novo copia os parâmetros do cálculo aberto, sem as parcelas
+    const addCalculation = () => {
+        const list = currentDrafts();
+        list.push({ ...list[activeIdx], label: `Cálculo ${list.length + 1}`, installments: [{ ...EMPTY_INSTALLMENT }] });
+        switchTo(list.length - 1, list);
+    };
+
+    // A remoção só vale quando o cálculo é salvo
+    const removeCalculation = () => {
+        const list = currentDrafts();
+        if (list.length < 2) return;
+        list.splice(activeIdx, 1);
+        switchTo(Math.max(0, activeIdx - 1), list);
+    };
+
+    const calcLabels = (drafts.length > 0 ? drafts : [{ label: activeLabel }])
+        .map((d, i) => (i === activeIdx ? activeLabel : d.label) || `Cálculo ${i + 1}`);
 
     const getToken = () => getAccessTokenSilently({
         authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
@@ -378,50 +326,32 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     // ── submit principal ──────────────────────────────────────────────────────
     const onSaveAndCalculate = async (data: FormValues) => {
-        const parseBR = (s: string) => s.includes(',')
-            ? parseFloat(s.replace(/\./g, '').replace(',', '.'))
-            : parseFloat(s);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { referenceMonth, ...activeDraft } = data;
+        const list = drafts.length > 0 ? [...drafts] : [activeDraft];
+        list[activeIdx] = activeDraft;
+        setDrafts(list);
 
-        const installments = data.installments
-            .filter(i => i.baseValue && i.baseDate)
-            .map(i => {
-                const iso = parseDisplayDate(i.baseDate);
-                if (!iso) return null;
-                return {
-                    baseValue:      parseBR(i.baseValue),
-                    baseDate:       new Date(iso + 'T00:00:00Z').toISOString(),
-                    description:    i.description || undefined,
-                    type:           i.type,
-                    deductionPoint: i.type === 'ABATIMENTO' ? i.deductionPoint : undefined,
-                };
-            })
-            .filter(Boolean);
-
-        if (installments.length === 0) {
-            toaster.create({ title: 'Informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).', type: 'warning' });
+        const payloads = list.map(toPayload);
+        const invalidIdx = payloads.findIndex(p => p === null);
+        if (invalidIdx >= 0) {
+            const label = list[invalidIdx].label || `Cálculo ${invalidIdx + 1}`;
+            toaster.create({
+                title: list.length > 1
+                    ? `Em "${label}", informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).`
+                    : 'Informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).',
+                type: 'warning',
+            });
+            if (invalidIdx !== activeIdx) switchTo(invalidIdx, list);
             return;
         }
 
+        const [main, ...extras] = payloads as NonNullable<ReturnType<typeof toPayload>>[];
         const payload = {
-            correctionIndex:       data.correctionIndex,
-            moratoryMode:          data.moratoryMode,
-            moratoryRate:          parseFloat(data.moratoryRate   || '0'),
-            moratoryRateUnit:      data.moratoryRateUnit          || 'AM',
-            moratoryType:          data.moratoryType,
-            moratoryStartDate:     data.moratoryStartDate
-                ? (parseDisplayDate(data.moratoryStartDate) || null) : null,
-            compensatoryRate:      parseFloat(data.compensatoryRate || '0'),
-            compensatoryRateUnit:  data.compensatoryRateUnit       || 'AM',
-            compensatoryType:      data.compensatoryType           || 'SIMPLES',
-            compensatoryStartDate: data.compensatoryStartDate
-                ? (parseDisplayDate(data.compensatoryStartDate) || null) : null,
-            multaPercentage:       parseFloat(data.multaPercentage || '0'),
-            feesMode:              data.feesMode                   || 'PERCENTUAL',
-            feesPercentage:        parseFloat(data.feesPercentage  || '0'),
-            feesFixedValue:        parseBR(data.feesFixedValue     || '0'),
-            penaltyPercentage:     parseFloat(data.penaltyPercentage || '0'),
-            feesOnPenalty:         data.feesOnPenalty,
-            installments,
+            ...main,
+            // Com um cálculo só, os campos vazios apagam cálculos extras salvos antes
+            calculationLabel:  list.length > 1 ? (list[0].label || 'Cálculo 1') : null,
+            extraCalculations: extras.map((p, i) => ({ label: list[i + 1].label || `Cálculo ${i + 2}`, ...p })),
         };
 
         setIsSaving(true);
@@ -546,6 +476,42 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
                     <form onSubmit={handleSubmit(onSaveAndCalculate)}>
                         <VStack align="stretch" gap={5}>
+
+                            {/* Vários cálculos no mesmo processo */}
+                            <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                <Flex justify="space-between" align="center" gap={3} wrap="wrap">
+                                    {calcLabels.length > 1 ? (
+                                        <HStack gap={1} wrap="wrap">
+                                            {calcLabels.map((label, idx) => (
+                                                <Button key={idx} size="xs" type="button"
+                                                    variant={idx === activeIdx ? 'solid' : 'ghost'}
+                                                    colorPalette={idx === activeIdx ? 'brand' : 'gray'}
+                                                    onClick={() => { if (idx !== activeIdx) switchTo(idx); }}>
+                                                    {label}
+                                                </Button>
+                                            ))}
+                                        </HStack>
+                                    ) : (
+                                        <Text fontSize="xs" color="gray.500" flex={1} minW="200px">
+                                            Processo com contratos de índices ou juros diferentes? Use um cálculo para cada um. O valor do processo é a soma.
+                                        </Text>
+                                    )}
+                                    <Button size="xs" variant="outline" colorPalette="brand" gap={1} type="button" onClick={addCalculation}>
+                                        <Icon as={PiPlus} /> Adicionar cálculo
+                                    </Button>
+                                </Flex>
+                                {calcLabels.length > 1 && (
+                                    <Flex gap={3} align="flex-end" wrap="wrap" mt={3}>
+                                        <Field.Root flex={1} minW="200px">
+                                            <Field.Label fontSize="xs" color="gray.400">Nome deste cálculo</Field.Label>
+                                            <Input {...register('label')} size="sm" bg="gray.900" borderColor="gray.600" placeholder="Ex: Contrato 1" />
+                                        </Field.Root>
+                                        <Button size="xs" variant="ghost" colorPalette="red" gap={1} type="button" onClick={removeCalculation}>
+                                            <Icon as={PiTrash} /> Remover este cálculo
+                                        </Button>
+                                    </Flex>
+                                )}
+                            </Box>
 
                             {/* Índice de Correção */}
                             <Field.Root>
@@ -1001,6 +967,20 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Text fontWeight="bold" fontSize="sm" color="orange.300">− {formatBRL(calcResult.abatimentoTotal)}</Text>
                                 </Box>
                             </Flex>
+                        )}
+
+                        {calcResult.calculations && calcResult.calculations.length > 1 && (
+                            <VStack align="stretch" gap={1} mb={4} p={3} bg="gray.800" borderRadius="md">
+                                <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                    Por cálculo
+                                </Text>
+                                {calcResult.calculations.map((calc, i) => (
+                                    <Flex key={i} justify="space-between" align="center" gap={3}>
+                                        <Text fontSize="sm">{calc.label}</Text>
+                                        <Text fontSize="sm" fontWeight="bold" fontVariantNumeric="tabular-nums">{formatBRL(calc.totalValue)}</Text>
+                                    </Flex>
+                                ))}
+                            </VStack>
                         )}
 
                         <Box p={4} bg="brand.900/30" borderRadius="md" border="1px solid" borderColor="brand.700">
