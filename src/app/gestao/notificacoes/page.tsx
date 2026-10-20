@@ -311,12 +311,14 @@ export default function NotificacoesPage() {
                                                         overflow="hidden"
                                                         textOverflow="ellipsis"
                                                         whiteSpace="nowrap"
+                                                        title={notif.title}
                                                     >
                                                         {notif.title}
                                                     </Text>
                                                 </Table.Cell>
                                                 <Table.Cell px={4} py={3}>
-                                                    <Text fontSize="xs" color="gray.400" maxW="260px" lineClamp={2}>
+                                                    {/* A lista mostra duas linhas; o texto inteiro aparece ao passar o mouse */}
+                                                    <Text fontSize="xs" color="gray.400" maxW="260px" lineClamp={2} title={notif.message}>
                                                         {notif.message}
                                                     </Text>
                                                 </Table.Cell>
