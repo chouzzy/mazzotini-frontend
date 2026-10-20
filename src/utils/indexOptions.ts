@@ -19,6 +19,8 @@ export const NAO_ATUALIZAR = 'NAO_ATUALIZAR';
 
 export const CALCULATOR_INDEXES: IndexOption[] = [
     { label: 'TJSP — Lei 14.905 (INPC/IPCA-15)', value: 'TJSP_LEI14905' },
+    { label: 'TJPR — média INPC/IGP-DI',          value: 'TJPR_MEDIA_INPC_IGPDI' },
+    { label: 'TJMG — Corregedoria (INPC)',        value: 'TJMG_CORREGEDORIA' },
     { label: 'IPCA-E',                            value: 'IPCA_E'        },
     { label: 'INPC',                              value: 'INPC'          },
     { label: 'IPCA',                              value: 'IPCA'          },
