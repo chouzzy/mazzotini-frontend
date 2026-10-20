@@ -275,4 +275,25 @@ describe('CalculatorTab: vários cálculos no mesmo processo', () => {
         expect(btn(/Salvar e Calcular/)).toBeEnabled();
         expect(screen.queryByText(/Não foi possível carregar/)).toBeNull();
     });
+
+    it('mostra os avisos do cálculo, como um mês sem índice no banco', async () => {
+        api.params = savedSingle();
+        const aviso = 'IPCA de 10/2026 ainda sem valor no banco: o mês entrou como 0%.';
+        axiosMock.post.mockResolvedValue({ data: { ...fakeResult, warnings: [aviso] } });
+        render(tab());
+
+        await submit();
+
+        expect(await screen.findByText(aviso)).toBeInTheDocument();
+    });
+
+    it('sem avisos, não mostra o quadro de atenção', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(screen.queryByText('Atenção')).toBeNull();
+    });
 });

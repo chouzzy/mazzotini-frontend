@@ -140,6 +140,7 @@ interface CalcResult {
     referenceYear:        number;
     installmentResults:   any[];
     calculations?:        { label: string; baseTotal: number; correctedValue: number; totalValue: number }[];
+    warnings?:            string[];   // meses sem índice no banco, que entraram como 0%
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -579,10 +580,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 )} />
                                 {moratoryMode === 'TAXA_LEGAL' ? (
                                     <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50" mb={3}>
-                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC):</Text>
-                                        <Text fontSize="xs" color="gray.400">• Até jan/2003 — 6% a.a. (0,5%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Fev/2003 a ago/2024 — 12% a.a. (1%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Set/2024 em diante — SELIC − IPCA mensal (Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC), como no Dr. Calc:</Text>
+                                        <Text fontSize="xs" color="gray.400">• Até 11/02/2003 — 6% a.a.</Text>
+                                        <Text fontSize="xs" color="gray.400">• De 12/02/2003 a 29/08/2024 — 12% a.a.</Text>
+                                        <Text fontSize="xs" color="gray.400">• Desde 30/08/2024 — taxa legal do BCB (SELIC e IPCA-15 do mês anterior, Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="gray.500" mt={1}>Juros simples, do mês de início até o mês anterior ao de referência.</Text>
                                     </Box>
                                 ) : (
                                     <HStack gap={4} wrap="wrap" mb={3} align="flex-end">
@@ -705,6 +707,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">HO e multa Art. 523 (%)</Field.Label>
                                         <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
@@ -963,6 +966,18 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 </Badge>
                             )}
                         </HStack>
+                        {calcResult.warnings && calcResult.warnings.length > 0 && (
+                            <Box mb={4} p={3} bg="yellow.950" borderRadius="md" border="1px solid" borderColor="yellow.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="yellow.300" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                    Atenção
+                                </Text>
+                                <VStack align="stretch" gap={1}>
+                                    {calcResult.warnings.map((warning, i) => (
+                                        <Text key={i} fontSize="sm" color="yellow.100">{warning}</Text>
+                                    ))}
+                                </VStack>
+                            </Box>
+                        )}
                         <Flex gap={4} wrap="wrap" mb={4}>
                             {[
                                 { label: 'Valor Base',             value: calcResult.baseTotal },
