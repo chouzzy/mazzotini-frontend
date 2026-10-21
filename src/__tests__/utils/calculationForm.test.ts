@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     calculationError, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
-    toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft,
+    toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
 } from '@/utils/calculationForm';
 
 // Parâmetros fictícios de um processo com dois contratos, como a API devolve
@@ -35,7 +35,7 @@ const saved = {
 
 const draftA = () => toDraft(saved, 'Contrato A');
 const withRows = (d: CalcDraft, installments: CalcDraft['installments']): CalcDraft => ({ ...d, installments });
-const row = (baseValue: string, baseDate: string, type: 'DEBITO' | 'ABATIMENTO' = 'DEBITO') =>
+const row = (baseValue: string, baseDate: string, type: InstallmentType = 'DEBITO') =>
     ({ baseValue, baseDate, description: '', type, deductionPoint: 'APOS_TUDO' as const });
 
 describe('datas', () => {
@@ -135,6 +135,7 @@ describe('toPayload', () => {
         ['valor inválido', [row('dois mil', '01/09/2025')], 'parcela 1: valor inválido (dois mil).'],
         ['data impossível', [row('2.000,00', '31/02/2025')], 'parcela 1: data inválida (31/02/2025).'],
         ['só abatimento', [row('100,00', '01/09/2025', 'ABATIMENTO')], 'informe ao menos uma parcela de débito com valor e data (DD/MM/AAAA).'],
+        ['só custa', [row('100,00', '01/09/2025', 'CUSTA')], 'informe ao menos uma parcela de débito com valor e data (DD/MM/AAAA).'],
     ])('recusa %s, sem descartar nada em silêncio', (_, installments, error) => {
         expect(toPayload(withRows(draftA(), installments))).toEqual({ ok: false, error });
     });
@@ -151,6 +152,19 @@ describe('toPayload', () => {
         ]));
 
         expect(result.ok && result.payload.installments[1]).toMatchObject({ baseValue: 100, type: 'ABATIMENTO', deductionPoint: 'APOS_HONORARIOS' });
+    });
+
+    it('envia a custa ou despesa com o tipo, sem ponto de dedução, e o rascunho a recupera', () => {
+        const result = toPayload(withRows(draftA(), [
+            row('2.000,00', '01/09/2025'),
+            { ...row('350,00', '05/10/2025', 'CUSTA'), description: 'Perícia' },
+        ]));
+
+        expect(result.ok && result.payload.installments[1]).toEqual({
+            baseValue: 350, baseDate: '2025-10-05T00:00:00.000Z', description: 'Perícia', type: 'CUSTA', deductionPoint: undefined,
+        });
+        const reopened = toDraft({ installments: result.ok ? result.payload.installments : [] }, 'Cálculo 1');
+        expect(reopened.installments[1]).toMatchObject({ baseValue: '350', baseDate: '05/10/2025', type: 'CUSTA' });
     });
 });
 

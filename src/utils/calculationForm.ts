@@ -8,11 +8,17 @@
 
 export type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MULTA' | 'APOS_TUDO';
 
+/**
+ * Débito, abatimento (crédito ou pagamento) ou custa/despesa. A custa só é corrigida, sem juros,
+ * multa nem honorários, e entra no fim do total, como no Dr. Calc.
+ */
+export type InstallmentType = 'DEBITO' | 'ABATIMENTO' | 'CUSTA';
+
 export interface Installment {
     baseValue:      string;
     baseDate:       string;  // DD/MM/AAAA no form, convertido para ISO no envio
     description:    string;
-    type:           'DEBITO' | 'ABATIMENTO';
+    type:           InstallmentType;
     deductionPoint: DeductionPoint;
 }
 
@@ -60,7 +66,7 @@ export interface CalculationPayload {
         baseValue:       number;
         baseDate:        string;
         description?:    string;
-        type:            'DEBITO' | 'ABATIMENTO';
+        type:            InstallmentType;
         deductionPoint?: DeductionPoint;
     }[];
 }
