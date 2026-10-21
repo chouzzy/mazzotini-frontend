@@ -173,6 +173,8 @@ export const toPayload = (d: CalcDraft): PayloadResult => {
         if (!date) return invalid(`${what}: informe a data (DD/MM/AAAA).`);
         const amount = parseBR(value);
         if (!Number.isFinite(amount)) return invalid(`${what}: valor inválido (${value}).`);
+        // Custa e abatimento são valores a somar ou a deduzir; no débito, o negativo é um crédito
+        if (amount < 0 && row.type !== 'DEBITO') return invalid(`${what}: o valor não pode ser negativo.`);
         const iso = parseDisplayDate(date);
         if (!iso) return invalid(`${what}: data inválida (${date}).`);
         installments.push({

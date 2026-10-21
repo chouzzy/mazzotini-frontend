@@ -855,6 +855,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                                 <Button key={opt.v} size="xs" type="button"
                                                                     variant={f.value === opt.v ? 'solid' : 'ghost'}
                                                                     colorPalette={f.value === opt.v ? opt.c : 'gray'}
+                                                                    aria-pressed={f.value === opt.v}
                                                                     onClick={() => f.onChange(opt.v)}>
                                                                     {opt.l}
                                                                 </Button>

@@ -308,6 +308,9 @@ describe('CalculatorTab: custas e despesas', () => {
         fireEvent.click(btn(/Adicionar Parcela/));
         fireEvent.click(screen.getAllByRole('button', { name: 'Custa ou despesa' })[1]);
         expect(screen.getByText(/Só é corrigida pelo índice do cálculo/)).toBeInTheDocument();
+        // O botão marcado é anunciado para leitores de tela
+        expect(screen.getAllByRole('button', { name: 'Custa ou despesa' })[1]).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getAllByRole('button', { name: 'Débito' })[1]).toHaveAttribute('aria-pressed', 'false');
         type(valueInputs()[1], '350,00');
         type(dateInputs()[3], '05/10/2025');
 

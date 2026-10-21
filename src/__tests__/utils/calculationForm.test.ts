@@ -136,6 +136,8 @@ describe('toPayload', () => {
         ['data impossível', [row('2.000,00', '31/02/2025')], 'parcela 1: data inválida (31/02/2025).'],
         ['só abatimento', [row('100,00', '01/09/2025', 'ABATIMENTO')], 'informe ao menos uma parcela de débito com valor e data (DD/MM/AAAA).'],
         ['só custa', [row('100,00', '01/09/2025', 'CUSTA')], 'informe ao menos uma parcela de débito com valor e data (DD/MM/AAAA).'],
+        ['custa negativa', [row('2.000,00', '01/09/2025'), row('-100,00', '01/09/2025', 'CUSTA')], 'parcela 2: o valor não pode ser negativo.'],
+        ['abatimento negativo', [row('2.000,00', '01/09/2025'), row('-50,00', '01/09/2025', 'ABATIMENTO')], 'parcela 2: o valor não pode ser negativo.'],
     ])('recusa %s, sem descartar nada em silêncio', (_, installments, error) => {
         expect(toPayload(withRows(draftA(), installments))).toEqual({ ok: false, error });
     });
