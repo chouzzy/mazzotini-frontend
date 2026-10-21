@@ -253,7 +253,8 @@ export function NotificationsMenu() {
                                                     {timeAgo(notif.createdAt)}
                                                 </Text>
                                             </Flex>
-                                            <Text fontSize="xs" color="gray.400" lineHeight="1.4" lineClamp={2}>
+                                            {/* Duas linhas na lista; o texto inteiro aparece ao passar o mouse */}
+                                            <Text fontSize="xs" color="gray.400" lineHeight="1.4" lineClamp={2} title={notif.message}>
                                                 {notif.message}
                                             </Text>
                                         </VStack>

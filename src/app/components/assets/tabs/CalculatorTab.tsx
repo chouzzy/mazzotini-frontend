@@ -16,6 +16,10 @@ import axios from 'axios';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
+import {
+    calculationError, CalcDraft, CalculationPayload, DeductionPoint, newCalculationFrom, nextCalculationLabel,
+    parseBR, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
+} from '@/utils/calculationForm';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
 // ── constantes ────────────────────────────────────────────────────────────────
@@ -46,23 +50,6 @@ const formatPct = (v: number) =>
     new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(v) + '%';
 
 // ── helpers de data ───────────────────────────────────────────────────────────
-
-// ISO YYYY-MM-DD → DD/MM/AAAA (para exibição)
-const toDisplayDate = (iso: string): string => {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    if (!y || !m || !d) return '';
-    return `${d}/${m}/${y}`;
-};
-
-// DD/MM/AAAA → ISO YYYY-MM-DD (para envio)
-const parseDisplayDate = (display: string): string => {
-    if (!display) return '';
-    const match = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (match) return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(display)) return display;
-    return '';
-};
 
 // Máscara DD/MM/AAAA — aplica barras automaticamente
 const applyDateMask = (raw: string): string => {
@@ -99,16 +86,6 @@ const addMonths = (isoDate: string, n: number): string => {
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
-type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MULTA' | 'APOS_TUDO';
-
-interface Installment {
-    baseValue:      string;
-    baseDate:       string;  // DD/MM/AAAA no form, convertido para ISO no submit
-    description:    string;
-    type:           'DEBITO' | 'ABATIMENTO';
-    deductionPoint: DeductionPoint;
-}
-
 const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
     { label: 'Do valor corrigido (antes dos honorários)', value: 'DO_VALOR_CORRIGIDO' },
     { label: 'Após os honorários advocatícios',           value: 'APOS_HONORARIOS'   },
@@ -116,26 +93,8 @@ const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
     { label: 'Após tudo (total final)',                   value: 'APOS_TUDO'         },
 ]});
 
-interface FormValues {
-    correctionIndex:        string;
-    moratoryMode:           string;
-    moratoryRate:           string;
-    moratoryRateUnit:       string;  // 'AM' | 'AA'
-    moratoryType:           string;
-    moratoryStartDate:      string;  // DD/MM/AAAA
-    compensatoryRate:       string;
-    compensatoryRateUnit:   string;  // 'AM' | 'AA'
-    compensatoryType:       string;
-    compensatoryStartDate:  string;  // DD/MM/AAAA
-    multaPercentage:        string;
-    feesMode:               string;  // 'PERCENTUAL' | 'FIXO'
-    feesPercentage:         string;
-    feesFixedValue:         string;
-    penaltyPercentage:      string;
-    feesOnPenalty:          boolean;
-    installments:           Installment[];
-    referenceMonth:         string;
-}
+// O formulário edita um dos cálculos do processo; o mês de referência vale para todos
+type FormValues = CalcDraft & { referenceMonth: string };
 
 interface CalcLog {
     id: string;
@@ -180,6 +139,8 @@ interface CalcResult {
     referenceMonth:       number;
     referenceYear:        number;
     installmentResults:   any[];
+    calculations?:        { label: string; baseTotal: number; correctedValue: number; totalValue: number }[];
+    warnings?:            string[];   // meses sem índice no banco, que entraram como 0%
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -193,41 +154,22 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     const [isSaving, setIsSaving]         = useState(false);
     const hasInitialized                  = useRef(false);
 
+    // Vários cálculos no mesmo processo: o formulário edita o cálculo aberto (activeIdx), e
+    // `drafts` guarda todos. O cálculo aberto em `drafts` só é atualizado ao trocar ou salvar.
+    const [drafts, setDrafts]       = useState<CalcDraft[]>([]);
+    const [activeIdx, setActiveIdx] = useState(0);
+    // Quantos cálculos salvos seriam apagados se o usuário confirmar o salvamento
+    const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
+
     // ── reabrir cálculo do histórico ──────────────────────────────────────────
     const reopenFromLog = (snapshot: any) => {
         if (!snapshot) return;
         hasInitialized.current = true; // impede o useEffect de sobrescrever
-        reset({
-            correctionIndex:       snapshot.correctionIndex      ?? 'TJSP_LEI14905',
-            moratoryMode:          snapshot.moratoryMode         ?? 'TAXA_LEGAL',
-            moratoryRate:          String(snapshot.moratoryRate  ?? 1),
-            moratoryRateUnit:      snapshot.moratoryRateUnit     ?? 'AM',
-            moratoryType:          snapshot.moratoryType         ?? 'SIMPLES',
-            moratoryStartDate:     snapshot.moratoryStartDate
-                ? toDisplayDate(snapshot.moratoryStartDate.substring(0, 10)) : '',
-            compensatoryRate:      String(snapshot.compensatoryRate ?? 0),
-            compensatoryRateUnit:  snapshot.compensatoryRateUnit  ?? 'AM',
-            compensatoryType:      snapshot.compensatoryType      ?? 'SIMPLES',
-            compensatoryStartDate: snapshot.compensatoryStartDate
-                ? toDisplayDate(snapshot.compensatoryStartDate.substring(0, 10)) : '',
-            multaPercentage:       String(snapshot.multaPercentage  ?? 0),
-            feesMode:              snapshot.feesMode              ?? 'PERCENTUAL',
-            feesPercentage:        String(snapshot.feesPercentage  ?? 10),
-            feesFixedValue:        snapshot.feesFixedValue
-                ? (snapshot.feesFixedValue as number).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '',
-            penaltyPercentage:     String(snapshot.penaltyPercentage ?? 10),
-            feesOnPenalty:         snapshot.feesOnPenalty          ?? false,
-            referenceMonth:        '',
-            installments: snapshot.installments?.length
-                ? snapshot.installments.map((i: any) => ({
-                    baseValue:      String(i.baseValue),
-                    baseDate:       i.baseDate ? toDisplayDate(i.baseDate.substring(0, 10)) : '',
-                    description:    i.description ?? '',
-                    type:           i.type ?? 'DEBITO',
-                    deductionPoint: i.deductionPoint ?? 'APOS_TUDO',
-                  }))
-                : [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
-        });
+        const all = toDrafts(snapshot);
+        setDrafts(all);
+        setActiveIdx(0);
+        setPendingRemoval(null);
+        reset({ ...all[0], referenceMonth: '' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         toaster.create({ title: 'Parâmetros carregados. Ajuste o que precisar e salve.', type: 'info' });
     };
@@ -244,15 +186,19 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     const PERIOD_COLLECTION = PERIOD_OPTIONS;
 
-    const { data: savedParams, mutate: mutateParams } = useApi<any>(
+    const { data: savedParams, error: paramsError, mutate: mutateParams } = useApi<any>(
         `/api/calculator/${asset.legalOneId}/params`
     );
+    // A API devolve null quando o processo não tem parâmetros; undefined é que ainda não chegaram.
+    // Salvar antes disso sobrescreveria os cálculos salvos com o formulário em branco.
+    const paramsNotLoaded = savedParams === undefined;
     const { data: logs, mutate: mutateLogs } = useApi<CalcLog[]>(
         `/api/calculator/${asset.legalOneId}/log?limit=5`
     );
 
-    const { register, control, handleSubmit, reset, watch } = useForm<FormValues>({
+    const { register, control, handleSubmit, reset, watch, getValues } = useForm<FormValues>({
         defaultValues: {
+            label:                'Cálculo 1',
             correctionIndex:      'TJSP_LEI14905',
             moratoryMode:         'TAXA_LEGAL',
             moratoryRate:         '1',
@@ -278,36 +224,10 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     useEffect(() => {
         if (!savedParams || hasInitialized.current) return;
         hasInitialized.current = true;
-        reset({
-            correctionIndex:       savedParams.correctionIndex      ?? 'TJSP_LEI14905',
-            moratoryMode:          savedParams.moratoryMode         ?? 'TAXA_LEGAL',
-            moratoryRate:          String(savedParams.moratoryRate   ?? 1),
-            moratoryRateUnit:      savedParams.moratoryRateUnit     ?? 'AM',
-            moratoryType:          savedParams.moratoryType         ?? 'SIMPLES',
-            moratoryStartDate:     savedParams.moratoryStartDate
-                ? toDisplayDate(savedParams.moratoryStartDate.substring(0, 10)) : '',
-            compensatoryRate:      String(savedParams.compensatoryRate ?? 0),
-            compensatoryRateUnit:  savedParams.compensatoryRateUnit  ?? 'AM',
-            compensatoryType:      savedParams.compensatoryType      ?? 'SIMPLES',
-            compensatoryStartDate: savedParams.compensatoryStartDate
-                ? toDisplayDate(savedParams.compensatoryStartDate.substring(0, 10)) : '',
-            multaPercentage:       String(savedParams.multaPercentage  ?? 0),
-            feesMode:              savedParams.feesMode              ?? 'PERCENTUAL',
-            feesPercentage:        String(savedParams.feesPercentage   ?? 10),
-            feesFixedValue:        String(savedParams.feesFixedValue   ?? 0),
-            penaltyPercentage:     String(savedParams.penaltyPercentage ?? 10),
-            feesOnPenalty:         savedParams.feesOnPenalty          ?? false,
-            referenceMonth:        '',
-            installments: savedParams.installments?.length
-                ? savedParams.installments.map((i: any) => ({
-                    baseValue:      String(i.baseValue),
-                    baseDate:       i.baseDate ? toDisplayDate(i.baseDate.substring(0, 10)) : '',
-                    description:    i.description ?? '',
-                    type:           i.type ?? 'DEBITO',
-                    deductionPoint: i.deductionPoint ?? 'APOS_TUDO',
-                  }))
-                : [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
-        });
+        const all = toDrafts(savedParams);
+        setDrafts(all);
+        setActiveIdx(0);
+        reset({ ...all[0], referenceMonth: '' });
     }, [savedParams, reset]);
 
     const { fields, append, remove } = useFieldArray({ control, name: 'installments' });
@@ -316,6 +236,47 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     const moratoryRateUnit    = watch('moratoryRateUnit');
     const compensatoryRateUnit = watch('compensatoryRateUnit');
     const watchedInstallments = watch('installments');
+    const activeLabel         = watch('label');
+
+    // ── vários cálculos no mesmo processo ─────────────────────────────────────
+    /** Todos os cálculos, com o que está no formulário no lugar do cálculo aberto. */
+    const currentDrafts = (): CalcDraft[] => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { referenceMonth, ...draft } = getValues();
+        const list = drafts.length > 0 ? [...drafts] : [draft];
+        list[activeIdx] = draft;
+        return list;
+    };
+
+    const switchTo = (idx: number, list: CalcDraft[] = currentDrafts()) => {
+        const referenceMonth = getValues('referenceMonth');
+        setDrafts(list);
+        setActiveIdx(idx);
+        reset({ ...list[idx], referenceMonth });
+    };
+
+    // O cálculo novo copia índice, juros e percentuais do aberto. Parcelas, datas de início e
+    // honorário fixo ficam em branco, porque costumam ser de cada contrato
+    const addCalculation = () => {
+        const list = currentDrafts();
+        const labels = list.map((d, i) => d.label || `Cálculo ${i + 1}`);
+        list.push(newCalculationFrom(list[activeIdx], nextCalculationLabel(labels)));
+        switchTo(list.length - 1, list);
+        setPendingRemoval(null);
+        toaster.create({ title: 'Cálculo adicionado. Confira os honorários, as datas de início dos juros e as parcelas.', type: 'info' });
+    };
+
+    // A remoção só vale quando o cálculo é salvo
+    const removeCalculation = () => {
+        const list = currentDrafts();
+        if (list.length < 2) return;
+        list.splice(activeIdx, 1);
+        switchTo(Math.max(0, activeIdx - 1), list);
+        setPendingRemoval(null);
+    };
+
+    const calcLabels = (drafts.length > 0 ? drafts : [{ label: activeLabel }])
+        .map((d, i) => (i === activeIdx ? activeLabel : d.label) || `Cálculo ${i + 1}`);
 
     const getToken = () => getAccessTokenSilently({
         authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! },
@@ -353,10 +314,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             const dateStr  = parts[0].trim();
             const valueStr = parts[1].trim().replace(/[^\d,.-]/g, '');
             const desc     = parts[2]?.trim() || '';
-            const value    = valueStr.includes(',')
-                ? parseFloat(valueStr.replace(/\./g, '').replace(',', '.'))
-                : parseFloat(valueStr);
-            if (!dateStr || isNaN(value)) continue;
+            const value    = parseBR(valueStr);
+            if (!dateStr || !Number.isFinite(value)) continue;
             const iso = parseDisplayDate(dateStr);
             if (!iso) continue;
             append({
@@ -377,62 +336,62 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     };
 
     // ── submit principal ──────────────────────────────────────────────────────
-    const onSaveAndCalculate = async (data: FormValues) => {
-        const parseBR = (s: string) => s.includes(',')
-            ? parseFloat(s.replace(/\./g, '').replace(',', '.'))
-            : parseFloat(s);
+    const onSaveAndCalculate = async (data: FormValues, removalConfirmed = false) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { referenceMonth, ...activeDraft } = data;
+        const list = drafts.length > 0 ? [...drafts] : [activeDraft];
+        list[activeIdx] = activeDraft;
+        setDrafts(list);
 
-        const installments = data.installments
-            .filter(i => i.baseValue && i.baseDate)
-            .map(i => {
-                const iso = parseDisplayDate(i.baseDate);
-                if (!iso) return null;
-                return {
-                    baseValue:      parseBR(i.baseValue),
-                    baseDate:       new Date(iso + 'T00:00:00Z').toISOString(),
-                    description:    i.description || undefined,
-                    type:           i.type,
-                    deductionPoint: i.type === 'ABATIMENTO' ? i.deductionPoint : undefined,
-                };
-            })
-            .filter(Boolean);
-
-        if (installments.length === 0) {
-            toaster.create({ title: 'Informe ao menos uma parcela com valor e data válida (DD/MM/AAAA).', type: 'warning' });
-            return;
+        // Um erro em qualquer cálculo abre esse cálculo e diz o que corrigir
+        const payloads: CalculationPayload[] = [];
+        for (let i = 0; i < list.length; i++) {
+            const result = toPayload(list[i]);
+            if (!result.ok) {
+                const label = list.length > 1 ? (list[i].label || `Cálculo ${i + 1}`) : null;
+                toaster.create({ title: calculationError(result.error, label), type: 'warning' });
+                if (i !== activeIdx) switchTo(i, list);
+                return;
+            }
+            payloads.push(result.payload);
         }
 
+        // Menos cálculos do que os salvos: os que saíram da tela seriam apagados
+        const savedCount = 1 + (Array.isArray(savedParams?.extraCalculations) ? savedParams.extraCalculations.length : 0);
+        if (!removalConfirmed && savedParams && list.length < savedCount) {
+            setPendingRemoval(savedCount - list.length);
+            return;
+        }
+        setPendingRemoval(null);
+
+        const [main, ...extras] = payloads;
         const payload = {
-            correctionIndex:       data.correctionIndex,
-            moratoryMode:          data.moratoryMode,
-            moratoryRate:          parseFloat(data.moratoryRate   || '0'),
-            moratoryRateUnit:      data.moratoryRateUnit          || 'AM',
-            moratoryType:          data.moratoryType,
-            moratoryStartDate:     data.moratoryStartDate
-                ? (parseDisplayDate(data.moratoryStartDate) || null) : null,
-            compensatoryRate:      parseFloat(data.compensatoryRate || '0'),
-            compensatoryRateUnit:  data.compensatoryRateUnit       || 'AM',
-            compensatoryType:      data.compensatoryType           || 'SIMPLES',
-            compensatoryStartDate: data.compensatoryStartDate
-                ? (parseDisplayDate(data.compensatoryStartDate) || null) : null,
-            multaPercentage:       parseFloat(data.multaPercentage || '0'),
-            feesMode:              data.feesMode                   || 'PERCENTUAL',
-            feesPercentage:        parseFloat(data.feesPercentage  || '0'),
-            feesFixedValue:        parseBR(data.feesFixedValue     || '0'),
-            penaltyPercentage:     parseFloat(data.penaltyPercentage || '0'),
-            feesOnPenalty:         data.feesOnPenalty,
-            installments,
+            ...main,
+            // Com um cálculo só, os campos vazios apagam cálculos extras salvos antes
+            calculationLabel:  list.length > 1 ? (list[0].label || 'Cálculo 1') : null,
+            extraCalculations: extras.map((p, i) => ({ label: list[i + 1].label || `Cálculo ${i + 2}`, ...p })),
         };
 
         setIsSaving(true);
         try {
             const token = await getToken();
-            await axios.put(
+            const res = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${asset.legalOneId}/params`,
                 payload,
                 { headers: { Authorization: `Bearer ${token}` } },
             );
+            // O recarregamento dos parâmetros não deve trocar o cálculo aberto
+            hasInitialized.current = true;
             mutateParams();
+            // Servidor numa versão sem vários cálculos: os extras não foram gravados
+            const savedExtras = res.data?.extraCalculations;
+            if (extras.length > 0 && (!Array.isArray(savedExtras) || savedExtras.length !== extras.length)) {
+                toaster.create({
+                    title: 'O servidor não gravou os outros cálculos. Atualize a página e tente de novo; se continuar, avise o suporte.',
+                    type: 'error',
+                });
+                return;
+            }
             toaster.create({ title: 'Parâmetros salvos.', type: 'success' });
         } catch (e: any) {
             toaster.create({ title: e?.response?.data?.error || 'Erro ao salvar parâmetros.', type: 'error' });
@@ -456,7 +415,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             setCalcResult(res.data);
             mutateLogs();
             onRefresh();
-            toaster.create({ title: 'Cálculo realizado com sucesso!', type: 'success' });
+            if (res.data?.warnings?.length) {
+                toaster.create({ title: 'Cálculo feito, com avisos. Confira o quadro de atenção no resultado.', type: 'warning' });
+            } else {
+                toaster.create({ title: 'Cálculo realizado com sucesso!', type: 'success' });
+            }
         } catch (e: any) {
             toaster.create({ title: e?.response?.data?.error || 'Erro ao calcular.', type: 'error' });
         } finally { setIsCalculating(false); }
@@ -544,8 +507,53 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                         )}
                     </Flex>
 
-                    <form onSubmit={handleSubmit(onSaveAndCalculate)}>
+                    <form onSubmit={handleSubmit(d => onSaveAndCalculate(d))}>
                         <VStack align="stretch" gap={5}>
+
+                            {paramsError && paramsNotLoaded && (
+                                <Box p={3} bg="red.950" borderRadius="md" border="1px solid" borderColor="red.700">
+                                    <Text fontSize="sm" color="red.200">
+                                        Não foi possível carregar os parâmetros salvos deste processo. Recarregue a página antes de
+                                        salvar, para não sobrescrever o que já está salvo.
+                                    </Text>
+                                </Box>
+                            )}
+
+                            {/* Vários cálculos no mesmo processo */}
+                            <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                <Flex justify="space-between" align="center" gap={3} wrap="wrap">
+                                    {calcLabels.length > 1 ? (
+                                        <HStack gap={1} wrap="wrap">
+                                            {calcLabels.map((label, idx) => (
+                                                <Button key={idx} size="xs" type="button"
+                                                    variant={idx === activeIdx ? 'solid' : 'ghost'}
+                                                    colorPalette={idx === activeIdx ? 'brand' : 'gray'}
+                                                    onClick={() => { if (idx !== activeIdx) switchTo(idx); }}>
+                                                    {label}
+                                                </Button>
+                                            ))}
+                                        </HStack>
+                                    ) : (
+                                        <Text fontSize="xs" color="gray.500" flex={1} minW="200px">
+                                            Processo com contratos de índices ou juros diferentes? Use um cálculo para cada um. O valor do processo é a soma.
+                                        </Text>
+                                    )}
+                                    <Button size="xs" variant="outline" colorPalette="brand" gap={1} type="button" onClick={addCalculation}>
+                                        <Icon as={PiPlus} /> Adicionar cálculo
+                                    </Button>
+                                </Flex>
+                                {calcLabels.length > 1 && (
+                                    <Flex gap={3} align="flex-end" wrap="wrap" mt={3}>
+                                        <Field.Root flex={1} minW="200px">
+                                            <Field.Label fontSize="xs" color="gray.400">Nome deste cálculo</Field.Label>
+                                            <Input {...register('label')} size="sm" bg="gray.900" borderColor="gray.600" placeholder="Ex: Contrato 1" />
+                                        </Field.Root>
+                                        <Button size="xs" variant="ghost" colorPalette="red" gap={1} type="button" onClick={removeCalculation}>
+                                            <Icon as={PiTrash} /> Remover este cálculo
+                                        </Button>
+                                    </Flex>
+                                )}
+                            </Box>
 
                             {/* Índice de Correção */}
                             <Field.Root>
@@ -576,10 +584,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 )} />
                                 {moratoryMode === 'TAXA_LEGAL' ? (
                                     <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50" mb={3}>
-                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC):</Text>
-                                        <Text fontSize="xs" color="gray.400">• Até jan/2003 — 6% a.a. (0,5%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Fev/2003 a ago/2024 — 12% a.a. (1%/mês)</Text>
-                                        <Text fontSize="xs" color="gray.400">• Set/2024 em diante — SELIC − IPCA mensal (Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Aplicação automática por período (art. 406 CC), como no Dr. Calc:</Text>
+                                        <Text fontSize="xs" color="gray.400">• Até 11/02/2003 — 6% a.a.</Text>
+                                        <Text fontSize="xs" color="gray.400">• De 12/02/2003 a 29/08/2024 — 12% a.a.</Text>
+                                        <Text fontSize="xs" color="gray.400">• Desde 30/08/2024 — taxa legal do BCB (SELIC e IPCA-15 do mês anterior, Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="gray.500" mt={1}>Juros simples, do mês de início até o mês anterior ao de referência.</Text>
                                     </Box>
                                 ) : (
                                     <HStack gap={4} wrap="wrap" mb={3} align="flex-end">
@@ -702,6 +711,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">HO e multa Art. 523 (%)</Field.Label>
                                         <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
@@ -912,11 +922,32 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         max={new Date().toISOString().substring(0, 7)} />
                                 </Field.Root>
                                 <Text fontSize="xs" color="gray.500" pb={1}>
-                                    Vazio = mês atual. Use o último mês fechado para máxima precisão.
+                                    Vazio = mês atual. A correção e os juros vão até o mês anterior ao de referência, como no Dr. Calc.
                                 </Text>
                             </HStack>
 
-                            <Button type="submit" colorPalette="brand" size="md" loading={isSaving || isCalculating} gap={2}>
+                            {pendingRemoval !== null && (
+                                <Box p={3} bg="orange.950" borderRadius="md" border="1px solid" borderColor="orange.700">
+                                    <Text fontSize="sm" color="orange.200" mb={3}>
+                                        {pendingRemoval === 1
+                                            ? 'Um cálculo salvo neste processo não está mais na tela e será apagado.'
+                                            : `${pendingRemoval} cálculos salvos neste processo não estão mais na tela e serão apagados.`}
+                                        {' '}O valor do processo passa a ser só o dos cálculos que estão aqui.
+                                    </Text>
+                                    <HStack gap={2}>
+                                        <Button size="sm" colorPalette="orange" type="button"
+                                            onClick={() => handleSubmit(d => onSaveAndCalculate(d, true))()}>
+                                            Apagar e salvar
+                                        </Button>
+                                        <Button size="sm" variant="ghost" colorPalette="gray" type="button" onClick={() => setPendingRemoval(null)}>
+                                            Cancelar
+                                        </Button>
+                                    </HStack>
+                                </Box>
+                            )}
+
+                            <Button type="submit" colorPalette="brand" size="md" loading={isSaving || isCalculating} gap={2}
+                                disabled={paramsNotLoaded}>
                                 <Icon as={PiPlay} />
                                 {isSaving ? 'Salvando parâmetros...' : isCalculating ? 'Calculando...' : 'Salvar e Calcular'}
                             </Button>
@@ -939,6 +970,18 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 </Badge>
                             )}
                         </HStack>
+                        {calcResult.warnings && calcResult.warnings.length > 0 && (
+                            <Box mb={4} p={3} bg="yellow.950" borderRadius="md" border="1px solid" borderColor="yellow.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="yellow.300" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                    Atenção
+                                </Text>
+                                <VStack align="stretch" gap={1}>
+                                    {calcResult.warnings.map((warning, i) => (
+                                        <Text key={i} fontSize="sm" color="yellow.100">{warning}</Text>
+                                    ))}
+                                </VStack>
+                            </Box>
+                        )}
                         <Flex gap={4} wrap="wrap" mb={4}>
                             {[
                                 { label: 'Valor Base',             value: calcResult.baseTotal },
@@ -1001,6 +1044,20 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Text fontWeight="bold" fontSize="sm" color="orange.300">− {formatBRL(calcResult.abatimentoTotal)}</Text>
                                 </Box>
                             </Flex>
+                        )}
+
+                        {calcResult.calculations && calcResult.calculations.length > 1 && (
+                            <VStack align="stretch" gap={1} mb={4} p={3} bg="gray.800" borderRadius="md">
+                                <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                    Por cálculo
+                                </Text>
+                                {calcResult.calculations.map((calc, i) => (
+                                    <Flex key={i} justify="space-between" align="center" gap={3}>
+                                        <Text fontSize="sm">{calc.label}</Text>
+                                        <Text fontSize="sm" fontWeight="bold" fontVariantNumeric="tabular-nums">{formatBRL(calc.totalValue)}</Text>
+                                    </Flex>
+                                ))}
+                            </VStack>
                         )}
 
                         <Box p={4} bg="brand.900/30" borderRadius="md" border="1px solid" borderColor="brand.700">

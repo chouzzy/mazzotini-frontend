@@ -62,6 +62,7 @@ const NOTIFICATION_TYPES = [
     { value: 'PROFILE_CHANGE_REQUESTED',  label: 'Alteração de perfil' },
     { value: 'FAILED_ENRICHMENT',         label: 'Falha no Legal One' },
     { value: 'ASSET_IMPORTED',            label: 'Processo importado' },
+    { value: 'CALCULATION',               label: 'Recálculo mensal' },
     { value: 'GENERAL',                   label: 'Geral' },
 ];
 
@@ -93,6 +94,7 @@ function getTypeBadge(notificationType: string) {
         PROFILE_CHANGE_REQUESTED:  { label: 'Alt. perfil',     color: 'purple' },
         FAILED_ENRICHMENT:         { label: 'Falha Legal One', color: 'red'    },
         ASSET_IMPORTED:            { label: 'Importado',       color: 'green'  },
+        CALCULATION:               { label: 'Cálculo',         color: 'orange' },
         GENERAL:                   { label: 'Geral',           color: 'gray'   },
     };
     const cfg = map[notificationType] ?? { label: notificationType, color: 'gray' };
@@ -309,12 +311,14 @@ export default function NotificacoesPage() {
                                                         overflow="hidden"
                                                         textOverflow="ellipsis"
                                                         whiteSpace="nowrap"
+                                                        title={notif.title}
                                                     >
                                                         {notif.title}
                                                     </Text>
                                                 </Table.Cell>
                                                 <Table.Cell px={4} py={3}>
-                                                    <Text fontSize="xs" color="gray.400" maxW="260px" lineClamp={2}>
+                                                    {/* A lista mostra duas linhas; o texto inteiro aparece ao passar o mouse */}
+                                                    <Text fontSize="xs" color="gray.400" maxW="260px" lineClamp={2} title={notif.message}>
                                                         {notif.message}
                                                     </Text>
                                                 </Table.Cell>

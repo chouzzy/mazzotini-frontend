@@ -14,6 +14,8 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
+import { parseBR } from '@/utils/calculationForm';
+import { saveFirstCalculation } from '@/utils/firstCalculation';
 import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
@@ -45,6 +47,7 @@ interface FormValues {
     investors: InvestorFormInput[];
     // Parâmetros de cálculo judicial
     calcCorrectionIndex:   string;
+    calcMoratoryMode:      'TAXA_LEGAL' | 'PERSONALIZADO';
     calcMoratoryRate:      string;
     calcMoratoryType:      string;
     calcFeesPercentage:    string;
@@ -83,6 +86,11 @@ const CALC_TYPE_COLLECTION = createListCollection({ items: [
     { label: 'Simples', value: 'SIMPLES' },
     { label: 'Composto', value: 'COMPOSTO' },
 ]});
+
+const MORATORY_MODES = [
+    { value: 'TAXA_LEGAL',    label: 'Taxa Legal (art. 406/CC)' },
+    { value: 'PERSONALIZADO', label: 'Personalizado' },
+] as const;
 
 function InvestorCombobox(props: any) {
     const { control, index, allInvestors } = props;
@@ -245,6 +253,7 @@ export default function CreateAssetPage() {
             folderId: "",
             investors: [{ userId: "", share: 0, acquisitionDate: "" }],
             calcCorrectionIndex:   "TJSP_LEI14905",
+            calcMoratoryMode:      "TAXA_LEGAL",
             calcMoratoryRate:      "1",
             calcMoratoryType:      "SIMPLES",
             calcFeesPercentage:    "10",
@@ -256,6 +265,7 @@ export default function CreateAssetPage() {
     const { fields, append, remove, replace } = useFieldArray({ control, name: "investors" });
     const { fields: calcFields, append: calcAppend, remove: calcRemove } = useFieldArray({ control, name: "calcInstallments" });
     const processNumberValue = useWatch({ control, name: 'processNumber' });
+    const calcMoratoryMode   = useWatch({ control, name: 'calcMoratoryMode' });
 
     const applyLookupResponse = async (data: LookupResponse) => {
         const { processNumber: pn, originalCreditor, origemProcesso, legalOneId, legalOneType, otherParty, nickname, processFolderId, suggestedInvestors, legalOneMatches: matches } = data;
@@ -350,49 +360,33 @@ export default function CreateAssetPage() {
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             // Salva parâmetros de cálculo e dispara primeiro cálculo
-            const parseBRNumber = (s: string): number => {
-                // Suporta formato BR "1.150.972,30" e americano "1150972.30"
-                if (s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
-                return parseFloat(s.replace(/,/g, ''));
-            };
-
             const calcInstallments = data.calcInstallments
                 .filter(i => i.baseValue && i.baseDate)
                 .map(i => ({
-                    baseValue:   parseBRNumber(i.baseValue),
+                    baseValue:   parseBR(i.baseValue),
                     baseDate:    new Date(i.baseDate + 'T00:00:00Z').toISOString(),
                     description: i.description || undefined,
                 }));
 
-            if (calcInstallments.length > 0) {
-                try {
-                    await axios.put(
-                        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${data.legalOneId}/params`,
-                        {
-                            correctionIndex:   data.calcCorrectionIndex,
-                            moratoryMode:      'TAXA_LEGAL',
-                            moratoryRate:      parseFloat(data.calcMoratoryRate || '0'),
-                            moratoryType:      data.calcMoratoryType,
-                            compensatoryRate:  0,
-                            compensatoryType:  'SIMPLES',
-                            feesPercentage:    parseFloat(data.calcFeesPercentage || '0'),
-                            penaltyPercentage: parseFloat(data.calcPenaltyPercentage || '0'),
-                            feesOnPenalty:     false,
-                            installments:      calcInstallments,
-                        },
-                        { headers: { Authorization: `Bearer ${token}` } },
-                    );
-                    await axios.post(
-                        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${data.legalOneId}/calculate`,
-                        {},
-                        { headers: { Authorization: `Bearer ${token}` } },
-                    );
-                } catch {
-                    toaster.create({ title: 'Processo criado, mas houve um erro ao salvar os parâmetros de cálculo. Configure na aba Cálculo Judicial.', type: 'warning' });
-                }
-            }
+            const calcNotice = calcInstallments.length > 0
+                ? await saveFirstCalculation(data.legalOneId, {
+                    correctionIndex:   data.calcCorrectionIndex,
+                    moratoryMode:      data.calcMoratoryMode,
+                    moratoryRate:      parseFloat(data.calcMoratoryRate || '0'),
+                    moratoryType:      data.calcMoratoryType,
+                    compensatoryRate:  0,
+                    compensatoryType:  'SIMPLES',
+                    feesPercentage:    parseFloat(data.calcFeesPercentage || '0'),
+                    penaltyPercentage: parseFloat(data.calcPenaltyPercentage || '0'),
+                    feesOnPenalty:     false,
+                    installments:      calcInstallments,
+                }, token)
+                : null;
+            if (calcNotice) toaster.create({ ...calcNotice, type: 'warning' });
 
             toaster.create({ title: "Processo Registrado!", type: "success" });
+            // Com aviso do cálculo, dá tempo de ler antes de abrir o processo
+            if (calcNotice) await new Promise(resolve => setTimeout(resolve, 4000));
             window.location.href = `/processos/${data.legalOneId}`;
         } catch (error: any) {
             toaster.create({ title: "Erro ao Registrar", description: error.response?.data?.error, type: "error" });
@@ -597,16 +591,37 @@ export default function CreateAssetPage() {
 
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root>
-                                <Field.Label>Juros Moratórios (% a.m.)</Field.Label>
-                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
+                                <Field.Label>Juros Moratórios</Field.Label>
+                                <Controller name="calcMoratoryMode" control={control} render={({ field }) => (
+                                    <HStack gap={1} wrap="wrap">
+                                        {MORATORY_MODES.map(opt => (
+                                            <Button key={opt.value} size="xs" type="button"
+                                                variant={field.value === opt.value ? 'solid' : 'ghost'}
+                                                colorPalette={field.value === opt.value ? 'brand' : 'gray'}
+                                                onClick={() => field.onChange(opt.value)}
+                                            >
+                                                {opt.label}
+                                            </Button>
+                                        ))}
+                                    </HStack>
+                                )} />
+                                {calcMoratoryMode === 'PERSONALIZADO' ? (
+                                    <HStack gap={2}>
+                                        <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
+                                        <Text fontSize="sm" color="gray.400" flexShrink={0}>% a.m.</Text>
+                                    </HStack>
+                                ) : (
+                                    <Field.HelperText fontSize="xs" color="gray.500">6% e 12% a.a. até 08/2024; depois, a taxa legal do BCB</Field.HelperText>
+                                )}
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Honorários (%)</Field.Label>
                                 <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcFeesPercentage")} />
                             </Field.Root>
                             <Field.Root>
-                                <Field.Label>Multa Art. 523 (%)</Field.Label>
+                                <Field.Label>HO e multa Art. 523 (%)</Field.Label>
                                 <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcPenaltyPercentage")} />
+                                <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                             </Field.Root>
                         </SimpleGrid>
 
