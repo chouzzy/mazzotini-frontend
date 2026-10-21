@@ -12,8 +12,11 @@ const apiError = (e: any, fallback: string): string => e?.response?.data?.error 
  * Salva os parâmetros do cálculo e roda o primeiro cálculo do processo recém-criado. Devolve o
  * aviso a mostrar antes de abrir o processo, ou null. Os dois passos têm avisos próprios: se o
  * salvamento falha, nada do cálculo foi gravado e os parâmetros precisam ser digitados de novo.
+ *
+ * O token aceita `undefined` porque, nas versões do Auth0 que o build da Vercel instala, o
+ * `getAccessTokenSilently` é tipado assim. Sem token, a API recusa e o aviso de salvamento aparece.
  */
-export async function saveFirstCalculation(legalOneId: number, params: object, token: string): Promise<CalcNotice | null> {
+export async function saveFirstCalculation(legalOneId: number, params: object, token: string | undefined): Promise<CalcNotice | null> {
     const url     = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${legalOneId}`;
     const headers = { Authorization: `Bearer ${token}` };
     try {
