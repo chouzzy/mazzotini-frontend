@@ -593,6 +593,7 @@ export default function CreateAssetPage() {
                                             <Button key={opt.value} size="xs" type="button"
                                                 variant={field.value === opt.value ? 'solid' : 'ghost'}
                                                 colorPalette={field.value === opt.value ? 'brand' : 'gray'}
+                                                aria-pressed={field.value === opt.value}
                                                 onClick={() => field.onChange(opt.value)}
                                             >
                                                 {opt.label}
@@ -606,7 +607,7 @@ export default function CreateAssetPage() {
                                         <Text fontSize="sm" color="gray.400" flexShrink={0}>% a.m.</Text>
                                     </HStack>
                                 ) : calcMoratoryMode === 'TAXA_LEGAL_TEMA1368' ? (
-                                    <Field.HelperText fontSize="xs" color="gray.500">SELIC menos IPCA-E de 03/1995 a 07/2024; depois, a taxa legal do BCB</Field.HelperText>
+                                    <Field.HelperText fontSize="xs" color="gray.500">SELIC menos IPCA-E de 03/1995 a 07/2024 (antes, sem juros); depois, a taxa legal do BCB</Field.HelperText>
                                 ) : (
                                     <Field.HelperText fontSize="xs" color="gray.500">6% e 12% a.a. até 08/2024; depois, a taxa legal do BCB</Field.HelperText>
                                 )}

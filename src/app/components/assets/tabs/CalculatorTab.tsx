@@ -150,7 +150,7 @@ interface CalcResult {
     referenceYear:        number;
     installmentResults:   any[];
     calculations?:        { label: string; baseTotal: number; correctedValue: number; totalValue: number }[];
-    warnings?:            string[];   // meses sem índice no banco, que entraram como 0%
+    warnings?:            string[];   // avisos do cálculo (ex.: mês sem índice no banco, que entrou como 0%)
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -244,6 +244,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     const { fields, append, remove } = useFieldArray({ control, name: 'installments' });
     const moratoryMode        = watch('moratoryMode');
+    const correctionIndex     = watch('correctionIndex');
     const feesMode            = watch('feesMode');
     const moratoryRateUnit    = watch('moratoryRateUnit');
     const compensatoryRateUnit = watch('compensatoryRateUnit');
@@ -404,6 +405,14 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                 });
                 return;
             }
+            // Servidor numa versão sem as opções do Dr. Calc: o cálculo seguiria a regra antiga
+            if (res.data && !('feesOnMulta' in res.data)) {
+                toaster.create({
+                    title: 'O servidor não gravou as opções "honorários sobre a multa" e "deflacionar". Atualize a página e tente de novo; se continuar, avise o suporte.',
+                    type: 'error',
+                });
+                return;
+            }
             toaster.create({ title: 'Parâmetros salvos.', type: 'success' });
         } catch (e: any) {
             toaster.create({ title: e?.response?.data?.error || 'Erro ao salvar parâmetros.', type: 'error' });
@@ -482,18 +491,19 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     ];
 
     // ── opções do Dr. Calc (desmarcadas por padrão, como lá) ──────────────────
-    // Função, e não componente declarado aqui dentro: assim a caixa não é remontada a cada render
-    const optionCheckbox = (name: 'feesOnMulta' | 'deflate', label: string, help: string) => (
+    // Função, e não componente declarado aqui dentro: assim a caixa não é remontada a cada render.
+    // A ajuda fica fora do rótulo, ligada por aria-describedby, e o leitor de tela lê só o nome
+    const optionCheckbox = (name: 'feesOnMulta' | 'deflate', label: string, help: string, disabled = false) => (
         <Controller name={name} control={control} render={({ field }) => (
-            <Checkbox.Root checked={field.value} onCheckedChange={d => field.onChange(Boolean(d.checked))}
-                size="sm" colorPalette="brand" alignItems="flex-start" mt={3}>
-                <Checkbox.HiddenInput />
-                <Checkbox.Control mt="2px" />
-                <Box>
+            <Box mt={3}>
+                <Checkbox.Root checked={field.value} onCheckedChange={d => field.onChange(Boolean(d.checked))}
+                    disabled={disabled} size="sm" colorPalette="brand">
+                    <Checkbox.HiddenInput aria-describedby={`${name}-ajuda`} />
+                    <Checkbox.Control />
                     <Checkbox.Label fontSize="sm">{label}</Checkbox.Label>
-                    <Text fontSize="xs" color="gray.500">{help}</Text>
-                </Box>
-            </Checkbox.Root>
+                </Checkbox.Root>
+                <Text id={`${name}-ajuda`} fontSize="xs" color="gray.500" ml={6}>{help}</Text>
+            </Box>
         )} />
     );
 
@@ -590,8 +600,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <SmSelect name="correctionIndex" collection={INDEX_OPTIONS} bg="gray.800" />
                                 </Field.Root>
                                 {/* Fora do Field.Root, para a caixa ter o próprio rótulo */}
-                                {optionCheckbox('deflate', 'Deflacionar valor nominal em caso de inflação negativa',
-                                    'Desmarcado, como no Dr. Calc: com inflação negativa no período, a parcela fica com o valor original.')}
+                                {correctionIndex === 'NAO_ATUALIZAR'
+                                    ? optionCheckbox('deflate', 'Deflacionar valor nominal em caso de inflação negativa',
+                                        'Não se aplica com "Não atualizar (fixo)".', true)
+                                    : optionCheckbox('deflate', 'Deflacionar valor nominal em caso de inflação negativa',
+                                        'Padrão do Dr. Calc: desmarcado. Assim, com inflação negativa no período, a parcela fica com o valor original.')}
                             </Box>
 
                             {/* Juros Moratórios */}
@@ -757,8 +770,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Input {...register('multaPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                     </Field.Root>
                                 </HStack>
-                                {optionCheckbox('feesOnMulta', 'Incidir honorários sobre a multa',
-                                    'Desmarcado, como no Dr. Calc: os honorários saem do valor sem a multa. A multa do Art. 523 incide sobre tudo.')}
+                                {feesMode === 'FIXO'
+                                    ? optionCheckbox('feesOnMulta', 'Incidir honorários sobre a multa',
+                                        'Não se aplica com honorários fixos em R$.', true)
+                                    : optionCheckbox('feesOnMulta', 'Incidir honorários sobre a multa',
+                                        'Padrão do Dr. Calc: desmarcado. Assim, os honorários saem do valor sem a multa; a multa do Art. 523 incide sobre tudo.')}
                             </Box>
 
                             {/* Parcelas */}
@@ -1177,6 +1193,11 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                         </Box>
                                                     ))}
                                                 </Flex>
+                                                {inst.nominalFloor && (
+                                                    <Text fontSize="xs" color="gray.400" mb={2}>
+                                                        Inflação negativa no período: a parcela ficou com o valor original, porque a opção &quot;Deflacionar&quot; está desmarcada, como no Dr. Calc. A tabela mostra os índices do período.
+                                                    </Text>
+                                                )}
                                                 {inst.monthBreakdown?.length > 0 && (
                                                     <Box maxH="200px" overflowY="auto" overflowX="auto">
                                                         <Table.Root size="sm" variant="line">

@@ -354,20 +354,52 @@ describe('CalculatorTab: opções do Dr. Calc e taxa legal com o Tema 1368', () 
     const deflate     = () => screen.getByRole('checkbox', { name: /Deflacionar valor nominal/ });
     const tema1368    = () => btn('Taxa Legal + Tema 1368 (STJ)');
 
+    // O processo fictício com honorários em percentual, para a opção dos honorários valer
+    const comHonorariosEmPercentual = () => ({ ...savedSingle(), feesMode: 'PERCENTUAL', feesPercentage: 10 });
+
     it('as opções vêm desmarcadas, como no Dr. Calc, e vão assim para a API', async () => {
-        api.params = savedSingle();
+        api.params = comHonorariosEmPercentual();
         render(tab());
 
         expect(feesOnMulta()).not.toBeChecked();
         expect(deflate()).not.toBeChecked();
+        // A ajuda é a descrição da caixa, e não parte do nome
+        expect(feesOnMulta()).toHaveAccessibleDescription(/Padrão do Dr\. Calc: desmarcado/);
         await submit();
 
         await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
         expect(putBody()).toMatchObject({ feesOnMulta: false, deflate: false });
     });
 
+    it('com honorário fixo em R$ ou "Não atualizar (fixo)", a opção correspondente não se aplica', () => {
+        api.params = { ...savedSingle(), correctionIndex: 'NAO_ATUALIZAR' };   // honorário fixo em R$
+        render(tab());
+
+        expect(feesOnMulta()).toBeDisabled();
+        expect(feesOnMulta()).toHaveAccessibleDescription('Não se aplica com honorários fixos em R$.');
+        expect(deflate()).toBeDisabled();
+    });
+
+    it('servidor sem as opções do Dr. Calc: avisa e não calcula', async () => {
+        api.params = comHonorariosEmPercentual();
+        // A versão anterior do servidor devolve o registro sem os campos novos
+        axiosMock.put.mockImplementation((_url: string, body: Record<string, unknown>) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { feesOnMulta: _f, deflate: _d, ...antigo } = body;
+            return Promise.resolve({ data: antigo });
+        });
+        render(tab());
+
+        await submit();
+
+        await waitFor(() => expect(toastTitles()).toContain(
+            'O servidor não gravou as opções "honorários sobre a multa" e "deflacionar". Atualize a página e tente de novo; se continuar, avise o suporte.',
+        ));
+        expect(axiosMock.post).not.toHaveBeenCalled();
+    });
+
     it('marca as opções e a taxa legal com o Tema 1368, explica a regra e envia', async () => {
-        api.params = savedSingle();
+        api.params = comHonorariosEmPercentual();
         render(tab());
 
         fireEvent.click(tema1368());
@@ -385,6 +417,25 @@ describe('CalculatorTab: opções do Dr. Calc e taxa legal com o Tema 1368', () 
 
         await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
         expect(putBody()).toMatchObject({ moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true });
+    });
+
+    it('explica no detalhe da parcela quando a inflação negativa deixou o valor no original', async () => {
+        api.params = comHonorariosEmPercentual();
+        axiosMock.post.mockResolvedValue({ data: {
+            ...fakeResult,
+            installmentResults: [{
+                installmentIndex: 1, description: 'Parcela A', baseValue: 1000, baseDate: '2023-05-15T00:00:00.000Z',
+                correctionFactor: 1, correctedValue: 1000, moratoryMonths: 0, moratoryInterest: 0, compensatoryInterest: 0,
+                feesValue: 0, penaltyValue: 0, subtotal: 1000, nominalFloor: true,
+                monthBreakdown: [{ year: 2023, month: 6, monthlyRate: -0.985, accumulated: 0.99015 }],
+            }],
+        } });
+        render(tab());
+
+        await submit();
+        fireEvent.click(await screen.findByText(/Parcela A — Base/));
+
+        expect(await screen.findByText(/Inflação negativa no período: a parcela ficou com o valor original/)).toBeInTheDocument();
     });
 
     it('reabre um cálculo salvo com as opções e o modo dos juros', () => {
