@@ -52,6 +52,7 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
                         <Flex px={5} py={2} borderBottom="1px solid" borderColor="gray.700" bg="gray.850">
                             <Text flex={2} fontSize="xs" fontWeight="bold" color="brand.500" textTransform="uppercase" letterSpacing="wider">Nº do Processo</Text>
                             <Text flex={2} fontSize="xs" fontWeight="bold" color="brand.500" textTransform="uppercase" letterSpacing="wider">Parte Contrária</Text>
+                            <Text flex={2} fontSize="xs" fontWeight="bold" color="brand.500" textTransform="uppercase" letterSpacing="wider">Associado</Text>
                             <Text flex={1} fontSize="xs" fontWeight="bold" color="brand.500" textTransform="uppercase" letterSpacing="wider">Status</Text>
                             <Box w="32px" />
                         </Flex>
@@ -71,6 +72,10 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
                                 </Text>
                                 <Text flex={2} fontSize="sm" color="gray.400">
                                     {inv.asset.nickname || inv.asset.otherParty || '—'}
+                                </Text>
+                                {/* Quem acompanha o processo no portal do associado (diferente da indicação do cadastro) */}
+                                <Text flex={2} fontSize="sm" color={inv.associate?.name ? 'gray.300' : 'gray.600'}>
+                                    {inv.associate?.name || 'Sem associado'}
                                 </Text>
                                 <Box flex={1}>
                                     <Tag.Root size="sm" variant="solid" colorPalette={getStatusColor(inv.asset.status)}>
