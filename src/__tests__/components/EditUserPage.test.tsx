@@ -42,7 +42,8 @@ const client = () => ({
     ],
 });
 
-const page = () => render(<ChakraProvider value={defaultSystem}><EditUserPage /></ChakraProvider>);
+const pageElement = () => <ChakraProvider value={defaultSystem}><EditUserPage /></ChakraProvider>;
+const page = () => render(pageElement());
 
 const btn = (name: RegExp | string) => screen.getByRole('button', { name });
 // O zag avisa as mudanças depois do clique, fora do mesmo tick
@@ -142,6 +143,15 @@ describe('Editar Usuário: indicação × associado dos processos', () => {
         expect(patchBody()).not.toHaveProperty('applyReferralToInvestments');
     });
 
+    it('o formulário recarrega quando o cadastro muda no servidor', () => {
+        const { rerender } = page();
+
+        api.user = { ...client(), name: 'Nome Salvo' };
+        rerender(pageElement());
+
+        expect(screen.getByDisplayValue('Nome Salvo')).toBeInTheDocument();
+    });
+
     it('o próprio cliente não aparece na lista de associados', async () => {
         page();
 
@@ -171,6 +181,21 @@ describe('Editar Usuário: indicação × associado dos processos', () => {
                 type: 'success', title: 'Associado levado para os processos', description: '001 — Associado A agora acompanha 1 processo do cliente.',
             }));
             expect(api.mutateUser).toHaveBeenCalled();
+        });
+
+        it('não apaga o que foi digitado e ainda não salvo', async () => {
+            const { rerender } = page();
+            fireEvent.change(screen.getByDisplayValue('Cliente Exemplo'), { target: { value: 'Nome Digitado' } });
+
+            await click(btn('Levar a indicação para os processos'));
+            await click(btn('Levar para o processo'));
+            await waitFor(() => expect(api.mutateUser).toHaveBeenCalled());
+            // O usuário recarregado vem com a carteira nova e o mesmo cadastro
+            api.user = { ...client(), investments: client().investments.map(inv => ({ ...inv, associateId: 'associado-a', associate: { id: 'associado-a', name: 'Associado A' } })) };
+            rerender(pageElement());
+
+            expect(screen.getByDisplayValue('Nome Digitado')).toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: 'Levar a indicação para os processos' })).toBeNull();
         });
 
         it('mostra o motivo quando o servidor recusa', async () => {

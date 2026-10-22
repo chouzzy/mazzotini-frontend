@@ -445,7 +445,9 @@ export default function EditUserPage() {
     });
     // =================================================================
 
-    // 2. Popula o form
+    // 2. Popula o form, só quando muda o cadastro, e não a carteira: levar a indicação para os
+    // processos recarrega o usuário, e o que foi digitado e ainda não salvo não pode sumir
+    const profileKey = useMemo(() => userData ? JSON.stringify({ ...userData, investments: undefined }) : null, [userData]);
     useEffect(() => {
         if (userData) {
             console.log("Dados do usuário carregados:", userData);
@@ -461,7 +463,8 @@ export default function EditUserPage() {
                 personalDocumentUrls: userData.personalDocumentUrls || []
             });
         }
-    }, [userData, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profileKey, reset]);
 
     const useCommercialAddress = watch('useCommercialAddress');
     const unknownAssociate = watch('unknownAssociate');
