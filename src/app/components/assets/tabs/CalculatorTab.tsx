@@ -492,7 +492,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     // ── opções do Dr. Calc (desmarcadas por padrão, como lá) ──────────────────
     // Função, e não componente declarado aqui dentro: assim a caixa não é remontada a cada render.
-    // A ajuda fica fora do rótulo, ligada por aria-describedby, e o leitor de tela lê só o nome
+    // A ajuda fica fora do rótulo, ligada por aria-describedby, para o leitor de tela lê-la como descrição
     const optionCheckbox = (name: 'feesOnMulta' | 'deflate', label: string, help: string, disabled = false) => (
         <Controller name={name} control={control} render={({ field }) => (
             <Box mt={3}>
@@ -768,6 +768,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
                                         <Input {...register('multaPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                        <Field.HelperText fontSize="xs" color="gray.500">Só das parcelas vencidas: como no Dr. Calc, a parcela com data no último dia do mês de referência ou depois fica sem multa</Field.HelperText>
                                     </Field.Root>
                                 </HStack>
                                 {feesMode === 'FIXO'
@@ -1059,7 +1060,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     ? [{ label: 'Juros Remuneratórios', value: calcResult.compensatoryInterest }]
                                     : []),
                                 ...(calcResult.multaValue > 0
-                                    ? [{ label: 'Multa s/ valor corrigido', value: calcResult.multaValue }]
+                                    ? [{ label: 'Multa s/ parcelas vencidas', value: calcResult.multaValue }]
                                     : []),
                                 { label: 'Honorários',             value: calcResult.feesValue },
                                 { label: 'HO e Multa Art. 523',    value: calcResult.penaltyValue },
