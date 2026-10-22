@@ -369,6 +369,10 @@ export default function UserCarteiraPage() {
                     {userData?.name && (
                         <Text color="gray.400" fontSize="sm" mt={0.5}>{userData.name}</Text>
                     )}
+                    <Text color="gray.500" fontSize="xs" mt={1}>
+                        O associado de cada processo é quem acompanha esse processo do cliente no portal do associado.
+                        A indicação do cadastro só registra quem indicou o cliente.
+                    </Text>
                 </Box>
                 <Badge
                     ml="auto"

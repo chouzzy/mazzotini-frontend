@@ -17,6 +17,8 @@ import Link from 'next/link';
 import { UserStagingDocument } from '@/types/api';
 import { AddressBlock } from "@/app/components/management/AddressBlock";
 import { InvestmentsSummary } from "@/app/components/management/InvestmentsSummary";
+import { ReferralDialog } from "@/app/components/management/ReferralDialog";
+import { processesToMove, ProcessToMove } from "@/utils/referralChange";
 
 // ============================================================================
 //  INTERFACES
@@ -401,6 +403,8 @@ export default function EditUserPage() {
     const [confirmEmail, setConfirmEmail] = useState('');
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const emailInputRef = useRef<HTMLInputElement>(null);
+    // Troca da indicação esperando a resposta do admin: levar o associado para os processos?
+    const [referralPrompt, setReferralPrompt] = useState<{ data: UserFormData; associateName: string; processes: ProcessToMove[] } | null>(null);
     const router = useRouter();
     const params = useParams();
     const userId = params.id as string;
@@ -482,7 +486,22 @@ export default function EditUserPage() {
         }
     };
 
+    // Trocar a indicação por um associado cadastrado: antes de salvar, pergunta se ele vai também
+    // para os processos do cliente. A indicação só registra quem indicou; o portal do associado
+    // usa o associado de cada processo (o da carteira)
     const onSubmit: SubmitHandler<UserFormData> = async (data) => {
+        const nextReferral = data.unknownAssociate ? null : (data.referredById || null);
+        const processes = processesToMove(userData?.referredById, nextReferral, userData?.investments ?? []);
+        if (processes.length > 0) {
+            const associateName = associates?.find(a => a.value === nextReferral)?.label ?? 'o associado indicado';
+            setReferralPrompt({ data, associateName, processes });
+            return;
+        }
+        await saveUser(data, null);
+    };
+
+    /** Salva o cadastro; com `referral`, o associado indicado vai também para os processos do cliente. */
+    const saveUser = async (data: UserFormData, referral: { associateName: string; processes: number } | null) => {
         setIsSubmitting(true);
         try {
             const token = await getAccessTokenSilently();
@@ -533,15 +552,28 @@ export default function EditUserPage() {
 
             // Salva direto: a etapa de confirmação foi retirada a pedido do escritório (06/10).
             // O backend descarta as solicitações antigas que ainda estiverem pendentes.
-            await axios.patch(`${apiBaseUrl}/api/management/users/${userId}`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.patch(
+                `${apiBaseUrl}/api/management/users/${userId}`,
+                { ...payload, ...(referral ? { applyReferralToInvestments: true } : {}) },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
 
             mutateUser();
             mutatePendingChanges();
+            // Servidor numa versão sem essa opção: gravou só a indicação
+            if (referral && res.data?.investmentsUpdated === undefined) {
+                toaster.create({
+                    title: "Cadastro atualizado, mas os processos continuam com o associado anterior",
+                    description: "Troque o associado de cada processo em Gerenciar Carteira.",
+                    type: "warning"
+                });
+                return;
+            }
             toaster.create({
                 title: "Cadastro atualizado!",
-                description: "As alterações já estão valendo.",
+                description: referral
+                    ? `${referral.associateName} agora acompanha ${referral.processes === 1 ? '1 processo' : `${referral.processes} processos`} do cliente.`
+                    : "As alterações já estão valendo.",
                 type: "success"
             });
 
@@ -647,6 +679,19 @@ export default function EditUserPage() {
                 )}
 
                 {/* DIALOG: Alterar E-mail */}
+                <ReferralDialog
+                    associateName={referralPrompt?.associateName ?? null}
+                    processes={referralPrompt?.processes ?? []}
+                    onCancel={() => setReferralPrompt(null)}
+                    onConfirm={(applyToProcesses) => {
+                        const prompt = referralPrompt;
+                        setReferralPrompt(null);
+                        if (prompt) {
+                            saveUser(prompt.data, applyToProcesses ? { associateName: prompt.associateName, processes: prompt.processes.length } : null);
+                        }
+                    }}
+                />
+
                 <Dialog.Root open={isEmailDialogOpen} onOpenChange={(d) => !d.open && setIsEmailDialogOpen(false)}>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
@@ -839,6 +884,10 @@ export default function EditUserPage() {
                     {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação (Associado)</Heading>
+                        <Text fontSize="sm" color="gray.400">
+                            Registra quem indicou o cliente. O associado que acompanha cada processo fica na carteira (Gerenciar Carteira).
+                            Ao trocar a indicação por um associado cadastrado, você pode levá-lo também para os processos.
+                        </Text>
                         <Controller name="unknownAssociate" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))} mb={2}>
                                 <Checkbox.HiddenInput />
