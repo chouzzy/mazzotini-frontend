@@ -74,7 +74,7 @@ export function InvestmentsSummary({ userId, investments }: InvestmentsSummaryPr
                                     {inv.asset.nickname || inv.asset.otherParty || '—'}
                                 </Text>
                                 {/* Quem acompanha o processo no portal do associado (diferente da indicação do cadastro) */}
-                                <Text flex={2} fontSize="sm" color={inv.associate?.name ? 'gray.300' : 'gray.600'}>
+                                <Text flex={2} fontSize="sm" color={inv.associate?.name ? 'gray.300' : 'gray.400'}>
                                     {inv.associate?.name || 'Sem associado'}
                                 </Text>
                                 <Box flex={1}>
