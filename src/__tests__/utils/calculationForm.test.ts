@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    calculationError, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
+    calculationError, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
     toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
 } from '@/utils/calculationForm';
 
@@ -167,6 +167,29 @@ describe('toPayload', () => {
         });
         const reopened = toDraft({ installments: result.ok ? result.payload.installments : [] }, 'Cálculo 1');
         expect(reopened.installments[1]).toMatchObject({ baseValue: '350', baseDate: '05/10/2025', type: 'CUSTA' });
+    });
+});
+
+describe('opções do Dr. Calc e modos dos juros', () => {
+    it('os três modos dos juros de mora, com a taxa legal como padrão', () => {
+        expect(MORATORY_MODES.map(m => m.value)).toEqual(['TAXA_LEGAL', 'TAXA_LEGAL_TEMA1368', 'PERSONALIZADO']);
+        expect(toDraft({}, 'Cálculo 1').moratoryMode).toBe('TAXA_LEGAL');
+    });
+
+    it('cálculo salvo antes das opções abre com as duas desmarcadas, como no Dr. Calc', () => {
+        expect(draftA()).toMatchObject({ feesOnMulta: false, deflate: false });
+
+        const result = toPayload(draftA());
+        expect(result.ok && result.payload).toMatchObject({ feesOnMulta: false, deflate: false });
+    });
+
+    it('as opções marcadas e o modo do Tema 1368 vão e voltam da API', () => {
+        const draft = toDraft({ ...saved, moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true }, 'Contrato A');
+        const result = toPayload(draft);
+
+        expect(result.ok && result.payload).toMatchObject({ moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true });
+        // O cálculo novo copia as opções do aberto, como copia o índice e as taxas
+        expect(newCalculationFrom(draft, 'Contrato B')).toMatchObject({ feesOnMulta: true, deflate: true });
     });
 });
 

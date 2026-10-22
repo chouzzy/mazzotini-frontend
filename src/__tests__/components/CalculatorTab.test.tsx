@@ -348,3 +348,51 @@ describe('CalculatorTab: custas e despesas', () => {
         expect(screen.queryByText('Custas e despesas')).toBeNull();
     });
 });
+
+describe('CalculatorTab: opções do Dr. Calc e taxa legal com o Tema 1368', () => {
+    const feesOnMulta = () => screen.getByRole('checkbox', { name: /Incidir honorários sobre a multa/ });
+    const deflate     = () => screen.getByRole('checkbox', { name: /Deflacionar valor nominal/ });
+    const tema1368    = () => btn('Taxa Legal + Tema 1368 (STJ)');
+
+    it('as opções vêm desmarcadas, como no Dr. Calc, e vão assim para a API', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        expect(feesOnMulta()).not.toBeChecked();
+        expect(deflate()).not.toBeChecked();
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(putBody()).toMatchObject({ feesOnMulta: false, deflate: false });
+    });
+
+    it('marca as opções e a taxa legal com o Tema 1368, explica a regra e envia', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(tema1368());
+        expect(tema1368()).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByText(/SELIC descontada do IPCA-E/)).toBeInTheDocument();
+        // A caixa avisa o formulário numa microtarefa depois do clique: o act assíncrono espera
+        await act(async () => {
+            fireEvent.click(feesOnMulta());
+            fireEvent.click(deflate());
+        });
+        expect(feesOnMulta()).toBeChecked();
+        expect(deflate()).toBeChecked();
+
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(putBody()).toMatchObject({ moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true });
+    });
+
+    it('reabre um cálculo salvo com as opções e o modo dos juros', () => {
+        api.params = { ...savedSingle(), moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true };
+        render(tab());
+
+        expect(feesOnMulta()).toBeChecked();
+        expect(deflate()).toBeChecked();
+        expect(tema1368()).toHaveAttribute('aria-pressed', 'true');
+    });
+});

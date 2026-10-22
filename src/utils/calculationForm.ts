@@ -14,6 +14,15 @@ export type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MU
  */
 export type InstallmentType = 'DEBITO' | 'ABATIMENTO' | 'CUSTA';
 
+/** Modos dos juros de mora, como no Dr. Calc; o primeiro é o padrão. */
+export const MORATORY_MODES = [
+    { value: 'TAXA_LEGAL',          label: 'Taxa Legal (art. 406/CC)' },
+    { value: 'TAXA_LEGAL_TEMA1368', label: 'Taxa Legal + Tema 1368 (STJ)' },
+    { value: 'PERSONALIZADO',       label: 'Personalizado' },
+] as const;
+
+export type MoratoryMode = typeof MORATORY_MODES[number]['value'];
+
 export interface Installment {
     baseValue:      string;
     baseDate:       string;  // DD/MM/AAAA no form, convertido para ISO no envio
@@ -41,6 +50,8 @@ export interface CalcDraft {
     feesFixedValue:         string;
     penaltyPercentage:      string;
     feesOnPenalty:          boolean;
+    feesOnMulta:            boolean;  // honorários também sobre a multa (Dr. Calc: desmarcado)
+    deflate:                boolean;  // inflação negativa abaixo do valor nominal (Dr. Calc: desmarcado)
     installments:           Installment[];
 }
 
@@ -62,6 +73,8 @@ export interface CalculationPayload {
     feesFixedValue:        number;
     penaltyPercentage:     number;
     feesOnPenalty:         boolean;
+    feesOnMulta:           boolean;
+    deflate:               boolean;
     installments: {
         baseValue:       number;
         baseDate:        string;
@@ -129,6 +142,8 @@ export const toDraft = (p: any, label: string): CalcDraft => ({
         ? Number(p.feesFixedValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '',
     penaltyPercentage:     String(p.penaltyPercentage ?? 10),
     feesOnPenalty:         p.feesOnPenalty         ?? false,
+    feesOnMulta:           p.feesOnMulta           ?? false,
+    deflate:               p.deflate               ?? false,
     installments: p.installments?.length
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? p.installments.map((i: any) => ({
@@ -220,6 +235,8 @@ export const toPayload = (d: CalcDraft): PayloadResult => {
             feesFixedValue,
             penaltyPercentage:     parseFloat(d.penaltyPercentage || '0'),
             feesOnPenalty:         d.feesOnPenalty,
+            feesOnMulta:           d.feesOnMulta,
+            deflate:               d.deflate,
             installments,
         },
     };

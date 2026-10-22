@@ -3,7 +3,7 @@
 import {
     VStack, HStack, Flex, Box, Text, Heading, Button, Icon, Badge,
     Card, Input, Field, Select, Portal, createListCollection,
-    Spinner, Table, Accordion, Textarea,
+    Spinner, Table, Accordion, Textarea, Checkbox,
 } from '@chakra-ui/react';
 import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller, useFieldArray, useController } from 'react-hook-form';
@@ -17,8 +17,8 @@ import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import {
-    calculationError, CalcDraft, CalculationPayload, DeductionPoint, newCalculationFrom, nextCalculationLabel,
-    parseBR, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
+    calculationError, CalcDraft, CalculationPayload, DeductionPoint, MORATORY_MODES, newCalculationFrom,
+    nextCalculationLabel, parseBR, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
 } from '@/utils/calculationForm';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
@@ -225,6 +225,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             feesFixedValue:       '0',
             penaltyPercentage:    '10',
             feesOnPenalty:        false,
+            feesOnMulta:          false,
+            deflate:              false,
             referenceMonth:       '',
             installments: [{ baseValue: '', baseDate: '', description: '', type: 'DEBITO', deductionPoint: 'APOS_TUDO' }],
         },
@@ -479,6 +481,22 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         { value: 'AD', label: '% a.d.' },
     ];
 
+    // ── opções do Dr. Calc (desmarcadas por padrão, como lá) ──────────────────
+    // Função, e não componente declarado aqui dentro: assim a caixa não é remontada a cada render
+    const optionCheckbox = (name: 'feesOnMulta' | 'deflate', label: string, help: string) => (
+        <Controller name={name} control={control} render={({ field }) => (
+            <Checkbox.Root checked={field.value} onCheckedChange={d => field.onChange(Boolean(d.checked))}
+                size="sm" colorPalette="brand" alignItems="flex-start" mt={3}>
+                <Checkbox.HiddenInput />
+                <Checkbox.Control mt="2px" />
+                <Box>
+                    <Checkbox.Label fontSize="sm">{label}</Checkbox.Label>
+                    <Text fontSize="xs" color="gray.500">{help}</Text>
+                </Box>
+            </Checkbox.Root>
+        )} />
+    );
+
     const RateUnitToggle = ({ name }: { name: 'moratoryRateUnit' | 'compensatoryRateUnit' }) => (
         <Controller name={name} control={control} render={({ field }) => (
             <HStack gap={0} border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden">
@@ -566,10 +584,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                             </Box>
 
                             {/* Índice de Correção */}
-                            <Field.Root>
-                                <Field.Label fontSize="sm">Índice de Correção Monetária</Field.Label>
-                                <SmSelect name="correctionIndex" collection={INDEX_OPTIONS} bg="gray.800" />
-                            </Field.Root>
+                            <Box>
+                                <Field.Root>
+                                    <Field.Label fontSize="sm">Índice de Correção Monetária</Field.Label>
+                                    <SmSelect name="correctionIndex" collection={INDEX_OPTIONS} bg="gray.800" />
+                                </Field.Root>
+                                {/* Fora do Field.Root, para a caixa ter o próprio rótulo */}
+                                {optionCheckbox('deflate', 'Deflacionar valor nominal em caso de inflação negativa',
+                                    'Desmarcado, como no Dr. Calc: com inflação negativa no período, a parcela fica com o valor original.')}
+                            </Box>
 
                             {/* Juros Moratórios */}
                             <Box p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
@@ -577,17 +600,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     Juros Moratórios
                                 </Text>
                                 <Controller name="moratoryMode" control={control} render={({ field }) => (
-                                    <HStack gap={1} mb={3}>
-                                        {[
-                                            { v: 'TAXA_LEGAL',   l: 'Taxa Legal (art. 406/CC)' },
-                                            { v: 'PERSONALIZADO', l: 'Personalizado' },
-                                        ].map(opt => (
-                                            <Button key={opt.v} size="sm" type="button"
-                                                variant={field.value === opt.v ? 'solid' : 'ghost'}
-                                                colorPalette={field.value === opt.v ? 'brand' : 'gray'}
-                                                onClick={() => field.onChange(opt.v)}
+                                    <HStack gap={1} mb={3} wrap="wrap">
+                                        {MORATORY_MODES.map(opt => (
+                                            <Button key={opt.value} size="sm" type="button"
+                                                variant={field.value === opt.value ? 'solid' : 'ghost'}
+                                                colorPalette={field.value === opt.value ? 'brand' : 'gray'}
+                                                aria-pressed={field.value === opt.value}
+                                                onClick={() => field.onChange(opt.value)}
                                             >
-                                                {opt.l}
+                                                {opt.label}
                                             </Button>
                                         ))}
                                     </HStack>
@@ -598,6 +619,14 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Text fontSize="xs" color="gray.400">• Até 11/02/2003 — 6% a.a.</Text>
                                         <Text fontSize="xs" color="gray.400">• De 12/02/2003 a 29/08/2024 — 12% a.a.</Text>
                                         <Text fontSize="xs" color="gray.400">• Desde 30/08/2024 — taxa legal do BCB (SELIC e IPCA-15 do mês anterior, Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="gray.500" mt={1}>Juros simples, do mês de início até o mês anterior ao de referência.</Text>
+                                    </Box>
+                                ) : moratoryMode === 'TAXA_LEGAL_TEMA1368' ? (
+                                    <Box p={3} bg="gray.900" borderRadius="md" border="1px dashed" borderColor="brand.700/50" mb={3}>
+                                        <Text fontSize="xs" color="brand.300" fontWeight="medium" mb={1}>Taxa legal com o Tema 1368 do STJ (SELIC − IPCA), como no Dr. Calc:</Text>
+                                        <Text fontSize="xs" color="gray.400">• De 03/1995 a 07/2024 — SELIC descontada do IPCA-E, os dois do mês anterior; mês com resultado negativo fica sem juros</Text>
+                                        <Text fontSize="xs" color="gray.400">• Desde 08/2024 — taxa legal do BCB (Lei 14.905)</Text>
+                                        <Text fontSize="xs" color="gray.400">• Antes de 03/1995 — sem juros</Text>
                                         <Text fontSize="xs" color="gray.500" mt={1}>Juros simples, do mês de início até o mês anterior ao de referência.</Text>
                                     </Box>
                                 ) : (
@@ -728,6 +757,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Input {...register('multaPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                     </Field.Root>
                                 </HStack>
+                                {optionCheckbox('feesOnMulta', 'Incidir honorários sobre a multa',
+                                    'Desmarcado, como no Dr. Calc: os honorários saem do valor sem a multa. A multa do Art. 523 incide sobre tudo.')}
                             </Box>
 
                             {/* Parcelas */}

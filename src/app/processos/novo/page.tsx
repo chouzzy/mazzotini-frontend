@@ -14,7 +14,7 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
-import { parseBR } from '@/utils/calculationForm';
+import { MORATORY_MODES, MoratoryMode, parseBR } from '@/utils/calculationForm';
 import { saveFirstCalculation } from '@/utils/firstCalculation';
 import { useRouter } from "next/navigation";
 
@@ -47,7 +47,7 @@ interface FormValues {
     investors: InvestorFormInput[];
     // Parâmetros de cálculo judicial
     calcCorrectionIndex:   string;
-    calcMoratoryMode:      'TAXA_LEGAL' | 'PERSONALIZADO';
+    calcMoratoryMode:      MoratoryMode;
     calcMoratoryRate:      string;
     calcMoratoryType:      string;
     calcFeesPercentage:    string;
@@ -86,11 +86,6 @@ const CALC_TYPE_COLLECTION = createListCollection({ items: [
     { label: 'Simples', value: 'SIMPLES' },
     { label: 'Composto', value: 'COMPOSTO' },
 ]});
-
-const MORATORY_MODES = [
-    { value: 'TAXA_LEGAL',    label: 'Taxa Legal (art. 406/CC)' },
-    { value: 'PERSONALIZADO', label: 'Personalizado' },
-] as const;
 
 function InvestorCombobox(props: any) {
     const { control, index, allInvestors } = props;
@@ -610,6 +605,8 @@ export default function CreateAssetPage() {
                                         <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
                                         <Text fontSize="sm" color="gray.400" flexShrink={0}>% a.m.</Text>
                                     </HStack>
+                                ) : calcMoratoryMode === 'TAXA_LEGAL_TEMA1368' ? (
+                                    <Field.HelperText fontSize="xs" color="gray.500">SELIC menos IPCA-E de 03/1995 a 07/2024; depois, a taxa legal do BCB</Field.HelperText>
                                 ) : (
                                     <Field.HelperText fontSize="xs" color="gray.500">6% e 12% a.a. até 08/2024; depois, a taxa legal do BCB</Field.HelperText>
                                 )}
