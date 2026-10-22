@@ -122,6 +122,14 @@ interface AbatimentoResult {
     deductionPoint:   DeductionPoint;
 }
 
+interface CustaResult {
+    description:      string;
+    baseDate:         string;
+    baseValue:        number;
+    correctionFactor: number;
+    correctedValue:   number;
+}
+
 interface CalcResult {
     totalValue:           number;
     correctedValue:       number;
@@ -135,6 +143,8 @@ interface CalcResult {
     grossTotal:           number;
     abatimentoResults:    AbatimentoResult[];
     abatimentoTotal:      number;
+    custaResults?:        CustaResult[];   // custas e despesas, só corrigidas e somadas no fim
+    custaTotal?:          number;
     baseTotal:            number;
     referenceMonth:       number;
     referenceYear:        number;
@@ -823,23 +833,29 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                 {/* Lista de parcelas */}
                                 <VStack align="stretch" gap={2}>
                                     {fields.map((field, idx) => {
-                                        const isAbatimento = watchedInstallments[idx]?.type === 'ABATIMENTO';
+                                        const rowType      = watchedInstallments[idx]?.type ?? 'DEBITO';
+                                        const isAbatimento = rowType === 'ABATIMENTO';
+                                        const isCusta      = rowType === 'CUSTA';
+                                        // Cor da linha: laranja no abatimento, roxa na custa
+                                        const tone         = isAbatimento ? 'orange' : isCusta ? 'purple' : null;
                                         return (
                                             <Box key={field.id} borderRadius="md" border="1px solid"
-                                                borderColor={isAbatimento ? 'orange.700' : 'gray.700'} overflow="hidden">
+                                                borderColor={tone ? `${tone}.700` : 'gray.700'} overflow="hidden">
                                                 {/* Header */}
                                                 <Flex align="center" justify="space-between" px={3} py={2}
-                                                    bg={isAbatimento ? 'orange.900' : 'gray.750'}
-                                                    borderBottom="1px solid" borderColor={isAbatimento ? 'orange.700' : 'gray.700'}>
+                                                    bg={tone ? `${tone}.900` : 'gray.750'}
+                                                    borderBottom="1px solid" borderColor={tone ? `${tone}.700` : 'gray.700'}>
                                                     <Controller name={`installments.${idx}.type`} control={control} render={({ field: f }) => (
-                                                        <HStack gap={1}>
+                                                        <HStack gap={1} wrap="wrap">
                                                             {[
-                                                                { v: 'DEBITO',     l: 'Débito'     },
-                                                                { v: 'ABATIMENTO', l: 'Abatimento' },
+                                                                { v: 'DEBITO',     l: 'Débito',           c: 'gray'   },
+                                                                { v: 'ABATIMENTO', l: 'Abatimento',       c: 'orange' },
+                                                                { v: 'CUSTA',      l: 'Custa ou despesa', c: 'purple' },
                                                             ].map(opt => (
                                                                 <Button key={opt.v} size="xs" type="button"
                                                                     variant={f.value === opt.v ? 'solid' : 'ghost'}
-                                                                    colorPalette={f.value === opt.v && opt.v === 'ABATIMENTO' ? 'orange' : 'gray'}
+                                                                    colorPalette={f.value === opt.v ? opt.c : 'gray'}
+                                                                    aria-pressed={f.value === opt.v}
                                                                     onClick={() => f.onChange(opt.v)}>
                                                                     {opt.l}
                                                                 </Button>
@@ -854,29 +870,34 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                 </Flex>
                                                 {/* Campos */}
                                                 <Flex gap={2} align="flex-end" wrap="wrap" p={3}
-                                                    bg={isAbatimento ? 'orange.950' : 'gray.800'}>
+                                                    bg={tone ? `${tone}.950` : 'gray.800'}>
                                                     <Field.Root flex={2} minW="140px">
-                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
-                                                            {isAbatimento ? 'Valor (R$)' : 'Valor Base (R$)'}
+                                                        <Field.Label fontSize="xs" color={tone ? `${tone}.300` : 'gray.400'}>
+                                                            {tone ? 'Valor (R$)' : 'Valor Base (R$)'}
                                                         </Field.Label>
                                                         <Input {...register(`installments.${idx}.baseValue`)} size="sm"
-                                                            bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'}
+                                                            bg="gray.900" borderColor={tone ? `${tone}.800` : 'gray.600'}
                                                             placeholder="1.150.972,30" />
                                                     </Field.Root>
                                                     {/* Feature 1: input de data livre */}
                                                     <Field.Root flex={1} minW="130px">
-                                                        <Field.Label fontSize="xs" color={isAbatimento ? 'orange.300' : 'gray.400'}>
-                                                            {isAbatimento ? 'Data' : 'Data Base'}
+                                                        <Field.Label fontSize="xs" color={tone ? `${tone}.300` : 'gray.400'}>
+                                                            {tone ? 'Data' : 'Data Base'}
                                                         </Field.Label>
                                                         <MaskedDateInput fieldName={`installments.${idx}.baseDate`}
-                                                            control={control} size="sm" bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'} />
+                                                            control={control} size="sm" bg="gray.900" borderColor={tone ? `${tone}.800` : 'gray.600'} />
                                                     </Field.Root>
                                                     <Field.Root flex={2} minW="140px">
                                                         <Field.Label fontSize="xs" color="gray.400">Descrição (opcional)</Field.Label>
                                                         <Input {...register(`installments.${idx}.description`)} size="sm"
-                                                            bg="gray.900" borderColor={isAbatimento ? 'orange.800' : 'gray.600'}
-                                                            placeholder={isAbatimento ? 'Ex: Depósito em cartório' : 'Ex: Condenação principal'} />
+                                                            bg="gray.900" borderColor={tone ? `${tone}.800` : 'gray.600'}
+                                                            placeholder={isAbatimento ? 'Ex: Depósito em cartório' : isCusta ? 'Ex: Custas iniciais, perícia' : 'Ex: Condenação principal'} />
                                                     </Field.Root>
+                                                    {isCusta && (
+                                                        <Text fontSize="xs" color="purple.300" w="100%">
+                                                            Só é corrigida pelo índice do cálculo, sem juros, multa nem honorários, e entra no fim do total, como no Dr. Calc.
+                                                        </Text>
+                                                    )}
                                                     {isAbatimento && (
                                                         <Field.Root flex={2} minW="180px">
                                                             <Field.Label fontSize="xs" color="orange.300">Ponto de Dedução</Field.Label>
@@ -1044,6 +1065,35 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     <Text fontWeight="bold" fontSize="sm" color="orange.300">− {formatBRL(calcResult.abatimentoTotal)}</Text>
                                 </Box>
                             </Flex>
+                        )}
+
+                        {calcResult.custaResults && calcResult.custaResults.length > 0 && (
+                            <Box mb={4} p={3} bg="purple.950" borderRadius="md" border="1px solid" borderColor="purple.700">
+                                <Text fontSize="xs" fontWeight="semibold" color="purple.300" textTransform="uppercase" letterSpacing="wider" mb={2}>
+                                    Custas e despesas
+                                </Text>
+                                <VStack align="stretch" gap={1} mb={2}>
+                                    {calcResult.custaResults.map((custa, i) => (
+                                        <Flex key={i} justify="space-between" align="center" py={1}
+                                            borderBottom="1px solid" borderColor="purple.900/60">
+                                            <Box>
+                                                <Text fontSize="sm" color="purple.100">{custa.description}</Text>
+                                                <Text fontSize="xs" color="purple.400">
+                                                    Base: {formatBRL(custa.baseValue)} — {new Date(custa.baseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                                                    {' · '}×{custa.correctionFactor.toFixed(6)}
+                                                </Text>
+                                            </Box>
+                                            <Text fontSize="sm" fontWeight="bold" color="purple.300">
+                                                + {formatBRL(custa.correctedValue)}
+                                            </Text>
+                                        </Flex>
+                                    ))}
+                                </VStack>
+                                <Flex justify="space-between" gap={3}>
+                                    <Text fontSize="xs" color="purple.400">Somadas no fim, só corrigidas (sem juros, multa nem honorários)</Text>
+                                    <Text fontSize="sm" fontWeight="bold" color="purple.300">+ {formatBRL(calcResult.custaTotal ?? 0)}</Text>
+                                </Flex>
+                            </Box>
                         )}
 
                         {calcResult.calculations && calcResult.calculations.length > 1 && (

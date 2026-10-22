@@ -299,3 +299,52 @@ describe('CalculatorTab: vários cálculos no mesmo processo', () => {
         expect(screen.queryByText('Atenção')).toBeNull();
     });
 });
+
+describe('CalculatorTab: custas e despesas', () => {
+    it('marca uma parcela como custa ou despesa, explica a regra e envia o tipo', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(btn(/Adicionar Parcela/));
+        fireEvent.click(screen.getAllByRole('button', { name: 'Custa ou despesa' })[1]);
+        expect(screen.getByText(/Só é corrigida pelo índice do cálculo/)).toBeInTheDocument();
+        // O botão marcado é anunciado para leitores de tela
+        expect(screen.getAllByRole('button', { name: 'Custa ou despesa' })[1]).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getAllByRole('button', { name: 'Débito' })[1]).toHaveAttribute('aria-pressed', 'false');
+        type(valueInputs()[1], '350,00');
+        type(dateInputs()[3], '05/10/2025');
+
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(putBody().installments[1]).toEqual({
+            baseValue: 350, baseDate: '2025-10-05T00:00:00.000Z', description: undefined, type: 'CUSTA', deductionPoint: undefined,
+        });
+    });
+
+    it('mostra as custas no resultado, somadas no fim', async () => {
+        api.params = savedSingle();
+        axiosMock.post.mockResolvedValue({ data: {
+            ...fakeResult,
+            custaResults: [{ description: 'Perícia', baseDate: '2025-10-05T00:00:00.000Z', baseValue: 350, correctionFactor: 1.01, correctedValue: 353.5 }],
+            custaTotal: 353.5,
+        } });
+        render(tab());
+
+        await submit();
+
+        expect(await screen.findByText('Custas e despesas')).toBeInTheDocument();
+        expect(screen.getByText('Perícia')).toBeInTheDocument();
+        expect(screen.getAllByText(/353,50/)).toHaveLength(2);
+    });
+
+    it('sem custas, não mostra o quadro', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(screen.queryByText('Custas e despesas')).toBeNull();
+    });
+});

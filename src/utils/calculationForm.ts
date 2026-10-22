@@ -8,11 +8,17 @@
 
 export type DeductionPoint = 'DO_VALOR_CORRIGIDO' | 'APOS_HONORARIOS' | 'APOS_MULTA' | 'APOS_TUDO';
 
+/**
+ * Débito, abatimento (crédito ou pagamento) ou custa/despesa. A custa só é corrigida, sem juros,
+ * multa nem honorários, e entra no fim do total, como no Dr. Calc.
+ */
+export type InstallmentType = 'DEBITO' | 'ABATIMENTO' | 'CUSTA';
+
 export interface Installment {
     baseValue:      string;
     baseDate:       string;  // DD/MM/AAAA no form, convertido para ISO no envio
     description:    string;
-    type:           'DEBITO' | 'ABATIMENTO';
+    type:           InstallmentType;
     deductionPoint: DeductionPoint;
 }
 
@@ -60,7 +66,7 @@ export interface CalculationPayload {
         baseValue:       number;
         baseDate:        string;
         description?:    string;
-        type:            'DEBITO' | 'ABATIMENTO';
+        type:            InstallmentType;
         deductionPoint?: DeductionPoint;
     }[];
 }
@@ -167,6 +173,8 @@ export const toPayload = (d: CalcDraft): PayloadResult => {
         if (!date) return invalid(`${what}: informe a data (DD/MM/AAAA).`);
         const amount = parseBR(value);
         if (!Number.isFinite(amount)) return invalid(`${what}: valor inválido (${value}).`);
+        // Custa e abatimento são valores a somar ou a deduzir; no débito, o negativo é um crédito
+        if (amount < 0 && row.type !== 'DEBITO') return invalid(`${what}: o valor não pode ser negativo.`);
         const iso = parseDisplayDate(date);
         if (!iso) return invalid(`${what}: data inválida (${date}).`);
         installments.push({
