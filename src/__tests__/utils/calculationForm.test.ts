@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    calculationError, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
-    toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
+    addMonthsISO, calculationError, formatBR, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
+    parseReferenceMonthInput, toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
 } from '@/utils/calculationForm';
 
 // Parâmetros fictícios de um processo com dois contratos, como a API devolve
@@ -54,6 +54,14 @@ describe('datas', () => {
         expect(parseDisplayDate('00/01/2025')).toBe('');
         expect(parseDisplayDate('29/02/2024')).toBe('2024-02-29');
     });
+
+    it('recusa ano fora de 1900 a 2100 (ano digitado errado), como o servidor', () => {
+        expect(parseDisplayDate('15/01/1023')).toBe('');
+        expect(parseDisplayDate('1023-01-15')).toBe('');
+        expect(parseDisplayDate('01/01/2101')).toBe('');
+        expect(parseDisplayDate('01/01/1900')).toBe('1900-01-01');
+        expect(parseDisplayDate('31/12/2100')).toBe('2100-12-31');
+    });
 });
 
 describe('parseBR', () => {
@@ -86,7 +94,7 @@ describe('toDrafts', () => {
             feesMode: 'FIXO',
             feesFixedValue: '2.500,00',
         });
-        expect(drafts[0].installments[0]).toMatchObject({ baseValue: '2000', baseDate: '01/09/2025', type: 'DEBITO' });
+        expect(drafts[0].installments[0]).toMatchObject({ baseValue: '2.000,00', baseDate: '01/09/2025', type: 'DEBITO' });
         // O extra usa os padrões nos campos que não vieram
         expect(drafts[1]).toMatchObject({ correctionIndex: 'INPC', moratoryMode: 'TAXA_LEGAL', compensatoryRate: '6', feesMode: 'PERCENTUAL' });
     });
@@ -166,7 +174,30 @@ describe('toPayload', () => {
             baseValue: 350, baseDate: '2025-10-05T00:00:00.000Z', description: 'Perícia', type: 'CUSTA', deductionPoint: undefined,
         });
         const reopened = toDraft({ installments: result.ok ? result.payload.installments : [] }, 'Cálculo 1');
-        expect(reopened.installments[1]).toMatchObject({ baseValue: '350', baseDate: '05/10/2025', type: 'CUSTA' });
+        expect(reopened.installments[1]).toMatchObject({ baseValue: '350,00', baseDate: '05/10/2025', type: 'CUSTA' });
+    });
+});
+
+describe('opções do Dr. Calc e modos dos juros', () => {
+    it('os três modos dos juros de mora, com a taxa legal como padrão', () => {
+        expect(MORATORY_MODES.map(m => m.value)).toEqual(['TAXA_LEGAL', 'TAXA_LEGAL_TEMA1368', 'PERSONALIZADO']);
+        expect(toDraft({}, 'Cálculo 1').moratoryMode).toBe('TAXA_LEGAL');
+    });
+
+    it('cálculo salvo antes das opções abre com as duas desmarcadas, como no Dr. Calc', () => {
+        expect(draftA()).toMatchObject({ feesOnMulta: false, deflate: false });
+
+        const result = toPayload(draftA());
+        expect(result.ok && result.payload).toMatchObject({ feesOnMulta: false, deflate: false });
+    });
+
+    it('as opções marcadas e o modo do Tema 1368 vão e voltam da API', () => {
+        const draft = toDraft({ ...saved, moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true }, 'Contrato A');
+        const result = toPayload(draft);
+
+        expect(result.ok && result.payload).toMatchObject({ moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true });
+        // O cálculo novo copia as opções do aberto, como copia o índice e as taxas
+        expect(newCalculationFrom(draft, 'Contrato B')).toMatchObject({ feesOnMulta: true, deflate: true });
     });
 });
 
@@ -196,5 +227,63 @@ describe('vários cálculos', () => {
             compensatoryStartDate: '',
         });
         expect(novo.installments).toEqual([row('', '')]);
+    });
+});
+
+describe('revisão de 23/10', () => {
+    it('valor com três casas volta ao formulário sem virar milhar (333,333 não vira 333.333)', () => {
+        for (const value of [333.333, 150.123, 0.125, 999.999, 1150972.3, 2000, -100]) {
+            const reopened = toDraft({ ...saved, installments: [{ baseValue: value, baseDate: '2025-09-01T00:00:00.000Z' }] }, 'Cálculo 1');
+            const result = toPayload(reopened);
+
+            expect(result.ok).toBe(true);
+            if (result.ok) expect(result.payload.installments[0].baseValue).toBe(value);
+        }
+        expect(formatBR(333.333)).toBe('333,333');
+        expect(formatBR(1150972.3)).toBe('1.150.972,30');
+    });
+
+    it('parseBR: milhar negativo e recusa do formato americano com vírgula de milhar', () => {
+        expect(parseBR('-150.000')).toBe(-150000);
+        expect(parseBR('1,500.00')).toBeNaN();
+        expect(parseBR('1.500,00')).toBe(1500);
+    });
+
+    it('Gerar em Massa: parcela mensal desde o dia 31 cai no último dia dos meses curtos', () => {
+        expect([0, 1, 2, 3].map(i => addMonthsISO('2025-01-31', i))).toEqual(['2025-01-31', '2025-02-28', '2025-03-31', '2025-04-30']);
+        expect(addMonthsISO('2024-01-31', 1)).toBe('2024-02-29');
+        expect(addMonthsISO('2025-11-15', 3)).toBe('2026-02-15');
+    });
+
+    it('mês de referência em AAAA-MM (campo do Chrome) ou MM/AAAA (Safari e Firefox)', () => {
+        expect(parseReferenceMonthInput('')).toEqual({});
+        expect(parseReferenceMonthInput('2026-09')).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        expect(parseReferenceMonthInput('09/2026')).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        for (const invalid of ['13/2026', 'setembro', '2026', '09/26']) expect(parseReferenceMonthInput(invalid)).toBeNull();
+    });
+
+    it.each([
+        ['multa', { multaPercentage: '-10' }, 'multa: o valor não pode ser negativo.'],
+        ['honorários em percentual', { feesMode: 'PERCENTUAL', feesPercentage: '-5' }, 'honorários (%): o valor não pode ser negativo.'],
+        ['taxa dos juros no modo personalizado', { moratoryMode: 'PERSONALIZADO', moratoryRate: '-1' }, 'taxa dos juros moratórios: o valor não pode ser negativo.'],
+        ['honorário fixo', { feesMode: 'FIXO', feesFixedValue: '-1.000,00' }, 'honorários (R$): o valor não pode ser negativo.'],
+        ['honorário fixo que não é valor', { feesMode: 'FIXO', feesFixedValue: 'abc' }, 'honorários (R$): valor inválido (abc).'],
+    ])('recusa %s negativo (ou inválido) antes de enviar', (_, overrides, error) => {
+        expect(toPayload({ ...draftA(), ...overrides })).toEqual({ ok: false, error });
+    });
+
+    it.each([
+        ['taxa dos juros na taxa legal', { moratoryMode: 'TAXA_LEGAL', moratoryRate: '-1' }],
+        ['percentual com honorário fixo', { feesMode: 'FIXO', feesPercentage: '-5' }],
+        ['honorário fixo com percentual', { feesMode: 'PERCENTUAL', feesFixedValue: '-1.000,00' }],
+    ])('aceita o que sobrou num campo que o modo esconde (%s), como o servidor', (_, overrides) => {
+        expect(toPayload({ ...draftA(), ...overrides }).ok).toBe(true);
+    });
+
+    it('honorário fixo escondido que não é valor vai como zero', () => {
+        const result = toPayload({ ...draftA(), feesMode: 'PERCENTUAL', feesFixedValue: 'abc' });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.payload.feesFixedValue).toBe(0);
     });
 });

@@ -14,8 +14,8 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
-import { parseBR } from '@/utils/calculationForm';
-import { saveFirstCalculation } from '@/utils/firstCalculation';
+import { MORATORY_MODES, MoratoryMode } from '@/utils/calculationForm';
+import { saveFirstCalculation, toFirstCalculationInstallments } from '@/utils/firstCalculation';
 import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
@@ -47,7 +47,7 @@ interface FormValues {
     investors: InvestorFormInput[];
     // Parâmetros de cálculo judicial
     calcCorrectionIndex:   string;
-    calcMoratoryMode:      'TAXA_LEGAL' | 'PERSONALIZADO';
+    calcMoratoryMode:      MoratoryMode;
     calcMoratoryRate:      string;
     calcMoratoryType:      string;
     calcFeesPercentage:    string;
@@ -86,11 +86,6 @@ const CALC_TYPE_COLLECTION = createListCollection({ items: [
     { label: 'Simples', value: 'SIMPLES' },
     { label: 'Composto', value: 'COMPOSTO' },
 ]});
-
-const MORATORY_MODES = [
-    { value: 'TAXA_LEGAL',    label: 'Taxa Legal (art. 406/CC)' },
-    { value: 'PERSONALIZADO', label: 'Personalizado' },
-] as const;
 
 function InvestorCombobox(props: any) {
     const { control, index, allInvestors } = props;
@@ -342,6 +337,24 @@ export default function CreateAssetPage() {
             return;
         }
 
+        // Parcelas do primeiro cálculo conferidas antes de criar o processo (ver toFirstCalculationInstallments)
+        const checked = toFirstCalculationInstallments(data.calcInstallments);
+        if (!checked.ok) {
+            toaster.create({ title: 'Confira o cálculo', description: checked.error, type: 'error' });
+            return;
+        }
+        const calcInstallments = checked.installments;
+        // A taxa dos juros só aparece (e só conta) no modo personalizado, como no servidor
+        const negative = [
+            ...(data.calcMoratoryMode === 'PERSONALIZADO' ? [['taxa dos juros moratórios', data.calcMoratoryRate]] : []),
+            ['honorários', data.calcFeesPercentage],
+            ['multa do Art. 523', data.calcPenaltyPercentage],
+        ].find(([, value]) => parseFloat(value || '0') < 0);
+        if (negative) {
+            toaster.create({ title: 'Confira o cálculo', description: `${negative[0]}: o valor não pode ser negativo.`, type: 'error' });
+            return;
+        }
+
         try {
             const token = await getAccessTokenSilently();
             const payload = {
@@ -360,14 +373,6 @@ export default function CreateAssetPage() {
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             // Salva parâmetros de cálculo e dispara primeiro cálculo
-            const calcInstallments = data.calcInstallments
-                .filter(i => i.baseValue && i.baseDate)
-                .map(i => ({
-                    baseValue:   parseBR(i.baseValue),
-                    baseDate:    new Date(i.baseDate + 'T00:00:00Z').toISOString(),
-                    description: i.description || undefined,
-                }));
-
             const calcNotice = calcInstallments.length > 0
                 ? await saveFirstCalculation(data.legalOneId, {
                     correctionIndex:   data.calcCorrectionIndex,
@@ -598,6 +603,7 @@ export default function CreateAssetPage() {
                                             <Button key={opt.value} size="xs" type="button"
                                                 variant={field.value === opt.value ? 'solid' : 'ghost'}
                                                 colorPalette={field.value === opt.value ? 'brand' : 'gray'}
+                                                aria-pressed={field.value === opt.value}
                                                 onClick={() => field.onChange(opt.value)}
                                             >
                                                 {opt.label}
@@ -610,6 +616,8 @@ export default function CreateAssetPage() {
                                         <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
                                         <Text fontSize="sm" color="gray.400" flexShrink={0}>% a.m.</Text>
                                     </HStack>
+                                ) : calcMoratoryMode === 'TAXA_LEGAL_TEMA1368' ? (
+                                    <Field.HelperText fontSize="xs" color="gray.500">SELIC menos IPCA-E de 03/1995 a 07/2024 (antes, sem juros); depois, a taxa legal do BCB</Field.HelperText>
                                 ) : (
                                     <Field.HelperText fontSize="xs" color="gray.500">6% e 12% a.a. até 08/2024; depois, a taxa legal do BCB</Field.HelperText>
                                 )}

@@ -8,13 +8,14 @@ const api = vi.hoisted(() => ({
     params: null as unknown,
     paramsError: undefined as unknown,
     logs: [] as unknown[],
+    mutateParams: vi.fn(),
 }));
 const axiosMock = vi.hoisted(() => ({ put: vi.fn(), post: vi.fn() }));
 const toasts = vi.hoisted(() => ({ create: vi.fn() }));
 
 vi.mock('@/hooks/useApi', () => ({
     useApi: (endpoint: string) => endpoint.includes('/params')
-        ? { data: api.params, error: api.paramsError, mutate: vi.fn() }
+        ? { data: api.params, error: api.paramsError, mutate: api.mutateParams }
         : { data: api.logs, mutate: vi.fn() },
 }));
 vi.mock('axios', () => ({ default: axiosMock }));
@@ -81,6 +82,7 @@ beforeEach(() => {
     axiosMock.put.mockReset().mockImplementation((_url: string, body: unknown) => Promise.resolve({ data: body }));
     axiosMock.post.mockReset().mockResolvedValue({ data: fakeResult });
     toasts.create.mockReset();
+    api.mutateParams.mockReset();
 });
 
 describe('CalculatorTab: vários cálculos no mesmo processo', () => {
@@ -346,5 +348,166 @@ describe('CalculatorTab: custas e despesas', () => {
 
         await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
         expect(screen.queryByText('Custas e despesas')).toBeNull();
+    });
+});
+
+describe('CalculatorTab: opções do Dr. Calc e taxa legal com o Tema 1368', () => {
+    const feesOnMulta = () => screen.getByRole('checkbox', { name: /Incidir honorários sobre a multa/ });
+    const deflate     = () => screen.getByRole('checkbox', { name: /Deflacionar valor nominal/ });
+    const tema1368    = () => btn('Taxa Legal + Tema 1368 (STJ)');
+
+    // O processo fictício com honorários em percentual, para a opção dos honorários valer
+    const comHonorariosEmPercentual = () => ({ ...savedSingle(), feesMode: 'PERCENTUAL', feesPercentage: 10 });
+
+    it('as opções vêm desmarcadas, como no Dr. Calc, e vão assim para a API', async () => {
+        api.params = comHonorariosEmPercentual();
+        render(tab());
+
+        expect(feesOnMulta()).not.toBeChecked();
+        expect(deflate()).not.toBeChecked();
+        // A ajuda é a descrição da caixa, e não parte do nome
+        expect(feesOnMulta()).toHaveAccessibleDescription(/Padrão do Dr\. Calc: desmarcado/);
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(putBody()).toMatchObject({ feesOnMulta: false, deflate: false });
+    });
+
+    it('com honorário fixo em R$ ou "Não atualizar (fixo)", a opção correspondente não se aplica', () => {
+        api.params = { ...savedSingle(), correctionIndex: 'NAO_ATUALIZAR' };   // honorário fixo em R$
+        render(tab());
+
+        expect(feesOnMulta()).toBeDisabled();
+        expect(feesOnMulta()).toHaveAccessibleDescription('Não se aplica com honorários fixos em R$.');
+        expect(deflate()).toBeDisabled();
+    });
+
+    it('servidor sem as opções do Dr. Calc: avisa e não calcula', async () => {
+        api.params = comHonorariosEmPercentual();
+        // A versão anterior do servidor devolve o registro sem os campos novos
+        axiosMock.put.mockImplementation((_url: string, body: Record<string, unknown>) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { feesOnMulta: _f, deflate: _d, ...antigo } = body;
+            return Promise.resolve({ data: antigo });
+        });
+        render(tab());
+
+        await submit();
+
+        await waitFor(() => expect(toastTitles()).toContain(
+            'O servidor não gravou as opções "honorários sobre a multa" e "deflacionar". Atualize a página e tente de novo; se continuar, avise o suporte.',
+        ));
+        expect(axiosMock.post).not.toHaveBeenCalled();
+    });
+
+    it('marca as opções e a taxa legal com o Tema 1368, explica a regra e envia', async () => {
+        api.params = comHonorariosEmPercentual();
+        render(tab());
+
+        fireEvent.click(tema1368());
+        expect(tema1368()).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByText(/SELIC descontada do IPCA-E/)).toBeInTheDocument();
+        // A caixa avisa o formulário numa microtarefa depois do clique: o act assíncrono espera
+        await act(async () => {
+            fireEvent.click(feesOnMulta());
+            fireEvent.click(deflate());
+        });
+        expect(feesOnMulta()).toBeChecked();
+        expect(deflate()).toBeChecked();
+
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(putBody()).toMatchObject({ moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true });
+    });
+
+    it('explica no detalhe da parcela quando a inflação negativa deixou o valor no original', async () => {
+        api.params = comHonorariosEmPercentual();
+        axiosMock.post.mockResolvedValue({ data: {
+            ...fakeResult,
+            installmentResults: [{
+                installmentIndex: 1, description: 'Parcela A', baseValue: 1000, baseDate: '2023-05-15T00:00:00.000Z',
+                correctionFactor: 1, correctedValue: 1000, moratoryMonths: 0, moratoryInterest: 0, compensatoryInterest: 0,
+                feesValue: 0, penaltyValue: 0, subtotal: 1000, nominalFloor: true,
+                monthBreakdown: [{ year: 2023, month: 6, monthlyRate: -0.985, accumulated: 0.99015 }],
+            }],
+        } });
+        render(tab());
+
+        await submit();
+        fireEvent.click(await screen.findByText(/Parcela A — Base/));
+
+        expect(await screen.findByText(/Inflação negativa no período: a parcela ficou com o valor original/)).toBeInTheDocument();
+    });
+
+    it('reabre um cálculo salvo com as opções e o modo dos juros', () => {
+        api.params = { ...savedSingle(), moratoryMode: 'TAXA_LEGAL_TEMA1368', feesOnMulta: true, deflate: true };
+        render(tab());
+
+        expect(feesOnMulta()).toBeChecked();
+        expect(deflate()).toBeChecked();
+        expect(tema1368()).toHaveAttribute('aria-pressed', 'true');
+    });
+});
+
+describe('CalculatorTab: revisão de 23/10', () => {
+    it('a colagem diz quais linhas ficaram de fora e mantém todas as casas do valor', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(btn(/^Colar$/));
+        fireEvent.change(screen.getByRole('textbox', { name: '' }) as HTMLTextAreaElement, {
+            target: { value: '15/01/2025;333,3333\n31/02/2025;100,00\n10/03/2025;abc' },
+        });
+        fireEvent.click(btn(/^Importar$/));
+
+        expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({
+            title: '1 parcela(s) importada(s).',
+            description: 'Ficaram de fora: linha 2 (data inválida: 31/02/2025), linha 3 (valor inválido).',
+            type: 'warning',
+        }));
+        expect(valueInputs().map(i => i.value)).toContain('333,3333');
+    });
+
+    it('na colagem, o número da linha conta as linhas em branco do começo', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(btn(/^Colar$/));
+        fireEvent.change(screen.getByRole('textbox', { name: '' }) as HTMLTextAreaElement, {
+            target: { value: '\n\n15/01/2025;100,00\n31/02/2025;100,00\n' },
+        });
+        fireEvent.click(btn(/^Importar$/));
+
+        expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({
+            title: '1 parcela(s) importada(s).',
+            description: 'Ficaram de fora: linha 4 (data inválida: 31/02/2025).',
+        }));
+    });
+
+    it('o mês de referência vai no corpo do cálculo, e os parâmetros são recarregados depois', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        type(screen.getByPlaceholderText('MM/AAAA') as HTMLInputElement, '2026-09');
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(axiosMock.post.mock.calls[0][1]).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        await waitFor(() => expect(api.mutateParams).toHaveBeenCalledTimes(2));   // depois de salvar e depois de calcular
+    });
+
+    it('escolher o índice não tira o foco do campo (o select não é remontado)', async () => {
+        api.params = savedSingle();
+        const { container } = render(tab());
+        const trigger = () => container.querySelector('[data-scope="select"][data-part="trigger"]') as HTMLElement;
+        const before = trigger();
+
+        before.focus();
+        await act(async () => { fireEvent.click(before); });
+        const option = screen.getAllByRole('option').find(o => /INPC/.test(o.textContent ?? ''))!;
+        await act(async () => { fireEvent.click(option); });
+
+        expect(trigger()).toBe(before);
     });
 });
