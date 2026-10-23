@@ -94,9 +94,14 @@ export const toDisplayDate = (iso: string): string => {
     return `${d}/${m}/${y}`;
 };
 
+/** Anos aceitos nas datas e no mês de referência, como no servidor. */
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+
 /**
  * DD/MM/AAAA (ou AAAA-MM-DD) → ISO AAAA-MM-DD (para envio). Vazio quando o texto não é uma
- * data ou a data não existe no calendário (31/02 não pode virar 03/03).
+ * data, a data não existe no calendário (31/02 não pode virar 03/03) ou o ano está fora de 1900 a
+ * 2100 (um ano digitado errado, como 1023, que o servidor recusa).
  */
 export const parseDisplayDate = (display: string): string => {
     if (!display) return '';
@@ -104,6 +109,7 @@ export const parseDisplayDate = (display: string): string => {
     const iso = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!br && !iso) return '';
     const [y, m, d] = br ? [Number(br[3]), Number(br[2]), Number(br[1])] : [Number(iso![1]), Number(iso![2]), Number(iso![3])];
+    if (y < MIN_YEAR || y > MAX_YEAR) return '';
     const date = new Date(Date.UTC(y, m - 1, d));
     if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return '';
     return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -159,7 +165,7 @@ export const parseReferenceMonthInput = (value: string | undefined): { reference
     const iso = text.match(/^(\d{4})-(\d{1,2})$/);
     const br  = text.match(/^(\d{1,2})\/(\d{4})$/);
     const [year, month] = iso ? [Number(iso[1]), Number(iso[2])] : br ? [Number(br[2]), Number(br[1])] : [NaN, NaN];
-    if (!Number.isInteger(year) || month < 1 || month > 12 || year < 1900 || year > 2100) return null;
+    if (!Number.isInteger(year) || month < 1 || month > 12 || year < MIN_YEAR || year > MAX_YEAR) return null;
     return { referenceYear: year, referenceMonth: month };
 };
 
@@ -254,19 +260,24 @@ export const toPayload = (d: CalcDraft): PayloadResult => {
         return invalid(`início dos juros remuneratórios: data inválida (${d.compensatoryStartDate}).`);
     }
 
-    const feesFixedValue = parseBR(d.feesFixedValue || '0');
-    if (!Number.isFinite(feesFixedValue)) return invalid(`honorários (R$): valor inválido (${d.feesFixedValue}).`);
+    // O campo que o modo escolhido não usa fica escondido na tela (a taxa dos juros fora do modo
+    // personalizado, o percentual dos honorários no valor fixo e vice-versa): o que sobrou nele não
+    // recusa o cálculo, como no servidor
+    const fixedFees   = d.feesMode === 'FIXO';
+    const parsedFixed = parseBR(d.feesFixedValue || '0');
+    if (fixedFees && !Number.isFinite(parsedFixed)) return invalid(`honorários (R$): valor inválido (${d.feesFixedValue}).`);
+    const feesFixedValue = Number.isFinite(parsedFixed) ? parsedFixed : 0;
 
     // Taxa, percentual ou honorário negativo reduziria o débito: o servidor recusa, e a tela também
-    const numbers: [string, number][] = [
-        ['taxa dos juros moratórios',     parseFloat(d.moratoryRate      || '0')],
-        ['taxa dos juros remuneratórios', parseFloat(d.compensatoryRate  || '0')],
-        ['multa',                         parseFloat(d.multaPercentage   || '0')],
-        ['honorários (%)',                parseFloat(d.feesPercentage    || '0')],
-        ['honorários (R$)',               feesFixedValue],
-        ['multa do Art. 523',             parseFloat(d.penaltyPercentage || '0')],
+    const numbers: [string, number, boolean][] = [
+        ['taxa dos juros moratórios',     parseFloat(d.moratoryRate      || '0'), d.moratoryMode === 'PERSONALIZADO'],
+        ['taxa dos juros remuneratórios', parseFloat(d.compensatoryRate  || '0'), true],
+        ['multa',                         parseFloat(d.multaPercentage   || '0'), true],
+        ['honorários (%)',                parseFloat(d.feesPercentage    || '0'), !fixedFees],
+        ['honorários (R$)',               feesFixedValue,                         fixedFees],
+        ['multa do Art. 523',             parseFloat(d.penaltyPercentage || '0'), true],
     ];
-    const negative = numbers.find(([, value]) => value < 0);
+    const negative = numbers.find(([, value, used]) => used && value < 0);
     if (negative) return invalid(`${negative[0]}: o valor não pode ser negativo.`);
 
     return {

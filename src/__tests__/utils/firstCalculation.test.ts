@@ -72,6 +72,7 @@ describe('toFirstCalculationInstallments (parcelas do cadastro, antes de criar o
         ['data sem valor', [row('', '2026-01-15')], 'Parcela 1 do cálculo: informe o valor.'],
         ['valor que não é número', [row('mil reais', '2026-01-15')], 'Parcela 1 do cálculo: valor inválido (mil reais).'],
         ['ano de cinco dígitos', [row('1.000,00', '20260-01-15')], 'Parcela 1 do cálculo: data inválida (20260-01-15).'],
+        ['ano digitado errado (o servidor recusaria depois de criar o processo)', [row('1.000,00', '1023-01-15')], 'Parcela 1 do cálculo: data inválida (1023-01-15).'],
         ['linha incompleta depois de uma boa', [row('500,00', '2026-01-15'), row('300,00', '')], 'Parcela 2 do cálculo: informe a data completa.'],
     ])('recusa %s', (_, rows, error) => {
         expect(toFirstCalculationInstallments(rows)).toEqual({ ok: false, error });

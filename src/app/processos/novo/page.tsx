@@ -344,8 +344,9 @@ export default function CreateAssetPage() {
             return;
         }
         const calcInstallments = checked.installments;
+        // A taxa dos juros só aparece (e só conta) no modo personalizado, como no servidor
         const negative = [
-            ['taxa dos juros moratórios', data.calcMoratoryRate],
+            ...(data.calcMoratoryMode === 'PERSONALIZADO' ? [['taxa dos juros moratórios', data.calcMoratoryRate]] : []),
             ['honorários', data.calcFeesPercentage],
             ['multa do Art. 523', data.calcPenaltyPercentage],
         ].find(([, value]) => parseFloat(value || '0') < 0);

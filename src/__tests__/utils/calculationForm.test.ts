@@ -54,6 +54,14 @@ describe('datas', () => {
         expect(parseDisplayDate('00/01/2025')).toBe('');
         expect(parseDisplayDate('29/02/2024')).toBe('2024-02-29');
     });
+
+    it('recusa ano fora de 1900 a 2100 (ano digitado errado), como o servidor', () => {
+        expect(parseDisplayDate('15/01/1023')).toBe('');
+        expect(parseDisplayDate('1023-01-15')).toBe('');
+        expect(parseDisplayDate('01/01/2101')).toBe('');
+        expect(parseDisplayDate('01/01/1900')).toBe('1900-01-01');
+        expect(parseDisplayDate('31/12/2100')).toBe('2100-12-31');
+    });
 });
 
 describe('parseBR', () => {
@@ -255,11 +263,27 @@ describe('revisão de 23/10', () => {
     });
 
     it.each([
-        ['multaPercentage', '-10', 'multa: o valor não pode ser negativo.'],
-        ['feesPercentage', '-5', 'honorários (%): o valor não pode ser negativo.'],
-        ['moratoryRate', '-1', 'taxa dos juros moratórios: o valor não pode ser negativo.'],
-        ['feesFixedValue', '-1.000,00', 'honorários (R$): o valor não pode ser negativo.'],
-    ])('recusa %s negativo antes de enviar', (field, value, error) => {
-        expect(toPayload({ ...draftA(), [field]: value })).toEqual({ ok: false, error });
+        ['multa', { multaPercentage: '-10' }, 'multa: o valor não pode ser negativo.'],
+        ['honorários em percentual', { feesMode: 'PERCENTUAL', feesPercentage: '-5' }, 'honorários (%): o valor não pode ser negativo.'],
+        ['taxa dos juros no modo personalizado', { moratoryMode: 'PERSONALIZADO', moratoryRate: '-1' }, 'taxa dos juros moratórios: o valor não pode ser negativo.'],
+        ['honorário fixo', { feesMode: 'FIXO', feesFixedValue: '-1.000,00' }, 'honorários (R$): o valor não pode ser negativo.'],
+        ['honorário fixo que não é valor', { feesMode: 'FIXO', feesFixedValue: 'abc' }, 'honorários (R$): valor inválido (abc).'],
+    ])('recusa %s negativo (ou inválido) antes de enviar', (_, overrides, error) => {
+        expect(toPayload({ ...draftA(), ...overrides })).toEqual({ ok: false, error });
+    });
+
+    it.each([
+        ['taxa dos juros na taxa legal', { moratoryMode: 'TAXA_LEGAL', moratoryRate: '-1' }],
+        ['percentual com honorário fixo', { feesMode: 'FIXO', feesPercentage: '-5' }],
+        ['honorário fixo com percentual', { feesMode: 'PERCENTUAL', feesFixedValue: '-1.000,00' }],
+    ])('aceita o que sobrou num campo que o modo esconde (%s), como o servidor', (_, overrides) => {
+        expect(toPayload({ ...draftA(), ...overrides }).ok).toBe(true);
+    });
+
+    it('honorário fixo escondido que não é valor vai como zero', () => {
+        const result = toPayload({ ...draftA(), feesMode: 'PERCENTUAL', feesFixedValue: 'abc' });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.payload.feesFixedValue).toBe(0);
     });
 });
