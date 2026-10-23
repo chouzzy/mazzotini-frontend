@@ -424,7 +424,7 @@ export default function EditAssetPage() {
                                         <Portal><Select.Positioner><Select.Content>{indexTypesCollection.items.map((item) => (<Select.Item key={item.value} item={item}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                     <Field.HelperText fontSize="xs" color="gray.500">
-                                        No dia 1, a correção mensal antiga aplica a taxa adicional sobre o valor atualizado (e o índice, quando ele já saiu, o que é raro nessa data). Nos processos com cálculo, o recálculo do dia 5 substitui esse valor pelo da aba Cálculo Judicial.
+                                        No dia 1, a correção mensal antiga corrige o valor atualizado pelo índice do mês anterior mais a taxa adicional. O índice só entra nas opções &quot;(correção antiga)&quot; e no IPCA, que quase nunca saiu nessa data; nas outras, entra só a taxa adicional, e com &quot;Outro&quot; o valor não muda. Nos processos com cálculo, o recálculo do dia 5 substitui esse valor pelo da aba Cálculo Judicial.
                                     </Field.HelperText>
                                 </Field.Root>
                             )} />
