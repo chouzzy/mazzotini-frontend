@@ -11,7 +11,7 @@ import { useApi } from '@/hooks/useApi';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
-import { formatCurrency } from '@/utils';
+import { extractFreeText, formatCurrency } from '@/utils';
 import { getStatusLabel, getStatusColor } from '@/utils/assetStatus';
 
 interface AssociateProcessRow {
@@ -149,7 +149,7 @@ function MeusClientesContent() {
                                                         {new Date(row.lastUpdateDate).toLocaleDateString('pt-BR')}
                                                     </Text>
                                                     <Text fontSize="xs" color="gray.300" lineClamp={2}>
-                                                        {row.lastUpdateDescription}
+                                                        {extractFreeText(row.lastUpdateDescription)}
                                                     </Text>
                                                 </VStack>
                                             ) : (
