@@ -419,6 +419,8 @@ export default function EditUserPage() {
     const [referralPrompt, setReferralPrompt] = useState<ReferralPrompt | null>(null);
     const [isReferralOpen, setIsReferralOpen] = useState(false);
     const [isApplyingReferral, setIsApplyingReferral] = useState(false);
+    // Muda depois de enviar os anexos, para o campo de arquivos voltar vazio
+    const [uploadFieldKey, setUploadFieldKey] = useState(0);
     const router = useRouter();
     const params = useParams();
     const userId = params.id as string;
@@ -600,11 +602,40 @@ export default function EditUserPage() {
                 { headers: { Authorization: `Bearer ${token}` } },
             );
 
+            // Documentos escolhidos no formulário: sobem um a um depois do cadastro salvo
+            const files = data.personalDocuments ? Array.from(data.personalDocuments) : [];
+            const failedUploads: string[] = [];
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('document', file);
+                try {
+                    await axios.post(`${apiBaseUrl}/api/management/users/${userId}/documents`, formData, { headers: { Authorization: `Bearer ${token}` } });
+                } catch (uploadError: any) {
+                    failedUploads.push(`${file.name}: ${uploadError.response?.data?.error || 'erro ao enviar'}`);
+                }
+            }
+            if (files.length > 0) {
+                // Limpa a escolha, para um novo salvamento não mandar os mesmos arquivos
+                setValue('personalDocuments', undefined);
+                setUploadFieldKey(key => key + 1);
+            }
+
             mutateUser();
             mutatePendingChanges();
             toaster.create(referral
                 ? referralOutcome('save', referral.associateName, referral.processes.length, res.data?.investmentsUpdated)
                 : { title: "Cadastro atualizado!", description: "As alterações já estão valendo.", type: "success" });
+            const sentUploads = files.length - failedUploads.length;
+            if (sentUploads > 0) {
+                toaster.create({ title: sentUploads === 1 ? '1 documento anexado' : `${sentUploads} documentos anexados`, type: 'success' });
+            }
+            if (failedUploads.length > 0) {
+                toaster.create({
+                    title: failedUploads.length === 1 ? 'Um documento não foi enviado' : `${failedUploads.length} documentos não foram enviados`,
+                    description: failedUploads.join(' · '),
+                    type: 'warning',
+                });
+            }
 
         } catch (error: any) {
             console.error("Erro ao salvar o cadastro:", error);
@@ -1059,7 +1090,7 @@ export default function EditUserPage() {
                         {/* UPLOAD DE NOVOS DOCUMENTOS */}
                         <Field.Root>
                             <Field.Label>Adicionar Novos Documentos Pessoais</Field.Label>
-                            <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
+                            <FileUpload.Root key={uploadFieldKey} accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
                                 <FileUpload.HiddenInput  {...register("personalDocuments")} />
                                 <FileUpload.Trigger asChild>
                                     <Flex bg={'brand.400'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2} borderRadius={4}>
@@ -1069,6 +1100,7 @@ export default function EditUserPage() {
                                 </FileUpload.Trigger>
                                 <FileUpload.List />
                             </FileUpload.Root>
+                            <Field.HelperText>PDF, JPG ou PNG, até 10 MB cada. Os arquivos são enviados ao salvar o cadastro.</Field.HelperText>
                         </Field.Root>
                     </VStack>
                     {/* ================================================================= */}

@@ -143,6 +143,51 @@ describe('Editar Usuário: indicação × associado dos processos', () => {
         expect(patchBody()).not.toHaveProperty('applyReferralToInvestments');
     });
 
+    describe('documentos anexados no formulário', () => {
+        const chooseFile = (name: string) => {
+            const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+            fireEvent.change(input, { target: { files: [new File(['conteúdo fictício'], name, { type: 'application/pdf' })] } });
+        };
+        const uploadCalls = () => axiosMock.post.mock.calls.filter(call => /\/documents$/.test(call[0]));
+
+        it('sobem depois do cadastro salvo, pela rota do admin', async () => {
+            page();
+
+            chooseFile('rg-ficticio.pdf');
+            await save();
+
+            await waitFor(() => expect(uploadCalls()).toHaveLength(1));
+            expect(uploadCalls()[0][0]).toMatch(/\/api\/management\/users\/cliente-1\/documents$/);
+            expect((uploadCalls()[0][1] as FormData).get('document')).toBeInstanceOf(File);
+            expect(axiosMock.patch.mock.invocationCallOrder[0]).toBeLessThan(axiosMock.post.mock.invocationCallOrder[0]);
+            await waitFor(() => expect(toasts.create).toHaveBeenCalledWith({ title: '1 documento anexado', type: 'success' }));
+        });
+
+        it('a falha num documento avisa sem desfazer o cadastro', async () => {
+            axiosMock.post.mockRejectedValue({ response: { data: { error: 'Arquivo muito grande. Tamanho máximo permitido: 10 MB.' } } });
+            page();
+
+            chooseFile('contrato-ficticio.pdf');
+            await save();
+
+            await waitFor(() => expect(lastToast()).toMatchObject({
+                type: 'warning',
+                title: 'Um documento não foi enviado',
+                description: 'contrato-ficticio.pdf: Arquivo muito grande. Tamanho máximo permitido: 10 MB.',
+            }));
+            expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cadastro atualizado!' }));
+        });
+
+        it('sem arquivo escolhido, nada sobe', async () => {
+            page();
+
+            await save();
+
+            await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(1));
+            expect(uploadCalls()).toHaveLength(0);
+        });
+    });
+
     it('o formulário recarrega quando o cadastro muda no servidor', () => {
         const { rerender } = page();
 
