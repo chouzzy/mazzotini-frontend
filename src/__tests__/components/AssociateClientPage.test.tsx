@@ -32,4 +32,21 @@ describe('Portal do associado: processos de um cliente', () => {
         expect(screen.queryByText(/Valor Atualizado/)).toBeNull();
         expect(screen.getByText('Ativo')).toBeInTheDocument();
     });
+
+    it('status gravado em inglês ou de integração aparece pelo rótulo do cliente', () => {
+        const base = api.data.processes[0];
+        api.data = {
+            ...api.data,
+            processes: [
+                { ...base, investmentId: 'inv-1', legalOneId: 991, status: 'CLOSED' },
+                { ...base, investmentId: 'inv-2', legalOneId: 992, status: 'FAILED_ENRICHMENT' },
+            ],
+        };
+        render(<ChakraProvider value={defaultSystem}><AssociateClientPage /></ChakraProvider>);
+
+        expect(screen.getByText('Liquidado')).toBeInTheDocument();
+        expect(screen.getByText('Em processamento')).toBeInTheDocument();
+        expect(screen.queryByText('CLOSED')).toBeNull();
+        expect(screen.queryByText('FAILED_ENRICHMENT')).toBeNull();
+    });
 });
