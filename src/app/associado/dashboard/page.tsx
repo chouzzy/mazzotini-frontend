@@ -11,6 +11,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { isActiveStatus } from '@/utils/assetStatus';
 
 interface AssociateProcessRow {
     investmentId: string;
@@ -41,7 +42,8 @@ function AssociateDashboardContent() {
     const stats = useMemo(() => {
         if (!rows) return { clients: 0, processes: 0, active: 0 };
         const clientIds = new Set(rows.map(r => r.clientId));
-        const active = rows.filter(r => r.status === 'ACTIVE').length;
+        // O backend grava "Ativo": contar só "ACTIVE" dava sempre zero
+        const active = rows.filter(r => isActiveStatus(r.status)).length;
         return { clients: clientIds.size, processes: rows.length, active };
     }, [rows]);
 

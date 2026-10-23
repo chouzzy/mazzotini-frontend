@@ -14,6 +14,7 @@ import { InvestorCreditAsset } from '../../dashboard/CreditAssetCard';
 import { PaginatedFoldersResponse } from '@/types/folders';
 import { FoldersSection } from '../../dashboard/FoldersSection';
 import { formatCurrency } from '@/utils';
+import { isActiveStatus, isClosedStatus } from '@/utils/assetStatus';
 
 interface MazzotiniUser {
     name: string;
@@ -83,13 +84,11 @@ export function DashboardOverview() {
         ? uniqueClients.length
         : (assets?.length ?? 0);
 
-    const totalActiveAssets = isAssociate
-        ? (associateRows?.filter(a => a.status === 'ACTIVE').length ?? 0)
-        : (assets?.filter(a => a.status === 'Ativo').length ?? 0);
-
-    const totalInactiveAssets = isAssociate
-        ? (associateRows?.filter(a => a.status === 'CLOSED').length ?? 0)
-        : (assets?.filter(a => a.status === 'Liquidado' || a.status === 'CLOSED').length ?? 0);
+    // Mesma regra para o associado e o cliente: o backend grava "Ativo" e "Liquidado" (os valores em
+    // inglês são legados). O associado via zero, porque a conta dele olhava só "ACTIVE" e "CLOSED"
+    const statuses = (isAssociate ? associateRows : assets)?.map(a => a.status) ?? [];
+    const totalActiveAssets   = statuses.filter(isActiveStatus).length;
+    const totalInactiveAssets = statuses.filter(isClosedStatus).length;
 
     const previewClients = uniqueClients.slice(0, 3);
     const hasMore = uniqueClients.length > 3;
