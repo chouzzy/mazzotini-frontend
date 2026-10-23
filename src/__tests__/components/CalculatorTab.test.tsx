@@ -8,13 +8,14 @@ const api = vi.hoisted(() => ({
     params: null as unknown,
     paramsError: undefined as unknown,
     logs: [] as unknown[],
+    mutateParams: vi.fn(),
 }));
 const axiosMock = vi.hoisted(() => ({ put: vi.fn(), post: vi.fn() }));
 const toasts = vi.hoisted(() => ({ create: vi.fn() }));
 
 vi.mock('@/hooks/useApi', () => ({
     useApi: (endpoint: string) => endpoint.includes('/params')
-        ? { data: api.params, error: api.paramsError, mutate: vi.fn() }
+        ? { data: api.params, error: api.paramsError, mutate: api.mutateParams }
         : { data: api.logs, mutate: vi.fn() },
 }));
 vi.mock('axios', () => ({ default: axiosMock }));
@@ -81,6 +82,7 @@ beforeEach(() => {
     axiosMock.put.mockReset().mockImplementation((_url: string, body: unknown) => Promise.resolve({ data: body }));
     axiosMock.post.mockReset().mockResolvedValue({ data: fakeResult });
     toasts.create.mockReset();
+    api.mutateParams.mockReset();
 });
 
 describe('CalculatorTab: vários cálculos no mesmo processo', () => {
@@ -445,5 +447,51 @@ describe('CalculatorTab: opções do Dr. Calc e taxa legal com o Tema 1368', () 
         expect(feesOnMulta()).toBeChecked();
         expect(deflate()).toBeChecked();
         expect(tema1368()).toHaveAttribute('aria-pressed', 'true');
+    });
+});
+
+describe('CalculatorTab: revisão de 23/10', () => {
+    it('a colagem diz quais linhas ficaram de fora e mantém todas as casas do valor', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(btn(/^Colar$/));
+        fireEvent.change(screen.getByRole('textbox', { name: '' }) as HTMLTextAreaElement, {
+            target: { value: '15/01/2025;333,3333\n31/02/2025;100,00\n10/03/2025;abc' },
+        });
+        fireEvent.click(btn(/^Importar$/));
+
+        expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({
+            title: '1 parcela(s) importada(s).',
+            description: 'Ficaram de fora: linha 2 (data inválida: 31/02/2025), linha 3 (valor inválido).',
+            type: 'warning',
+        }));
+        expect(valueInputs().map(i => i.value)).toContain('333,3333');
+    });
+
+    it('o mês de referência vai no corpo do cálculo, e os parâmetros são recarregados depois', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        type(screen.getByPlaceholderText('MM/AAAA') as HTMLInputElement, '2026-09');
+        await submit();
+
+        await waitFor(() => expect(axiosMock.post).toHaveBeenCalled());
+        expect(axiosMock.post.mock.calls[0][1]).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        await waitFor(() => expect(api.mutateParams).toHaveBeenCalledTimes(2));   // depois de salvar e depois de calcular
+    });
+
+    it('escolher o índice não tira o foco do campo (o select não é remontado)', async () => {
+        api.params = savedSingle();
+        const { container } = render(tab());
+        const trigger = () => container.querySelector('[data-scope="select"][data-part="trigger"]') as HTMLElement;
+        const before = trigger();
+
+        before.focus();
+        await act(async () => { fireEvent.click(before); });
+        const option = screen.getAllByRole('option').find(o => /INPC/.test(o.textContent ?? ''))!;
+        await act(async () => { fireEvent.click(option); });
+
+        expect(trigger()).toBe(before);
     });
 });

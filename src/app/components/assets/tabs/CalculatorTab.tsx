@@ -17,8 +17,9 @@ import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import {
-    calculationError, CalcDraft, CalculationPayload, DeductionPoint, MORATORY_MODES, newCalculationFrom,
-    nextCalculationLabel, parseBR, parseDisplayDate, toDisplayDate, toDrafts, toPayload,
+    addMonthsISO, calculationError, CalcDraft, CalculationPayload, currentMonthISO, DeductionPoint, formatBR,
+    MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate, parseReferenceMonthInput,
+    toDisplayDate, toDrafts, toPayload,
 } from '@/utils/calculationForm';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 
@@ -77,13 +78,6 @@ const MaskedDateInput = ({ fieldName, control, ...inputProps }: { fieldName: any
     );
 };
 
-// Adiciona N meses a uma data ISO
-const addMonths = (isoDate: string, n: number): string => {
-    const [y, m, d] = isoDate.split('-').map(Number);
-    const dt = new Date(Date.UTC(y, m - 1 + n, d));
-    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
-};
-
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
 const DEDUCTION_POINT_OPTIONS = createListCollection({ items: [
@@ -120,6 +114,7 @@ interface AbatimentoResult {
     correctionFactor: number;
     correctedValue:   number;
     deductionPoint:   DeductionPoint;
+    nominalFloor?:    boolean;   // inflação negativa no período: ficou no valor original
 }
 
 interface CustaResult {
@@ -128,6 +123,7 @@ interface CustaResult {
     baseValue:        number;
     correctionFactor: number;
     correctedValue:   number;
+    nominalFloor?:    boolean;   // inflação negativa no período: ficou no valor original
 }
 
 interface CalcResult {
@@ -307,7 +303,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         for (let i = 0; i < count; i++) {
             append({
                 baseValue:      bulkValue,
-                baseDate:       toDisplayDate(addMonths(isoStart, i * step)),
+                baseDate:       toDisplayDate(addMonthsISO(isoStart, i * step)),
                 description:    bulkDesc ? `${bulkDesc} ${i + 1}` : '',
                 type:           'DEBITO',
                 deductionPoint: 'APOS_TUDO',
@@ -319,29 +315,36 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     // ── Feature 5: importação por colagem ─────────────────────────────────────
     const handlePasteImport = () => {
-        const lines = pasteText.trim().split('\n').filter(Boolean);
+        const lines = pasteText.trim().split('\n');
         let count = 0;
-        for (const line of lines) {
+        // Linhas que não entraram, com o motivo: antes eram puladas sem aviso
+        const skipped: string[] = [];
+        lines.forEach((line, i) => {
+            if (!line.trim()) return;
             const parts = line.split(/[;\t]/);
-            if (parts.length < 2) continue;
-            const dateStr  = parts[0].trim();
-            const valueStr = parts[1].trim().replace(/[^\d,.-]/g, '');
+            const dateStr  = parts[0]?.trim() ?? '';
+            const valueStr = (parts[1] ?? '').trim().replace(/[^\d,.-]/g, '');
             const desc     = parts[2]?.trim() || '';
             const value    = parseBR(valueStr);
-            if (!dateStr || !Number.isFinite(value)) continue;
-            const iso = parseDisplayDate(dateStr);
-            if (!iso) continue;
+            const iso      = parseDisplayDate(dateStr);
+            if (parts.length < 2 || !Number.isFinite(value)) { skipped.push(`linha ${i + 1} (valor inválido)`); return; }
+            if (!iso) { skipped.push(`linha ${i + 1} (data inválida: ${dateStr || 'vazia'})`); return; }
             append({
-                baseValue:      value.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+                // Sem arredondar: o valor colado entra com todas as casas
+                baseValue:      formatBR(value),
                 baseDate:       toDisplayDate(iso),
                 description:    desc,
                 type:           'DEBITO',
                 deductionPoint: 'APOS_TUDO',
             });
             count++;
-        }
+        });
         if (count > 0) {
-            toaster.create({ title: `${count} parcela(s) importada(s).`, type: 'success' });
+            toaster.create({
+                title:       `${count} parcela(s) importada(s).`,
+                description: skipped.length > 0 ? `Ficaram de fora: ${skipped.join(', ')}.` : undefined,
+                type:        skipped.length > 0 ? 'warning' : 'success',
+            });
             setPasteText(''); setPasteOpen(false);
         } else {
             toaster.create({ title: 'Nenhuma linha válida. Formato: DD/MM/AAAA;valor;descrição', type: 'warning' });
@@ -350,7 +353,6 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     // ── submit principal ──────────────────────────────────────────────────────
     const onSaveAndCalculate = async (data: FormValues, removalConfirmed = false) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { referenceMonth, ...activeDraft } = data;
         const list = drafts.length > 0 ? [...drafts] : [activeDraft];
         list[activeIdx] = activeDraft;
@@ -376,6 +378,14 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
             return;
         }
         setPendingRemoval(null);
+
+        // No Safari e no Firefox o campo do mês vira texto: um mês fora do formato era ignorado, e o
+        // cálculo saía no mês atual. Recusa antes de salvar
+        const reference = parseReferenceMonthInput(referenceMonth);
+        if (!reference) {
+            toaster.create({ title: 'Mês de referência inválido. Use MM/AAAA, ou deixe vazio para usar o mês atual.', type: 'error' });
+            return;
+        }
 
         const [main, ...extras] = payloads;
         const payload = {
@@ -422,19 +432,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         setIsCalculating(true);
         try {
             const token = await getToken();
-            const refBody: Record<string, number> = {};
-            if (data.referenceMonth) {
-                const [ry, rm] = data.referenceMonth.split('-').map(Number);
-                refBody.referenceYear  = ry;
-                refBody.referenceMonth = rm;
-            }
             const res = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/calculator/${asset.legalOneId}/calculate`,
-                refBody,
+                reference,
                 { headers: { Authorization: `Bearer ${token}` } },
             );
             setCalcResult(res.data);
             mutateLogs();
+            // O "Último cálculo" do cabeçalho vem dos parâmetros, que o cálculo acabou de atualizar
+            mutateParams();
             onRefresh();
             if (res.data?.warnings?.length) {
                 toaster.create({ title: 'Cálculo feito, com avisos. Confira o quadro de atenção no resultado.', type: 'warning' });
@@ -447,12 +453,10 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
     };
 
     // ── JSX helper: select simples ────────────────────────────────────────────
+    // Função, e não componente declarado aqui dentro (como o optionCheckbox): um componente novo a
+    // cada render remontava o select, e escolher pelo teclado tirava o foco do campo
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SmSelect = ({ name, collection, bg = 'gray.900' }: {
-        name: keyof FormValues;
-        collection: any;
-        bg?: string;
-    }) => (
+    const smSelect = (name: keyof FormValues, collection: any, bg = 'gray.900') => (
         <Controller name={name} control={control} render={({ field }) => (
             <Select.Root
                 collection={collection}
@@ -507,11 +511,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
         )} />
     );
 
-    const RateUnitToggle = ({ name }: { name: 'moratoryRateUnit' | 'compensatoryRateUnit' }) => (
+    // Também função, pelo mesmo motivo do smSelect
+    const rateUnitToggle = (name: 'moratoryRateUnit' | 'compensatoryRateUnit') => (
         <Controller name={name} control={control} render={({ field }) => (
             <HStack gap={0} border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden">
                 {RATE_UNITS.map(({ value, label }) => (
                     <Button key={value} size="xs" type="button" borderRadius="none"
+                        aria-pressed={field.value === value}
                         variant={field.value === value ? 'solid' : 'ghost'}
                         colorPalette={field.value === value ? 'brand' : 'gray'}
                         onClick={() => field.onChange(value)}
@@ -564,6 +570,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <HStack gap={1} wrap="wrap">
                                             {calcLabels.map((label, idx) => (
                                                 <Button key={idx} size="xs" type="button"
+                                                    aria-pressed={idx === activeIdx}
                                                     variant={idx === activeIdx ? 'solid' : 'ghost'}
                                                     colorPalette={idx === activeIdx ? 'brand' : 'gray'}
                                                     onClick={() => { if (idx !== activeIdx) switchTo(idx); }}>
@@ -597,7 +604,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                             <Box>
                                 <Field.Root>
                                     <Field.Label fontSize="sm">Índice de Correção Monetária</Field.Label>
-                                    <SmSelect name="correctionIndex" collection={INDEX_OPTIONS} bg="gray.800" />
+                                    {smSelect('correctionIndex', INDEX_OPTIONS, 'gray.800')}
                                 </Field.Root>
                                 {/* Fora do Field.Root, para a caixa ter o próprio rótulo */}
                                 {correctionIndex === 'NAO_ATUALIZAR'
@@ -648,15 +655,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             <Field.Label fontSize="sm">
                                                 Taxa ({RATE_UNITS.find(u => u.value === moratoryRateUnit)?.label ?? '% a.m.'})
                                             </Field.Label>
-                                            <Input {...register('moratoryRate')} type="number" step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" />
+                                            <Input {...register('moratoryRate')} type="number" min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" />
                                         </Field.Root>
                                         <Field.Root flex="none">
                                             <Field.Label fontSize="sm">Unidade</Field.Label>
-                                            <RateUnitToggle name="moratoryRateUnit" />
+                                            {rateUnitToggle('moratoryRateUnit')}
                                         </Field.Root>
                                         <Field.Root flex={1} minW="140px">
                                             <Field.Label fontSize="sm">Tipo</Field.Label>
-                                            <SmSelect name="moratoryType" collection={TYPE_OPTIONS} />
+                                            {smSelect('moratoryType', TYPE_OPTIONS)}
                                         </Field.Root>
                                     </HStack>
                                 )}
@@ -680,15 +687,15 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Field.Label fontSize="sm">
                                             Taxa ({RATE_UNITS.find(u => u.value === compensatoryRateUnit)?.label ?? '% a.m.'}) — 0 = não aplicar
                                         </Field.Label>
-                                        <Input {...register('compensatoryRate')} type="number" step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                        <Input {...register('compensatoryRate')} type="number" min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                     </Field.Root>
                                     <Field.Root flex="none">
                                         <Field.Label fontSize="sm">Unidade</Field.Label>
-                                        <RateUnitToggle name="compensatoryRateUnit" />
+                                        {rateUnitToggle('compensatoryRateUnit')}
                                     </Field.Root>
                                     <Field.Root flex={1} minW="140px">
                                         <Field.Label fontSize="sm">Tipo</Field.Label>
-                                        <SmSelect name="compensatoryType" collection={TYPE_OPTIONS} />
+                                        {smSelect('compensatoryType', TYPE_OPTIONS)}
                                     </Field.Root>
                                 </HStack>
                                 <Field.Root>
@@ -712,8 +719,10 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             <Field.Label fontSize="sm" mb={0}>Honorários Advocatícios</Field.Label>
                                             <Controller name="feesMode" control={control} render={({ field }) => (
                                                 <HStack gap={0} border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden">
-                                                    {[{ v: 'PERCENTUAL', l: '%' }, { v: 'FIXO', l: 'R$' }].map(opt => (
+                                                    {[{ v: 'PERCENTUAL', l: '%', a: 'Honorários em percentual' }, { v: 'FIXO', l: 'R$', a: 'Honorários em valor fixo' }].map(opt => (
                                                         <Button key={opt.v} size="xs" type="button" borderRadius="none" px={3}
+                                                            aria-label={opt.a}
+                                                            aria-pressed={field.value === opt.v}
                                                             variant={field.value === opt.v ? 'solid' : 'ghost'}
                                                             colorPalette={field.value === opt.v ? 'brand' : 'gray'}
                                                             onClick={() => field.onChange(opt.v)}
@@ -753,7 +762,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             )} />
                                         ) : (
                                             <Flex align="center" border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden" bg="gray.900">
-                                                <Input {...register('feesPercentage')} type="number" step="0.01" size="sm" bg="gray.900" border="none" pr={3} _focus={{ boxShadow: 'none' }} placeholder="10" />
+                                                <Input {...register('feesPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" border="none" pr={3} _focus={{ boxShadow: 'none' }} placeholder="10" />
                                                 <Box px={2} bg="gray.700" borderLeft="1px solid" borderColor="gray.600" alignSelf="stretch" display="flex" alignItems="center">
                                                     <Text fontSize="xs" color="gray.300" fontWeight="semibold">%</Text>
                                                 </Box>
@@ -762,12 +771,12 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">HO e multa Art. 523 (%)</Field.Label>
-                                        <Input {...register('penaltyPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        <Input {...register('penaltyPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
                                         <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
-                                        <Input {...register('multaPercentage')} type="number" step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                        <Input {...register('multaPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                         <Field.HelperText fontSize="xs" color="gray.500">Só das parcelas vencidas: como no Dr. Calc, a parcela com data no último dia do mês de referência ou depois fica sem multa</Field.HelperText>
                                     </Field.Root>
                                 </HStack>
@@ -911,7 +920,8 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                         </HStack>
                                                     )} />
                                                     {fields.length > 1 && (
-                                                        <Button size="xs" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}>
+                                                        <Button size="xs" variant="ghost" colorPalette="red" type="button" onClick={() => remove(idx)}
+                                                            aria-label={`Remover parcela ${idx + 1}`}>
                                                             <Icon as={PiTrash} />
                                                         </Button>
                                                     )}
@@ -987,8 +997,9 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                             <HStack gap={3} align="flex-end" p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.700">
                                 <Field.Root flex={1}>
                                     <Field.Label fontSize="sm">Mês de Referência</Field.Label>
+                                    {/* O máximo é o mês atual de Brasília; no Safari e no Firefox o campo vira texto (MM/AAAA) */}
                                     <Input {...register('referenceMonth')} type="month" size="sm" bg="gray.900" borderColor="gray.600"
-                                        max={new Date().toISOString().substring(0, 7)} />
+                                        max={currentMonthISO()} placeholder="MM/AAAA" />
                                 </Field.Root>
                                 <Text fontSize="xs" color="gray.500" pb={1}>
                                     Vazio = mês atual. A correção e os juros vão até o mês anterior ao de referência, como no Dr. Calc.
@@ -1086,6 +1097,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                 <Text fontSize="xs" color="orange.400">
                                                     Base: {formatBRL(ab.baseValue)} — {new Date(ab.baseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                                                     {' · '}×{ab.correctionFactor.toFixed(6)}
+                                                    {ab.nominalFloor && ' (valor original: inflação negativa no período, sem "Deflacionar")'}
                                                     {' · '}{DEDUCTION_POINT_OPTIONS.items.find(o => o.value === ab.deductionPoint)?.label}
                                                 </Text>
                                             </Box>
@@ -1129,6 +1141,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                 <Text fontSize="xs" color="purple.400">
                                                     Base: {formatBRL(custa.baseValue)} — {new Date(custa.baseDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                                                     {' · '}×{custa.correctionFactor.toFixed(6)}
+                                                    {custa.nominalFloor && ' (valor original: inflação negativa no período, sem "Deflacionar")'}
                                                 </Text>
                                             </Box>
                                             <Text fontSize="sm" fontWeight="bold" color="purple.300">
@@ -1181,12 +1194,12 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             </Accordion.ItemTrigger>
                                             <Accordion.ItemContent px={4} py={3} bg="blackAlpha.400">
                                                 <Flex gap={3} wrap="wrap" mb={3}>
+                                                    {/* Multa e honorários saem do total, não de cada parcela (como no Dr. Calc): não aparecem aqui */}
                                                     {[
                                                         { l: 'Fator de Correção', v: `×${inst.correctionFactor.toFixed(6)}` },
                                                         { l: 'Valor Corrigido', v: formatBRL(inst.correctedValue) },
-                                                        { l: `Juros (${inst.moratoryMonths} meses)`, v: formatBRL(inst.moratoryInterest) },
-                                                        { l: 'Honorários', v: formatBRL(inst.feesValue) },
-                                                        { l: 'Multa', v: formatBRL(inst.penaltyValue) },
+                                                        { l: `Juros de mora (${inst.moratoryMonths} ${inst.moratoryMonths === 1 ? 'mês' : 'meses'})`, v: formatBRL(inst.moratoryInterest) },
+                                                        ...(inst.compensatoryInterest > 0 ? [{ l: 'Juros remuneratórios', v: formatBRL(inst.compensatoryInterest) }] : []),
                                                     ].map(item => (
                                                         <Box key={item.l} p={2} bg="gray.800" borderRadius="sm" minW="120px">
                                                             <Text fontSize="xs" color="gray.500">{item.l}</Text>

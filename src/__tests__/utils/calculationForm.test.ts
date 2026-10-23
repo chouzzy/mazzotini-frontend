@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-    calculationError, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
-    toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
+    addMonthsISO, calculationError, formatBR, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
+    parseReferenceMonthInput, toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
 } from '@/utils/calculationForm';
 
 // Parâmetros fictícios de um processo com dois contratos, como a API devolve
@@ -86,7 +86,7 @@ describe('toDrafts', () => {
             feesMode: 'FIXO',
             feesFixedValue: '2.500,00',
         });
-        expect(drafts[0].installments[0]).toMatchObject({ baseValue: '2000', baseDate: '01/09/2025', type: 'DEBITO' });
+        expect(drafts[0].installments[0]).toMatchObject({ baseValue: '2.000,00', baseDate: '01/09/2025', type: 'DEBITO' });
         // O extra usa os padrões nos campos que não vieram
         expect(drafts[1]).toMatchObject({ correctionIndex: 'INPC', moratoryMode: 'TAXA_LEGAL', compensatoryRate: '6', feesMode: 'PERCENTUAL' });
     });
@@ -166,7 +166,7 @@ describe('toPayload', () => {
             baseValue: 350, baseDate: '2025-10-05T00:00:00.000Z', description: 'Perícia', type: 'CUSTA', deductionPoint: undefined,
         });
         const reopened = toDraft({ installments: result.ok ? result.payload.installments : [] }, 'Cálculo 1');
-        expect(reopened.installments[1]).toMatchObject({ baseValue: '350', baseDate: '05/10/2025', type: 'CUSTA' });
+        expect(reopened.installments[1]).toMatchObject({ baseValue: '350,00', baseDate: '05/10/2025', type: 'CUSTA' });
     });
 });
 
@@ -219,5 +219,47 @@ describe('vários cálculos', () => {
             compensatoryStartDate: '',
         });
         expect(novo.installments).toEqual([row('', '')]);
+    });
+});
+
+describe('revisão de 23/10', () => {
+    it('valor com três casas volta ao formulário sem virar milhar (333,333 não vira 333.333)', () => {
+        for (const value of [333.333, 150.123, 0.125, 999.999, 1150972.3, 2000, -100]) {
+            const reopened = toDraft({ ...saved, installments: [{ baseValue: value, baseDate: '2025-09-01T00:00:00.000Z' }] }, 'Cálculo 1');
+            const result = toPayload(reopened);
+
+            expect(result.ok).toBe(true);
+            if (result.ok) expect(result.payload.installments[0].baseValue).toBe(value);
+        }
+        expect(formatBR(333.333)).toBe('333,333');
+        expect(formatBR(1150972.3)).toBe('1.150.972,30');
+    });
+
+    it('parseBR: milhar negativo e recusa do formato americano com vírgula de milhar', () => {
+        expect(parseBR('-150.000')).toBe(-150000);
+        expect(parseBR('1,500.00')).toBeNaN();
+        expect(parseBR('1.500,00')).toBe(1500);
+    });
+
+    it('Gerar em Massa: parcela mensal desde o dia 31 cai no último dia dos meses curtos', () => {
+        expect([0, 1, 2, 3].map(i => addMonthsISO('2025-01-31', i))).toEqual(['2025-01-31', '2025-02-28', '2025-03-31', '2025-04-30']);
+        expect(addMonthsISO('2024-01-31', 1)).toBe('2024-02-29');
+        expect(addMonthsISO('2025-11-15', 3)).toBe('2026-02-15');
+    });
+
+    it('mês de referência em AAAA-MM (campo do Chrome) ou MM/AAAA (Safari e Firefox)', () => {
+        expect(parseReferenceMonthInput('')).toEqual({});
+        expect(parseReferenceMonthInput('2026-09')).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        expect(parseReferenceMonthInput('09/2026')).toEqual({ referenceYear: 2026, referenceMonth: 9 });
+        for (const invalid of ['13/2026', 'setembro', '2026', '09/26']) expect(parseReferenceMonthInput(invalid)).toBeNull();
+    });
+
+    it.each([
+        ['multaPercentage', '-10', 'multa: o valor não pode ser negativo.'],
+        ['feesPercentage', '-5', 'honorários (%): o valor não pode ser negativo.'],
+        ['moratoryRate', '-1', 'taxa dos juros moratórios: o valor não pode ser negativo.'],
+        ['feesFixedValue', '-1.000,00', 'honorários (R$): o valor não pode ser negativo.'],
+    ])('recusa %s negativo antes de enviar', (field, value, error) => {
+        expect(toPayload({ ...draftA(), [field]: value })).toEqual({ ok: false, error });
     });
 });

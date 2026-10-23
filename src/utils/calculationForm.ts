@@ -110,15 +110,57 @@ export const parseDisplayDate = (display: string): string => {
 };
 
 /**
- * Valor digitado → número. Aceita "1.150.972,30", "150.000" (milhar sem centavos, em reais),
- * "1150972.30" e "R$ 1.000,00". NaN quando não é um valor.
+ * Valor digitado → número. Aceita "1.150.972,30", "150.000" e "-150.000" (milhar sem centavos, em
+ * reais), "1150972.30" e "R$ 1.000,00". NaN quando não é um valor, e também no formato americano
+ * ("1,500.00"), que viraria 1,5.
  */
 export const parseBR = (s: string): number => {
     const text = s.replace(/R\$/gi, '').replace(/\s/g, '');
+    if (text.includes(',') && text.lastIndexOf('.') > text.lastIndexOf(',')) return NaN;
     const normalized = text.includes(',')
         ? text.replace(/\./g, '').replace(',', '.')
-        : /^\d{1,3}(\.\d{3})+$/.test(text) ? text.replace(/\./g, '') : text;
+        : /^-?\d{1,3}(\.\d{3})+$/.test(text) ? text.replace(/\./g, '') : text;
     return /^-?\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : NaN;
+};
+
+/**
+ * Número → texto do formulário, no formato que o parseBR lê de volta ("1.150.972,30", "333,333"),
+ * sem perder casas. Com String(), 333,333 voltava como "333.333", e o parseBR lia 333.333 (milhar).
+ */
+export const formatBR = (value: number): string =>
+    value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+
+/**
+ * Soma N meses a uma data ISO. Como o EDATE do Excel, o dia vira o último do mês de destino quando
+ * ele é mais curto (31/01 + 1 mês = 28/02), em vez de transbordar para o mês seguinte.
+ */
+export const addMonthsISO = (isoDate: string, n: number): string => {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    const lastDay = new Date(Date.UTC(y, m + n, 0)).getUTCDate();
+    const dt = new Date(Date.UTC(y, m - 1 + n, Math.min(d, lastDay)));
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+};
+
+/** Mês atual em Brasília ("AAAA-MM"), o mesmo do servidor e dos crons; em UTC, às 22h do dia 31 já seria o mês seguinte. */
+export const currentMonthISO = (now = new Date()): string => {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).formatToParts(now);
+    const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+    return `${get('year')}-${get('month')}`;
+};
+
+/**
+ * Mês de referência do campo → corpo do POST /calculate. O campo é do tipo "month" ("AAAA-MM"), mas
+ * no Safari e no Firefox do computador ele vira texto, e a pessoa digita "MM/AAAA". Vazio → {} (o
+ * mês atual); fora desses formatos → null, para a tela recusar em vez de calcular no mês atual.
+ */
+export const parseReferenceMonthInput = (value: string | undefined): { referenceYear?: number; referenceMonth?: number } | null => {
+    const text = (value ?? '').trim();
+    if (!text) return {};
+    const iso = text.match(/^(\d{4})-(\d{1,2})$/);
+    const br  = text.match(/^(\d{1,2})\/(\d{4})$/);
+    const [year, month] = iso ? [Number(iso[1]), Number(iso[2])] : br ? [Number(br[2]), Number(br[1])] : [NaN, NaN];
+    if (!Number.isInteger(year) || month < 1 || month > 12 || year < 1900 || year > 2100) return null;
+    return { referenceYear: year, referenceMonth: month };
 };
 
 /** Parâmetros salvos, de um cálculo extra ou do snapshot de um log → valores do formulário. */
@@ -138,8 +180,7 @@ export const toDraft = (p: any, label: string): CalcDraft => ({
     multaPercentage:       String(p.multaPercentage ?? 0),
     feesMode:              p.feesMode              ?? 'PERCENTUAL',
     feesPercentage:        String(p.feesPercentage ?? 10),
-    feesFixedValue:        p.feesFixedValue
-        ? Number(p.feesFixedValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '',
+    feesFixedValue:        p.feesFixedValue ? formatBR(Number(p.feesFixedValue)) : '',
     penaltyPercentage:     String(p.penaltyPercentage ?? 10),
     feesOnPenalty:         p.feesOnPenalty         ?? false,
     feesOnMulta:           p.feesOnMulta           ?? false,
@@ -147,7 +188,7 @@ export const toDraft = (p: any, label: string): CalcDraft => ({
     installments: p.installments?.length
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? p.installments.map((i: any) => ({
-            baseValue:      String(i.baseValue),
+            baseValue:      formatBR(Number(i.baseValue)),
             baseDate:       i.baseDate ? toDisplayDate(i.baseDate.substring(0, 10)) : '',
             description:    i.description ?? '',
             type:           i.type ?? 'DEBITO',
@@ -215,6 +256,18 @@ export const toPayload = (d: CalcDraft): PayloadResult => {
 
     const feesFixedValue = parseBR(d.feesFixedValue || '0');
     if (!Number.isFinite(feesFixedValue)) return invalid(`honorários (R$): valor inválido (${d.feesFixedValue}).`);
+
+    // Taxa, percentual ou honorário negativo reduziria o débito: o servidor recusa, e a tela também
+    const numbers: [string, number][] = [
+        ['taxa dos juros moratórios',     parseFloat(d.moratoryRate      || '0')],
+        ['taxa dos juros remuneratórios', parseFloat(d.compensatoryRate  || '0')],
+        ['multa',                         parseFloat(d.multaPercentage   || '0')],
+        ['honorários (%)',                parseFloat(d.feesPercentage    || '0')],
+        ['honorários (R$)',               feesFixedValue],
+        ['multa do Art. 523',             parseFloat(d.penaltyPercentage || '0')],
+    ];
+    const negative = numbers.find(([, value]) => value < 0);
+    if (negative) return invalid(`${negative[0]}: o valor não pode ser negativo.`);
 
     return {
         ok: true,
