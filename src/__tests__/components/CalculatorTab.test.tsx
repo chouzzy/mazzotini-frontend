@@ -469,6 +469,22 @@ describe('CalculatorTab: revisão de 23/10', () => {
         expect(valueInputs().map(i => i.value)).toContain('333,3333');
     });
 
+    it('na colagem, o número da linha conta as linhas em branco do começo', async () => {
+        api.params = savedSingle();
+        render(tab());
+
+        fireEvent.click(btn(/^Colar$/));
+        fireEvent.change(screen.getByRole('textbox', { name: '' }) as HTMLTextAreaElement, {
+            target: { value: '\n\n15/01/2025;100,00\n31/02/2025;100,00\n' },
+        });
+        fireEvent.click(btn(/^Importar$/));
+
+        expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({
+            title: '1 parcela(s) importada(s).',
+            description: 'Ficaram de fora: linha 4 (data inválida: 31/02/2025).',
+        }));
+    });
+
     it('o mês de referência vai no corpo do cálculo, e os parâmetros são recarregados depois', async () => {
         api.params = savedSingle();
         render(tab());

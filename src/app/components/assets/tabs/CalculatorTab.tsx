@@ -315,7 +315,9 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
 
     // ── Feature 5: importação por colagem ─────────────────────────────────────
     const handlePasteImport = () => {
-        const lines = pasteText.trim().split('\n');
+        // Só o fim é aparado: linhas em branco no começo contam, para o número da linha no aviso
+        // bater com o da caixa de texto
+        const lines = pasteText.replace(/\s+$/, '').split('\n');
         let count = 0;
         // Linhas que não entraram, com o motivo: antes eram puladas sem aviso
         const skipped: string[] = [];
