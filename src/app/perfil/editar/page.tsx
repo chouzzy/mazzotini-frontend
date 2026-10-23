@@ -590,7 +590,7 @@ export default function CompleteProfilePage() {
 
                     <Button type="submit" colorPalette="blue" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch">
                         <Icon as={PiFloppyDisk} />
-                        Salvar e Enviar para Análise
+                        Salvar alterações
                     </Button>
                 </VStack>
             </form>
