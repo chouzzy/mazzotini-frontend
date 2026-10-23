@@ -255,8 +255,10 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
             );
         }
 
-        // Usuário Pendente/Novo = Layout Simples
-        if (isOnOnboardingPage || isOnPendingPage || isPublicRoute || status === 'PENDING_ONBOARDING') {
+        // Usuário Pendente/Novo = Layout Simples, só no onboarding, na espera e nas páginas públicas.
+        // Em outra página, fica o carregamento até o redirecionamento: a página pediria dados de
+        // cliente, que a API recusa até a aprovação, e mostraria um erro por um instante
+        if (isOnOnboardingPage || isOnPendingPage || isPublicRoute) {
             return (
                 <Flex direction="column" w="100%" minH="100vh">
                     <HeaderNav onOpen={() => { }} />

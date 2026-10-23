@@ -17,7 +17,7 @@ const auth = vi.hoisted(() => ({
     user: { email: 'cliente@exemplo.com', name: 'Cliente Exemplo', email_verified: true },
     getAccessTokenSilently: async () => 'token-ficticio',
 }));
-const nav = vi.hoisted(() => ({ router: { push: () => {} }, swr: { mutate: () => Promise.resolve() } }));
+const nav = vi.hoisted(() => ({ router: { push: vi.fn() }, swr: { mutate: () => Promise.resolve() } }));
 const axiosMock = vi.hoisted(() => ({ post: vi.fn(), patch: vi.fn() }));
 
 vi.mock('@/hooks/useApi', () => ({
@@ -44,6 +44,7 @@ const wrap = (el: React.ReactElement) => render(<ChakraProvider value={defaultSy
 beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     axiosMock.post.mockReset();
+    nav.router.push.mockClear();
     api.profileLoading = false;
     api.profile = {
         id: 'cliente-1', name: 'Cliente Exemplo', email: 'cliente@exemplo.com', status: 'ACTIVE', role: 'INVESTOR',
@@ -88,5 +89,17 @@ describe('Tela de erro do sync', () => {
         expect(await screen.findByText('Não foi possível carregar sua conta')).toBeInTheDocument();
         await waitFor(() => expect(axiosMock.post).toHaveBeenCalledTimes(1));
         expect(screen.queryByText(/conexão recusada/)).toBeNull();
+    });
+});
+
+describe('Conta nova fora do onboarding', () => {
+    it('não monta a página (que pediria dados de cliente, recusados até a aprovação) e vai para /perfil/completar', async () => {
+        api.profile = { id: 'cliente-1', name: 'Cliente Exemplo', status: 'PENDING_ONBOARDING', cpfOrCnpj: null };
+        axiosMock.post.mockResolvedValue({});
+
+        wrap(<LayoutController><p>conteúdo da página</p></LayoutController>);
+
+        await waitFor(() => expect(nav.router.push).toHaveBeenCalledWith('/perfil/completar'));
+        expect(screen.queryByText('conteúdo da página')).toBeNull();
     });
 });
