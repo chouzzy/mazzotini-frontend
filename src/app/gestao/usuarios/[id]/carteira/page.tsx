@@ -204,15 +204,17 @@ function DocumentsList({ index, control, userId, getValues, setValue }: {
 // ============================================================================
 //  SUB-COMPONENTE: COMBOBOX DE ASSOCIADO
 // ============================================================================
-function AssociateCombobox({ index, control, associateOptions }: {
+function AssociateCombobox({ index, control, associateOptions, formerAssociates }: {
     index: number;
     control: any;
     associateOptions: AssociateOption[];
+    /** Associados gravados na carteira que não estão mais na lista: aparecem pelo nome, sem ser opção. */
+    formerAssociates: Map<string, string>;
 }) {
     const { field } = useController({ name: `investments.${index}.associateId`, control });
     const defaultLabel = useMemo(
-        () => associateOptions.find(a => a.value === field.value)?.label || '',
-        [field.value, associateOptions]
+        () => associateOptions.find(a => a.value === field.value)?.label || formerAssociates.get(field.value) || '',
+        [field.value, associateOptions, formerAssociates]
     );
     const [inputValue, setInputValue] = useState(defaultLabel);
     useEffect(() => { setInputValue(defaultLabel); }, [defaultLabel]);
@@ -277,7 +279,24 @@ export default function UserCarteiraPage() {
     // É pesada, então a tela não espera por ela.
     const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
     const { data: associatesRaw, isLoading: isLoadingAssociates, error: associatesError } = useApi<AssociateOption[]>('/api/users/associates');
-    const associateOptions: AssociateOption[] = associatesRaw || [];
+    // O próprio cliente não pode ser o associado dos processos dele (o servidor recusa)
+    const associateOptions: AssociateOption[] = useMemo(
+        () => (associatesRaw || []).filter(a => a.value !== userId),
+        [associatesRaw, userId],
+    );
+    // Um associado gravado que saiu da lista (perdeu o papel) continua no processo ao salvar:
+    // aparece pelo nome, e não em branco
+    const formerAssociates = useMemo(() => {
+        const listed = new Set(associateOptions.map(a => a.value));
+        const former = new Map<string, string>();
+        for (const inv of userData?.investments || []) {
+            const associate = inv.associate;
+            if (associate?.id && !listed.has(associate.id)) {
+                former.set(associate.id, `${associate.name || 'Associado'} (fora da lista de associados)`);
+            }
+        }
+        return former;
+    }, [associateOptions, userData]);
 
     // Os processos da carteira entram primeiro, com o rótulo vindo do próprio investimento:
     // cada linha mostra o seu processo mesmo que a lista geral falhe ou ainda não tenha chegado.
@@ -538,6 +557,7 @@ export default function UserCarteiraPage() {
                                             index={index}
                                             control={control}
                                             associateOptions={associateOptions}
+                                            formerAssociates={formerAssociates}
                                         />
                                     </Box>
                                 </Stack>
