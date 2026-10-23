@@ -645,10 +645,11 @@ export default function EditUserPage() {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
-    if (myProfile?.role !== 'ADMIN' && myProfile?.role !== 'OPERATOR') {
+    // As rotas de gestão de usuários são só de admin (o operador receberia 403 em tudo)
+    if (myProfile?.role !== 'ADMIN') {
         return (
             <Flex w="100%" h="50vh" justify="center" align="center">
-                <Text color="gray.400">Acesso restrito a administradores e operadores.</Text>
+                <Text color="gray.400">Acesso restrito a administradores.</Text>
             </Flex>
         );
     }

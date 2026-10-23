@@ -25,8 +25,8 @@ const SideBarItems = [
     // Visível para todos
     { name: 'Meu Perfil',       icon: PiUser,            href: '/perfil' },
 
-    // Restrito a ADMIN / OPERATOR
-    { name: 'Usuários',         icon: PiUsers,           href: '/gestao/usuarios',         roles: ['ADMIN', 'OPERATOR'] },
+    // Restrito a ADMIN (as rotas de gestão de usuários são só de admin)
+    { name: 'Usuários',         icon: PiUsers,           href: '/gestao/usuarios',         roles: ['ADMIN'] },
     { name: 'Notificações',     icon: PiBell,            href: '/gestao/notificacoes',     roles: ['ADMIN'] },
     { name: 'Configurações',    icon: PiGear,            href: '/configuracoes',            roles: ['ADMIN'] },
 ];
