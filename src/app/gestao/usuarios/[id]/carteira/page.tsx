@@ -272,7 +272,7 @@ export default function UserCarteiraPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [investmentSearch, setInvestmentSearch] = useState('');
 
-    const { data: userData, isLoading: isLoadingUser, error: userError } = useApi<any>(`/api/management/users/${userId}`);
+    const { data: userData, isLoading: isLoadingUser, error: userError, mutate: mutateUser } = useApi<any>(`/api/management/users/${userId}`);
     // Lista de todos os processos: só é necessária para adicionar um processo novo.
     // É pesada, então a tela não espera por ela.
     const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
@@ -320,6 +320,8 @@ export default function UserCarteiraPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toaster.create({ title: "Carteira atualizada!", type: "success" });
+            // Recarrega o cadastro: a carteira e o resumo em Editar Usuário mostram o que ficou gravado
+            mutateUser();
         } catch (err: any) {
             toaster.create({ title: err.response?.data?.error || "Erro ao salvar carteira.", type: "error" });
         } finally {
