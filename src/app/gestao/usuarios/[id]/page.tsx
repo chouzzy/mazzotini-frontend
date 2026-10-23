@@ -602,6 +602,11 @@ export default function EditUserPage() {
                 { headers: { Authorization: `Bearer ${token}` } },
             );
 
+            // O cadastro já está salvo: o aviso sai agora, sem esperar os anexos
+            toaster.create(referral
+                ? referralOutcome('save', referral.associateName, referral.processes.length, res.data?.investmentsUpdated)
+                : { title: "Cadastro atualizado!", description: "As alterações já estão valendo.", type: "success" });
+
             // Documentos escolhidos no formulário: sobem um a um depois do cadastro salvo
             const files = data.personalDocuments ? Array.from(data.personalDocuments) : [];
             const failedUploads: string[] = [];
@@ -622,9 +627,6 @@ export default function EditUserPage() {
 
             mutateUser();
             mutatePendingChanges();
-            toaster.create(referral
-                ? referralOutcome('save', referral.associateName, referral.processes.length, res.data?.investmentsUpdated)
-                : { title: "Cadastro atualizado!", description: "As alterações já estão valendo.", type: "success" });
             const sentUploads = files.length - failedUploads.length;
             if (sentUploads > 0) {
                 toaster.create({ title: sentUploads === 1 ? '1 documento anexado' : `${sentUploads} documentos anexados`, type: 'success' });

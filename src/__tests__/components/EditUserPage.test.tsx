@@ -5,6 +5,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Estado das chamadas simuladas (API, axios e toasts). Dados fictícios.
 const api = vi.hoisted(() => ({
+    role: 'ADMIN',
     user: null as unknown,
     associates: [] as { value: string; label: string }[],
     mutateUser: vi.fn(),
@@ -14,7 +15,7 @@ const toasts = vi.hoisted(() => ({ create: vi.fn() }));
 
 vi.mock('@/hooks/useApi', () => ({
     useApi: (endpoint: string) => {
-        if (endpoint === '/api/users/me') return { data: { role: 'ADMIN' }, isLoading: false };
+        if (endpoint === '/api/users/me') return { data: { role: api.role }, isLoading: false };
         if (endpoint === '/api/users/associates') return { data: api.associates, isLoading: false };
         if (endpoint === '/api/management/users/cliente-1') return { data: api.user, isLoading: false, mutate: api.mutateUser };
         if (endpoint === '/api/management/profile-changes') return { data: [], mutate: vi.fn() };
@@ -59,6 +60,7 @@ const lastToast = () => toasts.create.mock.calls.at(-1)?.[0];
 beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    api.role = 'ADMIN';
     api.user = client();
     api.associates = [
         { value: 'associado-a', label: '001 — Associado A' },
@@ -178,6 +180,33 @@ describe('Editar Usuário: indicação × associado dos processos', () => {
             expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cadastro atualizado!' }));
         });
 
+        it('um segundo salvamento não manda de novo os arquivos já enviados', async () => {
+            page();
+
+            chooseFile('rg-ficticio.pdf');
+            await save();
+            await waitFor(() => expect(uploadCalls()).toHaveLength(1));
+            await save();
+
+            await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(2));
+            expect(uploadCalls()).toHaveLength(1);
+        });
+
+        it('o aviso do cadastro salvo sai antes de os anexos terminarem', async () => {
+            let finishUpload: (value: unknown) => void = () => {};
+            axiosMock.post.mockImplementation(() => new Promise(resolve => { finishUpload = resolve; }));
+            page();
+
+            chooseFile('rg-ficticio.pdf');
+            await save();
+
+            await waitFor(() => expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cadastro atualizado!' })));
+            expect(toasts.create).not.toHaveBeenCalledWith(expect.objectContaining({ title: '1 documento anexado' }));
+
+            await act(async () => { finishUpload({ data: { url: 'https://exemplo.com/rg.pdf' } }); });
+            await waitFor(() => expect(toasts.create).toHaveBeenCalledWith({ title: '1 documento anexado', type: 'success' }));
+        });
+
         it('sem arquivo escolhido, nada sobe', async () => {
             page();
 
@@ -186,6 +215,14 @@ describe('Editar Usuário: indicação × associado dos processos', () => {
             await waitFor(() => expect(axiosMock.patch).toHaveBeenCalledTimes(1));
             expect(uploadCalls()).toHaveLength(0);
         });
+    });
+
+    it('o operador não abre a tela (as rotas de gestão de usuários são só do admin)', () => {
+        api.role = 'OPERATOR';
+        page();
+
+        expect(screen.getByText('Acesso restrito a administradores.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Salvar Alterações/ })).toBeNull();
     });
 
     it('o formulário recarrega quando o cadastro muda no servidor', () => {
