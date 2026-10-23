@@ -14,6 +14,7 @@ import { InvestorCreditAsset } from '../../dashboard/CreditAssetCard';
 import { PaginatedFoldersResponse } from '@/types/folders';
 import { FoldersSection } from '../../dashboard/FoldersSection';
 import { formatCurrency } from '@/utils';
+import { getStatusColor, getStatusLabel, isActiveStatus, isClosedStatus } from '@/utils/assetStatus';
 
 interface MazzotiniUser {
     name: string;
@@ -32,12 +33,6 @@ interface AssociateProcessRow {
     currentValue: number;
     status: string;
 }
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-    ACTIVE:             { label: 'Ativo',      color: 'green'  },
-    PENDING_ENRICHMENT: { label: 'Em análise', color: 'yellow' },
-    CLOSED:             { label: 'Encerrado',  color: 'gray'   },
-};
 
 export function DashboardOverview() {
     const { data: assets, isLoading: isLoadingAssets, error: assetsError } = useApi<InvestorCreditAsset[]>('/api/investments/me');
@@ -83,13 +78,11 @@ export function DashboardOverview() {
         ? uniqueClients.length
         : (assets?.length ?? 0);
 
-    const totalActiveAssets = isAssociate
-        ? (associateRows?.filter(a => a.status === 'ACTIVE').length ?? 0)
-        : (assets?.filter(a => a.status === 'Ativo').length ?? 0);
-
-    const totalInactiveAssets = isAssociate
-        ? (associateRows?.filter(a => a.status === 'CLOSED').length ?? 0)
-        : (assets?.filter(a => a.status === 'Liquidado' || a.status === 'CLOSED').length ?? 0);
+    // Mesma regra para o associado e o cliente: o backend grava "Ativo" e "Liquidado" (os valores em
+    // inglês são legados). O associado via zero, porque a conta dele olhava só "ACTIVE" e "CLOSED"
+    const statuses = (isAssociate ? associateRows : assets)?.map(a => a.status) ?? [];
+    const totalActiveAssets   = statuses.filter(isActiveStatus).length;
+    const totalInactiveAssets = statuses.filter(isClosedStatus).length;
 
     const previewClients = uniqueClients.slice(0, 3);
     const hasMore = uniqueClients.length > 3;
@@ -204,7 +197,8 @@ export function DashboardOverview() {
                             ) : (
                                 <VStack align="stretch" gap={3} w="100%">
                                     {previewClients.map(client => {
-                                        const st = statusConfig[client.status] ?? { label: client.status, color: 'gray' };
+                                        // Rótulo e cor do cliente: "Ativo" (o que o backend grava) fica verde, e status de integração não aparece
+                                        const st = { label: getStatusLabel(client.status, 'client'), color: getStatusColor(client.status, 'client') };
                                         return (
                                             <Link key={client.clientId} as={NextLink} href="/associado" w="100%" display="block" _hover={{ textDecoration: 'none' }}>
                                                 <Flex

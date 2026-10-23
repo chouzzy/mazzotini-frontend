@@ -17,6 +17,8 @@ import Link from 'next/link';
 import { UserStagingDocument } from '@/types/api';
 import { AddressBlock } from "@/app/components/management/AddressBlock";
 import { InvestmentsSummary } from "@/app/components/management/InvestmentsSummary";
+import { ReferralDialog } from "@/app/components/management/ReferralDialog";
+import { processesNotWith, processesToMove, ProcessToMove, referralOutcome } from "@/utils/referralChange";
 
 // ============================================================================
 //  INTERFACES
@@ -60,6 +62,17 @@ interface UserFormData {
 }
 
 interface Associate { value: string; label: string; }
+
+/**
+ * A pergunta do diálogo da indicação. `save`: ao salvar a indicação trocada, com o formulário a
+ * gravar em `data`. `apply`: pelo aviso da indicação já gravada, só com os processos.
+ */
+interface ReferralPrompt {
+    mode: 'save' | 'apply';
+    data?: UserFormData;
+    associateName: string;
+    processes: ProcessToMove[];
+}
 
 // ============================================================================
 //  COLEÇÕES
@@ -401,6 +414,13 @@ export default function EditUserPage() {
     const [confirmEmail, setConfirmEmail] = useState('');
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const emailInputRef = useRef<HTMLInputElement>(null);
+    // Levar o associado da indicação para os processos? O `open` fica separado dos dados para o
+    // diálogo não esvaziar durante a animação de saída
+    const [referralPrompt, setReferralPrompt] = useState<ReferralPrompt | null>(null);
+    const [isReferralOpen, setIsReferralOpen] = useState(false);
+    const [isApplyingReferral, setIsApplyingReferral] = useState(false);
+    // Muda depois de enviar os anexos, para o campo de arquivos voltar vazio
+    const [uploadFieldKey, setUploadFieldKey] = useState(0);
     const router = useRouter();
     const params = useParams();
     const userId = params.id as string;
@@ -427,7 +447,9 @@ export default function EditUserPage() {
     });
     // =================================================================
 
-    // 2. Popula o form
+    // 2. Popula o form, só quando muda o cadastro, e não a carteira: levar a indicação para os
+    // processos recarrega o usuário, e o que foi digitado e ainda não salvo não pode sumir
+    const profileKey = useMemo(() => userData ? JSON.stringify({ ...userData, investments: undefined }) : null, [userData]);
     useEffect(() => {
         if (userData) {
             console.log("Dados do usuário carregados:", userData);
@@ -443,7 +465,8 @@ export default function EditUserPage() {
                 personalDocumentUrls: userData.personalDocumentUrls || []
             });
         }
-    }, [userData, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profileKey, reset]);
 
     const useCommercialAddress = watch('useCommercialAddress');
     const unknownAssociate = watch('unknownAssociate');
@@ -453,8 +476,24 @@ export default function EditUserPage() {
     const unmaskedCpfOrCnpj = unmask(cpfOrCnpjValue || '');
     const isCnpj = unmaskedCpfOrCnpj.length > 11;
 
-    const associatesCollection = createListCollection({ items: associates || [] });
+    // O próprio cliente fica fora da lista: ele não pode ser indicado por ele mesmo
+    const associateOptions = useMemo(() => (associates || []).filter(a => a.value !== userId), [associates, userId]);
+    const associatesCollection = useMemo(() => createListCollection({ items: associateOptions }), [associateOptions]);
     const contactPreference = useController({ control, name: "contactPreference", defaultValue: [] });
+
+    // Com o formulário mostrando a indicação gravada, os processos que estão com outro associado
+    // (ou sem) podem receber o da indicação, sem trocá-la: processos que chegaram depois, ou
+    // quando a indicação foi salva sem levar o associado
+    const formReferral = unknownAssociate ? null : (watch('referredById') || null);
+    const savedReferral = associateOptions.find(a => a.value === userData?.referredById) ?? null;
+    const processesOutside = savedReferral && formReferral === savedReferral.value
+        ? processesNotWith(savedReferral.value, userData?.investments ?? [])
+        : [];
+
+    const openReferralPrompt = (prompt: ReferralPrompt) => {
+        setReferralPrompt(prompt);
+        setIsReferralOpen(true);
+    };
 
     // Função de Exclusão de Documentos Pessoais (com botão type="button" corrigido)
     const handleDeleteDocument = async (indexToRemove: number) => {
@@ -482,7 +521,25 @@ export default function EditUserPage() {
         }
     };
 
+    // Trocar a indicação por um associado cadastrado: antes de salvar, pergunta se ele vai também
+    // para os processos do cliente. A indicação só registra quem indicou; o portal do associado
+    // usa o associado de cada processo (o da carteira)
     const onSubmit: SubmitHandler<UserFormData> = async (data) => {
+        const nextReferral = data.unknownAssociate ? null : (data.referredById || null);
+        const processes = processesToMove(userData?.referredById, nextReferral, userData?.investments ?? []);
+        if (processes.length > 0) {
+            const associateName = associateOptions.find(a => a.value === nextReferral)?.label ?? 'o associado indicado';
+            openReferralPrompt({ mode: 'save', data, associateName, processes });
+            return;
+        }
+        await saveUser(data, null);
+    };
+
+    /**
+     * Salva o cadastro; com `referral`, o associado indicado vai também para os processos que o
+     * diálogo mostrou (e só para eles).
+     */
+    const saveUser = async (data: UserFormData, referral: { associateName: string; processes: ProcessToMove[] } | null) => {
         setIsSubmitting(true);
         try {
             const token = await getAccessTokenSilently();
@@ -533,17 +590,54 @@ export default function EditUserPage() {
 
             // Salva direto: a etapa de confirmação foi retirada a pedido do escritório (06/10).
             // O backend descarta as solicitações antigas que ainda estiverem pendentes.
-            await axios.patch(`${apiBaseUrl}/api/management/users/${userId}`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.patch(
+                `${apiBaseUrl}/api/management/users/${userId}`,
+                {
+                    ...payload,
+                    ...(referral ? {
+                        applyReferralToInvestments: true,
+                        referralInvestmentIds: referral.processes.map(p => p.investmentId),
+                    } : {}),
+                },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+
+            // O cadastro já está salvo: o aviso sai agora, sem esperar os anexos
+            toaster.create(referral
+                ? referralOutcome('save', referral.associateName, referral.processes.length, res.data?.investmentsUpdated)
+                : { title: "Cadastro atualizado!", description: "As alterações já estão valendo.", type: "success" });
+
+            // Documentos escolhidos no formulário: sobem um a um depois do cadastro salvo
+            const files = data.personalDocuments ? Array.from(data.personalDocuments) : [];
+            const failedUploads: string[] = [];
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('document', file);
+                try {
+                    await axios.post(`${apiBaseUrl}/api/management/users/${userId}/documents`, formData, { headers: { Authorization: `Bearer ${token}` } });
+                } catch (uploadError: any) {
+                    failedUploads.push(`${file.name}: ${uploadError.response?.data?.error || 'erro ao enviar'}`);
+                }
+            }
+            if (files.length > 0) {
+                // Limpa a escolha, para um novo salvamento não mandar os mesmos arquivos
+                setValue('personalDocuments', undefined);
+                setUploadFieldKey(key => key + 1);
+            }
 
             mutateUser();
             mutatePendingChanges();
-            toaster.create({
-                title: "Cadastro atualizado!",
-                description: "As alterações já estão valendo.",
-                type: "success"
-            });
+            const sentUploads = files.length - failedUploads.length;
+            if (sentUploads > 0) {
+                toaster.create({ title: sentUploads === 1 ? '1 documento anexado' : `${sentUploads} documentos anexados`, type: 'success' });
+            }
+            if (failedUploads.length > 0) {
+                toaster.create({
+                    title: failedUploads.length === 1 ? 'Um documento não foi enviado' : `${failedUploads.length} documentos não foram enviados`,
+                    description: failedUploads.join(' · '),
+                    type: 'warning',
+                });
+            }
 
         } catch (error: any) {
             console.error("Erro ao salvar o cadastro:", error);
@@ -553,14 +647,42 @@ export default function EditUserPage() {
         }
     };
 
+    /** Leva o associado da indicação gravada para os processos que o diálogo mostrou, sem salvar o formulário. */
+    const applySavedReferral = async (associateName: string, processes: ProcessToMove[]) => {
+        setIsApplyingReferral(true);
+        try {
+            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+            const res = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${userId}/apply-referral`,
+                { investmentIds: processes.map(p => p.investmentId) },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            mutateUser();
+            toaster.create(referralOutcome('apply', associateName, processes.length, res.data?.investmentsUpdated));
+        } catch (error: any) {
+            console.error("Erro ao levar o associado para os processos:", error);
+            toaster.create({
+                title: "Os processos continuam com o associado anterior",
+                // 404: servidor numa versão sem essa rota
+                description: error.response?.status === 404
+                    ? "O servidor ainda não tem essa opção. Troque o associado de cada processo em Gerenciar Carteira."
+                    : error.response?.data?.error || "Erro desconhecido",
+                type: "error",
+            });
+        } finally {
+            setIsApplyingReferral(false);
+        }
+    };
+
     if (isLoadingProfile || isLoadingUser || isLoadingAssociates) {
         return <Flex w="100%" h="50vh" justify="center" align="center"><Spinner size="xl" /></Flex>;
     }
 
-    if (myProfile?.role !== 'ADMIN' && myProfile?.role !== 'OPERATOR') {
+    // As rotas de gestão de usuários são só de admin (o operador receberia 403 em tudo)
+    if (myProfile?.role !== 'ADMIN') {
         return (
             <Flex w="100%" h="50vh" justify="center" align="center">
-                <Text color="gray.400">Acesso restrito a administradores e operadores.</Text>
+                <Text color="gray.400">Acesso restrito a administradores.</Text>
             </Flex>
         );
     }
@@ -645,6 +767,23 @@ export default function EditUserPage() {
                         </Card.Body>
                     </Card.Root>
                 )}
+
+                {/* DIALOG: Levar o associado da indicação para os processos */}
+                <ReferralDialog
+                    open={isReferralOpen}
+                    mode={referralPrompt?.mode ?? 'save'}
+                    associateName={referralPrompt?.associateName ?? ''}
+                    processes={referralPrompt?.processes ?? []}
+                    onCancel={() => setIsReferralOpen(false)}
+                    onConfirm={(applyToProcesses) => {
+                        // Só a primeira resposta vale: o diálogo segue na tela durante a animação de saída
+                        if (!isReferralOpen || !referralPrompt) return;
+                        setIsReferralOpen(false);
+                        const { mode, data, associateName, processes } = referralPrompt;
+                        if (mode === 'apply') applySavedReferral(associateName, processes);
+                        else if (data) saveUser(data, applyToProcesses ? { associateName, processes } : null);
+                    }}
+                />
 
                 {/* DIALOG: Alterar E-mail */}
                 <Dialog.Root open={isEmailDialogOpen} onOpenChange={(d) => !d.open && setIsEmailDialogOpen(false)}>
@@ -839,6 +978,10 @@ export default function EditUserPage() {
                     {/* INDICAÇÃO */}
                     <VStack gap={4} align="stretch">
                         <Heading as="h2" size="md" pt={4} borderTopWidth="1px" borderColor="gray.700" mt={4}>Indicação (Associado)</Heading>
+                        <Text fontSize="sm" color="gray.400">
+                            Registra quem indicou o cliente. O associado que acompanha cada processo fica na carteira (Gerenciar Carteira).
+                            Ao trocar a indicação por um associado cadastrado, você pode levá-lo também para os processos.
+                        </Text>
                         <Controller name="unknownAssociate" control={control} render={({ field }) => (
                             <Checkbox.Root checked={field.value} onCheckedChange={(d) => field.onChange(Boolean(d.checked))} mb={2}>
                                 <Checkbox.HiddenInput />
@@ -861,6 +1004,24 @@ export default function EditUserPage() {
                                     </Select.Root>
                                 </Field.Root>
                             )} />
+                        )}
+                        {savedReferral && processesOutside.length > 0 && (
+                            <Alert.Root status="info" borderRadius="md" alignItems="center" flexWrap="wrap" gap={3}>
+                                <Alert.Indicator />
+                                <Alert.Content flex="1" minW="200px">
+                                    <Alert.Description fontSize="sm">
+                                        {processesOutside.length === 1
+                                            ? '1 processo do cliente não está'
+                                            : `${processesOutside.length} processos do cliente não estão`} com {savedReferral.label}, o associado da indicação.
+                                    </Alert.Description>
+                                </Alert.Content>
+                                <Button
+                                    type="button" size="sm" variant="outline" colorPalette="brand" loading={isApplyingReferral}
+                                    onClick={() => openReferralPrompt({ mode: 'apply', associateName: savedReferral.label, processes: processesOutside })}
+                                >
+                                    Levar a indicação para os processos
+                                </Button>
+                            </Alert.Root>
                         )}
                     </VStack>
 
@@ -931,7 +1092,7 @@ export default function EditUserPage() {
                         {/* UPLOAD DE NOVOS DOCUMENTOS */}
                         <Field.Root>
                             <Field.Label>Adicionar Novos Documentos Pessoais</Field.Label>
-                            <FileUpload.Root accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
+                            <FileUpload.Root key={uploadFieldKey} accept={[".pdf", ".jpg", ".jpeg", ".png"]} maxFiles={6} >
                                 <FileUpload.HiddenInput  {...register("personalDocuments")} />
                                 <FileUpload.Trigger asChild>
                                     <Flex bg={'brand.400'} color={'black'} p={2} alignItems={'center'} cursor={'pointer'} _hover={{ bgColor: 'brand.600', color: 'white' }} gap={2} borderRadius={4}>
@@ -941,6 +1102,7 @@ export default function EditUserPage() {
                                 </FileUpload.Trigger>
                                 <FileUpload.List />
                             </FileUpload.Root>
+                            <Field.HelperText>PDF, JPG ou PNG, até 10 MB cada. Os arquivos são enviados ao salvar o cadastro.</Field.HelperText>
                         </Field.Root>
                     </VStack>
                     {/* ================================================================= */}

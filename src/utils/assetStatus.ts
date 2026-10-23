@@ -95,6 +95,19 @@ export function getStatusColor(status: string, audience: StatusAudience = 'inter
     return entry.colorPalette;
 }
 
+/**
+ * Processo ativo, pelo status gravado: "Ativo", que é o que o backend grava, ou o legado "ACTIVE".
+ * As telas que contavam só "ACTIVE" (painel do associado) mostravam zero.
+ */
+export function isActiveStatus(status: string | null | undefined): boolean {
+    return status === 'Ativo' || status === 'ACTIVE';
+}
+
+/** Processo encerrado: "Liquidado", "Encerrado" ou o legado "CLOSED". */
+export function isClosedStatus(status: string | null | undefined): boolean {
+    return status === 'Liquidado' || status === 'Encerrado' || status === 'CLOSED';
+}
+
 /** Status que representam falha da nossa integração, não do processo. */
 export function isInternalIntegrationStatus(status: string): boolean {
     return status === 'FAILED_ENRICHMENT' || status === 'PENDING_ENRICHMENT';

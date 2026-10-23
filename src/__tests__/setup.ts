@@ -12,3 +12,4 @@ w.matchMedia = w.matchMedia ?? ((query: string) => ({
 }));
 window.scrollTo = (() => {}) as typeof window.scrollTo;
 Element.prototype.scrollIntoView = () => {};
+Element.prototype.scrollTo = (() => {}) as typeof Element.prototype.scrollTo;

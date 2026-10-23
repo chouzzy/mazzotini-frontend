@@ -11,7 +11,8 @@ import { useApi } from '@/hooks/useApi';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { formatCurrency } from '@/utils';
+import { extractFreeText, formatCurrency } from '@/utils';
+import { getStatusColor, getStatusLabel } from '@/utils/assetStatus';
 
 interface LastUpdate {
     date: string;
@@ -43,12 +44,6 @@ interface ClientProcessesResponse {
     };
     processes: AssociateProcess[];
 }
-
-const statusLabels: Record<string, { label: string; color: string }> = {
-    ACTIVE:             { label: 'Ativo',       color: 'green' },
-    PENDING_ENRICHMENT: { label: 'Em análise',  color: 'yellow' },
-    CLOSED:             { label: 'Encerrado',   color: 'gray' },
-};
 
 function ClientProcessesContent() {
     const params = useParams();
@@ -120,7 +115,6 @@ function ClientProcessesContent() {
                         </Table.Header>
                         <Table.Body>
                             {processes.map(proc => {
-                                const statusCfg = statusLabels[proc.status] ?? { label: proc.status, color: 'gray' };
                                 const title = proc.nickname || proc.originalCreditor;
                                 return (
                                     <Table.Row key={proc.investmentId} _hover={{ bg: 'whiteAlpha.50' }}>
@@ -145,7 +139,7 @@ function ClientProcessesContent() {
                                                         {new Date(proc.lastUpdate.date).toLocaleDateString('pt-BR')}
                                                     </Text>
                                                     <Text fontSize="xs" color="gray.300" lineClamp={2}>
-                                                        {proc.lastUpdate.description}
+                                                        {extractFreeText(proc.lastUpdate.description)}
                                                     </Text>
                                                 </VStack>
                                             ) : (
@@ -153,8 +147,8 @@ function ClientProcessesContent() {
                                             )}
                                         </Table.Cell>
                                         <Table.Cell px={6} py={4} textAlign="center">
-                                            <Badge colorPalette={statusCfg.color} variant="solid">
-                                                {statusCfg.label}
+                                            <Badge colorPalette={getStatusColor(proc.status, 'client')} variant="solid">
+                                                {getStatusLabel(proc.status, 'client')}
                                             </Badge>
                                         </Table.Cell>
                                         <Table.Cell px={6} py={4} textAlign="right">

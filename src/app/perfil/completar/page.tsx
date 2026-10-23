@@ -44,8 +44,6 @@ interface Associate {
     value: string;
     label: string;
     associateSequence?: number | null;
-    role: string
-    email: string;
 }
 
 interface OnboardingFormData {

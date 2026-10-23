@@ -23,7 +23,8 @@ const PUBLIC_ROUTES = ['/politica-privacidade', '/termos-de-uso'];
 
 // Tela mostrada quando o sync falha e o perfil não carrega. Sem ela, o usuário
 // ficaria parado no spinner, sem saber o que fazer.
-function SyncErrorScreen({ onRetry }: { onRetry: () => Promise<void> }) {
+// `message` é o motivo que o servidor deu, quando deu (ex.: conta sem e-mail no Auth0).
+function SyncErrorScreen({ onRetry, message }: { onRetry: () => Promise<void>; message: string | null }) {
     const { logout } = useAuth0();
     const [isRetrying, setIsRetrying] = useState(false);
 
@@ -40,6 +41,7 @@ function SyncErrorScreen({ onRetry }: { onRetry: () => Promise<void> }) {
                 <Text maxW="md">
                     Tivemos um problema ao preparar o seu acesso. Tente novamente em alguns instantes.
                 </Text>
+                {message && <Text maxW="md" fontSize="sm" color="gray.400">{message}</Text>}
                 <HStack gap={3}>
                     <Button
                         color='white'
@@ -76,6 +78,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
     // Falha do sync (ex.: Auth0 fora do ar). Sem perfil carregado, mostra a tela de erro
     const [syncFailed, setSyncFailed] = useState(false);
+    const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null);
 
     // Verifica se a página atual é pública teste
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname || '');
@@ -128,6 +131,9 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
             // (se estava nela) e deixa o usuário tentar de novo pela tela de erro.
             setNeedsEmailVerification(false);
             setSyncFailed(true);
+            // Erro de regra (4xx) traz o motivo; erro de rede ou do servidor fica só com o texto genérico
+            const status = error?.response?.status;
+            setSyncErrorMessage(status >= 400 && status < 500 ? (error?.response?.data?.error ?? null) : null);
         }
     };
 
@@ -229,7 +235,7 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
     if (syncFailed && !userProfile) {
         return (
             <Flex direction="column" w="100%" minH="100vh">
-                <SyncErrorScreen onRetry={syncUser} />
+                <SyncErrorScreen onRetry={syncUser} message={syncErrorMessage} />
             </Flex>
         );
     }
@@ -249,8 +255,10 @@ export function LayoutController({ children }: { children: React.ReactNode }) {
             );
         }
 
-        // Usuário Pendente/Novo = Layout Simples
-        if (isOnOnboardingPage || isOnPendingPage || isPublicRoute || status === 'PENDING_ONBOARDING') {
+        // Usuário Pendente/Novo = Layout Simples, só no onboarding, na espera e nas páginas públicas.
+        // Em outra página, fica o carregamento até o redirecionamento: a página pediria dados de
+        // cliente, que a API recusa até a aprovação, e mostraria um erro por um instante
+        if (isOnOnboardingPage || isOnPendingPage || isPublicRoute) {
             return (
                 <Flex direction="column" w="100%" minH="100vh">
                     <HeaderNav onOpen={() => { }} />

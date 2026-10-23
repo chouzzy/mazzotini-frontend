@@ -316,7 +316,7 @@ export default function CompleteProfilePage() {
 
             await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/me/profile`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
-            toaster.create({ title: "Perfil Atualizado!", description: "Os seus dados foram salvos e enviados para análise.", type: "success" });
+            toaster.create({ title: "Perfil Atualizado!", description: "As alterações já estão valendo.", type: "success" });
             await mutate('/api/users/me');
             router.push('/dashboard');
         } catch (error: any) {
@@ -342,7 +342,7 @@ export default function CompleteProfilePage() {
                 <VStack gap={8} align="stretch">
                     <VStack align="start">
                         <Heading as="h1" size="xl">Edite o seu Perfil</Heading>
-                        <Text color="gray.400">Para continuar, precisamos de mais algumas informações cadastrais. Após o envio, o seu perfil passará por uma breve análise da nossa equipa.</Text>
+                        <Text color="gray.400">Mantenha seus dados de contato e endereço atualizados. As alterações valem assim que você salvar.</Text>
                     </VStack>
 
                     {Object.keys(errors).length > 0 && (
@@ -383,9 +383,12 @@ export default function CompleteProfilePage() {
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
                             <Field.Root invalid={!!errors.cpfOrCnpj} required>
                                 <Field.Label>CPF ou CNPJ</Field.Label>
+                                {/* Com o cadastro aprovado, o CPF/CNPJ só muda pelo escritório: é por ele que os
+                                    documentos do Legal One chegam ao cliente. Sem CPF gravado, dá para preencher */}
                                 <Controller name="cpfOrCnpj" control={control} rules={{ required: "CPF ou CNPJ é obrigatório" }} render={({ field }) => (
-                                    <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} />
+                                    <Input bgColor={'gray.700'} value={field.value ? maskCPFOrCNPJ(field.value) : ''} onChange={field.onChange} readOnly={!!userProfile?.cpfOrCnpj} />
                                 )} />
+                                {userProfile?.cpfOrCnpj && <Field.HelperText>Para alterar, fale com o escritório.</Field.HelperText>}
                                 {errors.cpfOrCnpj && <Field.ErrorText>{errors.cpfOrCnpj.message}</Field.ErrorText>}
                             </Field.Root>
                             <Field.Root invalid={!!errors.rg}>
@@ -587,7 +590,7 @@ export default function CompleteProfilePage() {
 
                     <Button type="submit" colorPalette="blue" size="lg" loading={isSubmitting} gap={2} alignSelf="stretch">
                         <Icon as={PiFloppyDisk} />
-                        Salvar e Enviar para Análise
+                        Salvar alterações
                     </Button>
                 </VStack>
             </form>
