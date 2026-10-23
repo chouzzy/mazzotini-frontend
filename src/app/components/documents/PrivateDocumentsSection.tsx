@@ -11,6 +11,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { useApi } from '@/hooks/useApi';
 import { PrivateDocument } from '@/types/api';
+import { toaster } from '@/components/ui/toaster';
 
 const CATEGORY_LABELS: Record<string, string> = {
     CESSAO:                'Cessão',
@@ -27,6 +28,13 @@ function DocRow({ doc }: { doc: PrivateDocument }) {
     const { getAccessTokenSilently } = useAuth0();
 
     const handleDownload = async () => {
+        // Documento que não veio do Legal One (ex.: comprovante enviado pelo cliente e anexado
+        // pelo escritório): o arquivo já tem a URL dele, como na aba de documentos do processo
+        if (!doc.legalOneDocumentId) {
+            if (doc.url) window.open(doc.url, '_blank');
+            else toaster.create({ title: 'Documento indisponível', description: 'Fale com o escritório.', type: 'error' });
+            return;
+        }
         setLoading(true);
         try {
             const token = await getAccessTokenSilently({
@@ -37,8 +45,12 @@ function DocRow({ doc }: { doc: PrivateDocument }) {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             window.open(res.data.url, '_blank');
-        } catch {
-            // silently fail — link inativo
+        } catch (error: any) {
+            toaster.create({
+                title: 'Não foi possível abrir o documento',
+                description: error?.response?.data?.error || 'Tente novamente em alguns instantes.',
+                type: 'error',
+            });
         } finally {
             setLoading(false);
         }

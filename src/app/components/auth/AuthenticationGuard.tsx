@@ -47,7 +47,7 @@ function LoginScreen() {
 //  SUB-COMPONENTE: Ecrã de Verificação de E-mail (LÓGICA CORRIGIDA)
 // ============================================================================
 export function VerifyEmailScreen() {
-    const { getAccessTokenSilently, user } = useAuth0();
+    const { getAccessTokenSilently, user, logout } = useAuth0();
     const [isResending, setIsResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
 
@@ -139,6 +139,15 @@ export function VerifyEmailScreen() {
                 >
                     <Icon as={PiPaperPlaneTilt} />
                     {cooldown > 0 ? `Aguarde (${cooldown}s)` : 'Enviar Novamente'}
+                </Button>
+                {/* Quem entrou com o e-mail errado (ou que não consegue confirmar) troca de conta por aqui */}
+                <Text fontSize="sm" color="gray.400">Entrou com o e-mail errado?</Text>
+                <Button
+                    variant="ghost"
+                    color="gray.300"
+                    onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                >
+                    Sair e entrar com outra conta
                 </Button>
             </VStack>
         </Flex>
