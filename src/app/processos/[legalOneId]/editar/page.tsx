@@ -424,7 +424,7 @@ export default function EditAssetPage() {
                                         <Portal><Select.Positioner><Select.Content>{indexTypesCollection.items.map((item) => (<Select.Item key={item.value} item={item}>{item.label}</Select.Item>))}</Select.Content></Select.Positioner></Portal>
                                     </Select.Root>
                                     <Field.HelperText fontSize="xs" color="gray.500">
-                                        A correção mensal do dia 1 só aplica IPCA e os marcados como correção antiga. Os demais índices são os da calculadora, definidos na aba Cálculo Judicial.
+                                        No dia 1, a correção mensal antiga aplica a taxa adicional sobre o valor atualizado (e o índice, quando ele já saiu, o que é raro nessa data). Nos processos com cálculo, o recálculo do dia 5 substitui esse valor pelo da aba Cálculo Judicial.
                                     </Field.HelperText>
                                 </Field.Root>
                             )} />
