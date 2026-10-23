@@ -3,8 +3,38 @@
  */
 
 import axios from 'axios';
+import { parseBR, parseDisplayDate } from './calculationForm';
 
 export type CalcNotice = { title: string; description: string };
+
+export interface FirstCalculationRow { baseValue: string; baseDate: string; description?: string }
+export interface FirstCalculationInstallment { baseValue: number; baseDate: string; description?: string }
+
+/**
+ * Parcelas do primeiro cálculo, conferidas antes de criar o processo, como na aba Cálculo Judicial:
+ * linha toda vazia é ignorada; valor sem data, data impossível ou valor inválido viram erro. Antes,
+ * a linha incompleta sumia sem aviso (e o processo podia ser criado sem cálculo), e um ano de cinco
+ * dígitos dava erro depois de o processo já existir. A data vem do campo do tipo "date" (AAAA-MM-DD).
+ */
+export function toFirstCalculationInstallments(rows: FirstCalculationRow[]):
+    { ok: true; installments: FirstCalculationInstallment[] } | { ok: false; error: string } {
+    const installments: FirstCalculationInstallment[] = [];
+    for (let i = 0; i < rows.length; i++) {
+        const value  = (rows[i].baseValue ?? '').trim();
+        const date   = (rows[i].baseDate ?? '').trim();
+        if (!value && !date) continue;
+        const amount = parseBR(value);
+        const iso    = parseDisplayDate(date);
+        const error  = !value ? 'informe o valor.'
+            : !date ? 'informe a data completa.'
+            : !Number.isFinite(amount) ? `valor inválido (${value}).`
+            : !iso ? `data inválida (${date}).`
+            : null;
+        if (error) return { ok: false, error: `Parcela ${i + 1} do cálculo: ${error}` };
+        installments.push({ baseValue: amount, baseDate: `${iso}T00:00:00.000Z`, description: rows[i].description || undefined });
+    }
+    return { ok: true, installments };
+}
 
 const apiError = (e: any, fallback: string): string => e?.response?.data?.error || fallback;
 

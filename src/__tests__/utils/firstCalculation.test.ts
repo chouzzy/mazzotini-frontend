@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { saveFirstCalculation } from '@/utils/firstCalculation';
+import { saveFirstCalculation, toFirstCalculationInstallments } from '@/utils/firstCalculation';
 
 const axiosMock = vi.hoisted(() => ({ put: vi.fn(), post: vi.fn() }));
 vi.mock('axios', () => ({ default: axiosMock }));
@@ -54,5 +54,26 @@ describe('saveFirstCalculation (primeiro cálculo no cadastro de processo)', () 
         axiosMock.put.mockRejectedValue(new Error('Network Error'));
 
         expect((await save())?.description).toBe('Erro ao salvar os parâmetros. Configure o cálculo na aba Cálculo Judicial.');
+    });
+});
+
+describe('toFirstCalculationInstallments (parcelas do cadastro, antes de criar o processo)', () => {
+    const row = (baseValue: string, baseDate: string, description = '') => ({ baseValue, baseDate, description });
+
+    it('converte as parcelas e ignora a linha toda vazia', () => {
+        expect(toFirstCalculationInstallments([row('1.000,50', '2026-01-15', 'Parcela A'), row('', '')])).toEqual({
+            ok: true,
+            installments: [{ baseValue: 1000.5, baseDate: '2026-01-15T00:00:00.000Z', description: 'Parcela A' }],
+        });
+    });
+
+    it.each([
+        ['valor sem data (data incompleta no campo)', [row('1.000,00', '')], 'Parcela 1 do cálculo: informe a data completa.'],
+        ['data sem valor', [row('', '2026-01-15')], 'Parcela 1 do cálculo: informe o valor.'],
+        ['valor que não é número', [row('mil reais', '2026-01-15')], 'Parcela 1 do cálculo: valor inválido (mil reais).'],
+        ['ano de cinco dígitos', [row('1.000,00', '20260-01-15')], 'Parcela 1 do cálculo: data inválida (20260-01-15).'],
+        ['linha incompleta depois de uma boa', [row('500,00', '2026-01-15'), row('300,00', '')], 'Parcela 2 do cálculo: informe a data completa.'],
+    ])('recusa %s', (_, rows, error) => {
+        expect(toFirstCalculationInstallments(rows)).toEqual({ ok: false, error });
     });
 });

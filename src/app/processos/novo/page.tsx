@@ -14,8 +14,8 @@ import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
-import { MORATORY_MODES, MoratoryMode, parseBR } from '@/utils/calculationForm';
-import { saveFirstCalculation } from '@/utils/firstCalculation';
+import { MORATORY_MODES, MoratoryMode } from '@/utils/calculationForm';
+import { saveFirstCalculation, toFirstCalculationInstallments } from '@/utils/firstCalculation';
 import { useRouter } from "next/navigation";
 
 // 1. ATUALIZAMOS A INTERFACE DO INVESTIDOR
@@ -337,6 +337,23 @@ export default function CreateAssetPage() {
             return;
         }
 
+        // Parcelas do primeiro cálculo conferidas antes de criar o processo (ver toFirstCalculationInstallments)
+        const checked = toFirstCalculationInstallments(data.calcInstallments);
+        if (!checked.ok) {
+            toaster.create({ title: 'Confira o cálculo', description: checked.error, type: 'error' });
+            return;
+        }
+        const calcInstallments = checked.installments;
+        const negative = [
+            ['taxa dos juros moratórios', data.calcMoratoryRate],
+            ['honorários', data.calcFeesPercentage],
+            ['multa do Art. 523', data.calcPenaltyPercentage],
+        ].find(([, value]) => parseFloat(value || '0') < 0);
+        if (negative) {
+            toaster.create({ title: 'Confira o cálculo', description: `${negative[0]}: o valor não pode ser negativo.`, type: 'error' });
+            return;
+        }
+
         try {
             const token = await getAccessTokenSilently();
             const payload = {
@@ -355,14 +372,6 @@ export default function CreateAssetPage() {
             await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets`, payload, { headers: { Authorization: `Bearer ${token}` } });
 
             // Salva parâmetros de cálculo e dispara primeiro cálculo
-            const calcInstallments = data.calcInstallments
-                .filter(i => i.baseValue && i.baseDate)
-                .map(i => ({
-                    baseValue:   parseBR(i.baseValue),
-                    baseDate:    new Date(i.baseDate + 'T00:00:00Z').toISOString(),
-                    description: i.description || undefined,
-                }));
-
             const calcNotice = calcInstallments.length > 0
                 ? await saveFirstCalculation(data.legalOneId, {
                     correctionIndex:   data.calcCorrectionIndex,
