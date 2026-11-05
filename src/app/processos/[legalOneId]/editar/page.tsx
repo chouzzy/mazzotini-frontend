@@ -10,6 +10,7 @@ import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { PiCaretDownDuotone, PiFloppyDisk, PiPlusCircle, PiTrash, PiInfo } from "react-icons/pi";
+import { PlainNumberInput } from "@/components/ui/PlainNumberInput";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -402,11 +403,11 @@ export default function EditAssetPage() {
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                             <Field.Root invalid={!!errors.acquisitionValue} required>
                                 <Field.Label>Custo de Aquisição (R$)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
+                                <PlainNumberInput bgColor={'gray.700'} borderColor={'gray.700'} step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.originalValue} required>
                                 <Field.Label>Valor do Processo (na data)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
+                                <PlainNumberInput bgColor={'gray.700'} borderColor={'gray.700'} step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.acquisitionDate} required >
                                 <Field.Label>Data Cessão (Mazzotini)</Field.Label>
@@ -430,7 +431,7 @@ export default function EditAssetPage() {
                             )} />
                             <Field.Root invalid={!!errors.contractualIndexRate}>
                                 <Field.Label>Taxa Adicional (% a.m.)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("contractualIndexRate", { valueAsNumber: true })} />
+                                <PlainNumberInput bgColor={'gray.700'} borderColor={'gray.700'} step="0.01" {...register("contractualIndexRate", { valueAsNumber: true })} />
                             </Field.Root>
                         </SimpleGrid>
 

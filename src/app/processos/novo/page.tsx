@@ -10,6 +10,7 @@ import { useFilter } from "@chakra-ui/react";
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { PiPlusCircle, PiMagnifyingGlass, PiTrash, PiInfo, PiFolderOpen, PiHash, PiCalculator } from "react-icons/pi";
+import { PlainNumberInput } from "@/components/ui/PlainNumberInput";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { useState, useMemo, useEffect } from "react";
 import { useApi } from '@/hooks/useApi';
@@ -550,11 +551,11 @@ export default function CreateAssetPage() {
                         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
                             <Field.Root invalid={!!errors.acquisitionValue} required>
                                 <Field.Label>Custo Aquisição Total (R$)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
+                                <PlainNumberInput bgColor={'gray.700'} borderColor={'gray.700'} step="0.01" {...register("acquisitionValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.originalValue} required>
                                 <Field.Label>Valor Original do Processo (R$)</Field.Label>
-                                <Input bgColor={'gray.700'} borderColor={'gray.700'} type="number" step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
+                                <PlainNumberInput bgColor={'gray.700'} borderColor={'gray.700'} step="0.01" {...register("originalValue", { required: true, valueAsNumber: true })} />
                             </Field.Root>
                             <Field.Root invalid={!!errors.acquisitionDate} required>
                                 <Field.Label>Data Cessão (Mazzotini)</Field.Label>
@@ -613,7 +614,7 @@ export default function CreateAssetPage() {
                                 )} />
                                 {calcMoratoryMode === 'PERSONALIZADO' ? (
                                     <HStack gap={2}>
-                                        <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcMoratoryRate")} />
+                                        <PlainNumberInput bgColor="gray.700" borderColor="gray.700" step="0.01" {...register("calcMoratoryRate")} />
                                         <Text fontSize="sm" color="gray.400" flexShrink={0}>% a.m.</Text>
                                     </HStack>
                                 ) : calcMoratoryMode === 'TAXA_LEGAL_TEMA1368' ? (
@@ -624,11 +625,11 @@ export default function CreateAssetPage() {
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>Honorários (%)</Field.Label>
-                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcFeesPercentage")} />
+                                <PlainNumberInput bgColor="gray.700" borderColor="gray.700" step="0.01" {...register("calcFeesPercentage")} />
                             </Field.Root>
                             <Field.Root>
                                 <Field.Label>HO e multa Art. 523 (%)</Field.Label>
-                                <Input bgColor="gray.700" borderColor="gray.700" type="number" step="0.01" {...register("calcPenaltyPercentage")} />
+                                <PlainNumberInput bgColor="gray.700" borderColor="gray.700" step="0.01" {...register("calcPenaltyPercentage")} />
                                 <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                             </Field.Root>
                         </SimpleGrid>
