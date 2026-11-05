@@ -48,7 +48,16 @@ describe('PlainNumberInput', () => {
         await waitFor(() => expect(document.activeElement).toBe(field()));
     });
 
-    it('a rolagem sobre o campo sem foco não tira o foco de outro campo nem o traz para cá', async () => {
+    it('a rolagem da página sobre o campo, com nada em foco, não traz o foco para ele', async () => {
+        inChakra(<PlainNumberInput defaultValue="10" />);
+
+        fireEvent.wheel(field(), { deltaY: 100 });
+        await new Promise(resolve => setTimeout(resolve));
+
+        expect(document.activeElement).toBe(document.body);
+    });
+
+    it('a rolagem sobre o campo sem foco não tira o foco de outro campo', async () => {
         inChakra(<><input aria-label="outro" /><PlainNumberInput defaultValue="10" /></>);
         const other = screen.getByLabelText('outro');
         other.focus();
