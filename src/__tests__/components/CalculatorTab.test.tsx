@@ -511,3 +511,24 @@ describe('CalculatorTab: revisão de 23/10', () => {
         expect(trigger()).toBe(before);
     });
 });
+
+describe('CalculatorTab: campos numéricos só mudam digitando', () => {
+    it.each(['moratoryRate', 'compensatoryRate', 'feesPercentage', 'penaltyPercentage', 'multaPercentage'])(
+        '%s ignora a seta e a rolagem',
+        name => {
+            api.params = { ...savedSingle(), feesMode: 'PERCENTUAL', feesPercentage: 10 };
+            render(tab());
+            const field = document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+
+            expect(field.type).toBe('number');
+            expect(field.min).toBe('0');
+            expect(fireEvent.keyDown(field, { key: 'ArrowDown' })).toBe(false);
+            expect(fireEvent.keyDown(field, { key: 'ArrowUp' })).toBe(false);
+
+            field.focus();
+            expect(document.activeElement).toBe(field);
+            fireEvent.wheel(field, { deltaY: 100 });
+            expect(document.activeElement).not.toBe(field);
+        },
+    );
+});

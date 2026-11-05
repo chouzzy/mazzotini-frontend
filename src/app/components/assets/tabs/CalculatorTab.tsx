@@ -13,6 +13,7 @@ import {
 } from 'react-icons/pi';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
+import { PlainNumberInput } from '@/components/ui/PlainNumberInput';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
@@ -657,7 +658,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             <Field.Label fontSize="sm">
                                                 Taxa ({RATE_UNITS.find(u => u.value === moratoryRateUnit)?.label ?? '% a.m.'})
                                             </Field.Label>
-                                            <Input {...register('moratoryRate')} type="number" min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" />
+                                            <PlainNumberInput {...register('moratoryRate')} min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" />
                                         </Field.Root>
                                         <Field.Root flex="none">
                                             <Field.Label fontSize="sm">Unidade</Field.Label>
@@ -689,7 +690,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Field.Label fontSize="sm">
                                             Taxa ({RATE_UNITS.find(u => u.value === compensatoryRateUnit)?.label ?? '% a.m.'}) — 0 = não aplicar
                                         </Field.Label>
-                                        <Input {...register('compensatoryRate')} type="number" min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                        <PlainNumberInput {...register('compensatoryRate')} min={0} step="0.0001" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                     </Field.Root>
                                     <Field.Root flex="none">
                                         <Field.Label fontSize="sm">Unidade</Field.Label>
@@ -764,7 +765,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                             )} />
                                         ) : (
                                             <Flex align="center" border="1px solid" borderColor="gray.600" borderRadius="md" overflow="hidden" bg="gray.900">
-                                                <Input {...register('feesPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" border="none" pr={3} _focus={{ boxShadow: 'none' }} placeholder="10" />
+                                                <PlainNumberInput {...register('feesPercentage')} min={0} step="0.01" size="sm" bg="gray.900" border="none" pr={3} _focus={{ boxShadow: 'none' }} placeholder="10" />
                                                 <Box px={2} bg="gray.700" borderLeft="1px solid" borderColor="gray.600" alignSelf="stretch" display="flex" alignItems="center">
                                                     <Text fontSize="xs" color="gray.300" fontWeight="semibold">%</Text>
                                                 </Box>
@@ -773,12 +774,12 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">HO e multa Art. 523 (%)</Field.Label>
-                                        <Input {...register('penaltyPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
+                                        <PlainNumberInput {...register('penaltyPercentage')} min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" />
                                         <Field.HelperText fontSize="xs" color="gray.500">10% = só a multa; 20% = multa e honorários de 10% cada</Field.HelperText>
                                     </Field.Root>
                                     <Field.Root flex={1} minW="160px">
                                         <Field.Label fontSize="sm">Multa <Text as="span" color="gray.500" fontSize="xs">(% sobre valor corrigido)</Text></Field.Label>
-                                        <Input {...register('multaPercentage')} type="number" min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
+                                        <PlainNumberInput {...register('multaPercentage')} min={0} step="0.01" size="sm" bg="gray.900" borderColor="gray.600" placeholder="0" />
                                         <Field.HelperText fontSize="xs" color="gray.500">Só das parcelas vencidas: como no Dr. Calc, a parcela com data no último dia do mês de referência ou depois fica sem multa</Field.HelperText>
                                     </Field.Root>
                                 </HStack>
