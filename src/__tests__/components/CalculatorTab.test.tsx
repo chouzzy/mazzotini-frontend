@@ -521,10 +521,12 @@ describe('CalculatorTab: campos numéricos só mudam digitando', () => {
             const field = document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
 
             expect(field.type).toBe('number');
+            expect(field.min).toBe('0');
             expect(fireEvent.keyDown(field, { key: 'ArrowDown' })).toBe(false);
             expect(fireEvent.keyDown(field, { key: 'ArrowUp' })).toBe(false);
 
             field.focus();
+            expect(document.activeElement).toBe(field);
             fireEvent.wheel(field, { deltaY: 100 });
             expect(document.activeElement).not.toBe(field);
         },
