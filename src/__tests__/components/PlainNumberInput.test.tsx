@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { vi, describe, it, expect } from 'vitest';
@@ -8,14 +8,14 @@ import { PlainNumberInput } from '@/components/ui/PlainNumberInput';
 const inChakra = (node: React.ReactNode) => render(<ChakraProvider value={defaultSystem}>{node}</ChakraProvider>);
 const field = () => screen.getByRole('spinbutton') as HTMLInputElement;
 
-// O fireEvent devolve false quando o evento foi cancelado
+// O fireEvent devolve false quando o evento foi cancelado. O jsdom não muda o valor pela seta nem
+// pela rolagem: o que estes testes conferem é o que impede o navegador de mudar
 describe('PlainNumberInput', () => {
     it('cancela a seta para cima e para baixo', () => {
         inChakra(<PlainNumberInput defaultValue="10" step="0.01" />);
 
         expect(fireEvent.keyDown(field(), { key: 'ArrowDown' })).toBe(false);
         expect(fireEvent.keyDown(field(), { key: 'ArrowUp' })).toBe(false);
-        expect(field().value).toBe('10');
     });
 
     it.each(['0', ',', '.', '-', 'Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'])(
@@ -27,23 +27,46 @@ describe('PlainNumberInput', () => {
         },
     );
 
-    it('a rolagem tira o foco do campo, para o navegador não mudar o valor', () => {
+    it('esconde o botão de dentro do campo', () => {
+        inChakra(<PlainNumberInput defaultValue="10" />);
+
+        const css = Array.from(document.querySelectorAll('style')).map(s => s.textContent).join('');
+        const cssClass = field().className.split(' ').find(c => c.startsWith('css-'));
+        expect(css).toContain(`.${cssClass}::-webkit-inner-spin-button`);
+        expect(css).toContain(`.${cssClass}::-webkit-outer-spin-button`);
+        expect(css).toMatch(new RegExp(`\\.${cssClass}\\{[^}]*appearance:textfield`));
+    });
+
+    it('a rolagem tira o foco do campo, para o navegador não mudar o valor, e depois o devolve', async () => {
         inChakra(<PlainNumberInput defaultValue="10" />);
         field().focus();
         expect(document.activeElement).toBe(field());
 
         fireEvent.wheel(field(), { deltaY: 100 });
-
         expect(document.activeElement).not.toBe(field());
-        expect(field().value).toBe('10');
+
+        await waitFor(() => expect(document.activeElement).toBe(field()));
     });
 
-    it('a rolagem sobre o campo sem foco não tira o foco de outro campo', () => {
+    it('a rolagem sobre o campo sem foco não tira o foco de outro campo nem o traz para cá', async () => {
         inChakra(<><input aria-label="outro" /><PlainNumberInput defaultValue="10" /></>);
         const other = screen.getByLabelText('outro');
         other.focus();
 
         fireEvent.wheel(field(), { deltaY: 100 });
+        await new Promise(resolve => setTimeout(resolve));
+
+        expect(document.activeElement).toBe(other);
+    });
+
+    it('não devolve o foco se ele já foi para outro campo', async () => {
+        inChakra(<><input aria-label="outro" /><PlainNumberInput defaultValue="10" /></>);
+        const other = screen.getByLabelText('outro');
+        field().focus();
+
+        fireEvent.wheel(field(), { deltaY: 100 });
+        other.focus();
+        await new Promise(resolve => setTimeout(resolve));
 
         expect(document.activeElement).toBe(other);
     });
