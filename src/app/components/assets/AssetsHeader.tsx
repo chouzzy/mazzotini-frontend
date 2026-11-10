@@ -14,7 +14,8 @@ import {
     Box,
 } from '@chakra-ui/react';
 // 1. Importar o novo ícone e o router
-import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone } from 'react-icons/pi';
+import { PiWallet, PiScales, PiChartLineUp, PiArrowsClockwise, PiPencilSimple, PiGavelDuotone, PiIdentificationCardDuotone, PiFolderSimpleUser } from 'react-icons/pi';
+import { SwitchFolderDialog } from './SwitchFolderDialog';
 import { DetailedCreditAsset } from '@/app/processos/[legalOneId]/page';
 import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -46,6 +47,8 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
     // Busca o perfil para saber se é Admin ou Operador
     const { data: myProfile } = useApi<any>('/api/users/me');
     const isAdminOrOperator = myProfile?.role === 'ADMIN' || myProfile?.role === 'OPERATOR';
+    const isAdmin = myProfile?.role === 'ADMIN';
+    const [isSwitchOpen, setIsSwitchOpen] = useState(false);
 
     // Enquanto o perfil não chega, trata como cliente: é o padrão seguro, pois
     // um flash de "Falha no Legal One" para o investidor é pior que o inverso.
@@ -145,6 +148,20 @@ export function AssetHeader({ asset }: AssetHeaderProps) {
                                 <Icon as={PiArrowsClockwise} />
                                 Sincronizar<Box as="span" display={{ base: 'none', md: 'inline' }}> Andamentos</Box>
                             </Button>
+                        </>
+                    )}
+
+                    {isAdmin && !!asset.legalOneId && (
+                        <>
+                            <Button onClick={() => setIsSwitchOpen(true)} variant="outline" gap={2}>
+                                <Icon as={PiFolderSimpleUser} />
+                                Trocar pasta
+                            </Button>
+                            <SwitchFolderDialog
+                                open={isSwitchOpen}
+                                onClose={() => setIsSwitchOpen(false)}
+                                legalOneId={asset.legalOneId}
+                            />
                         </>
                     )}
 
