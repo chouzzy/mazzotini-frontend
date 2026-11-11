@@ -35,6 +35,7 @@ interface UserManagementInfo {
     associateSequence?: number | null;
     referredBySequence?: number | null;
     approvedAt?: string | null;
+    approvedByName?: string | null;
     createdAt?: string | null;
 }
 
@@ -181,13 +182,14 @@ export default function UserManagementPage() {
             if (usersToExport.length === 0) return;
 
             // Preparamos os cabeçalhos e as linhas. Separador = ';' para o Excel Brasileiro/Português
-            const headers = ['Nome', 'E-mail', 'Permissões', 'Associado', 'Aprovado em', 'Status', 'Último Login'];
+            const headers = ['Nome', 'E-mail', 'Permissões', 'Associado', 'Aprovado em', 'Aprovado por', 'Status', 'Último Login'];
             const rows = usersToExport.map((u: UserManagementInfo) => [
                 `"${u.name}"`,
                 `"${u.email}"`,
                 `"${u.roles.map(r => translateRole(r)).join(', ')}"`,
                 `"${u.associateName || '-'}"`,
                 `"${u.approvedAt ? new Date(u.approvedAt).toLocaleDateString('pt-BR') : '-'}"`,
+                `"${u.approvedByName || '-'}"`,
                 `"${u.status === 'ACTIVE' ? 'Ativo' : u.status === 'PENDING_REVIEW' ? 'Pendente Revisão' : 'Pendente Cadastro'}"`,
                 `"${u.email.includes('placeholder') ? 'Importado' : (u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Nunca')}"`
             ]);
@@ -431,9 +433,16 @@ export default function UserManagementPage() {
                                                 </Table.Cell>
                                                 <Table.Cell px={{ base: 2, md: 4 }} py={{ base: 3, md: 4 }}>
                                                     {u.approvedAt ? (
-                                                        <Text fontSize="sm" color="green.300">
-                                                            {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
-                                                        </Text>
+                                                        <Box>
+                                                            <Text fontSize="sm" color="green.300">
+                                                                {new Date(u.approvedAt).toLocaleDateString('pt-BR')}
+                                                            </Text>
+                                                            {u.approvedByName && (
+                                                                <Text fontSize="xs" color="gray.400">
+                                                                    por {u.approvedByName}
+                                                                </Text>
+                                                            )}
+                                                        </Box>
                                                     ) : u.createdAt ? (
                                                         <Text fontSize="sm" color="gray.400">
                                                             {new Date(u.createdAt).toLocaleDateString('pt-BR')}
