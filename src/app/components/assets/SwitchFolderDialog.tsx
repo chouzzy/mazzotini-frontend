@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Box, Button, Dialog, Flex, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Badge, Box, Button, Checkbox, Dialog, Flex, Spinner, Text, VStack } from '@chakra-ui/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,8 @@ import { toaster } from '@/components/ui/toaster';
  * Serve para o número de processo que está em mais de uma pasta no Legal One, quando o portal
  * ficou com a pasta errada (em geral, a baixada). Mostra as pastas, a prévia do que muda e só
  * troca depois da confirmação. O cálculo, o histórico, os andamentos, os documentos e os
- * clientes ficam no processo.
+ * clientes ficam no processo. Na prévia, o admin desmarca os envolvidos da pasta nova que
+ * não são clientes (o advogado cadastrado como cliente no Legal One, por exemplo).
  */
 
 export interface FolderOption {
@@ -27,6 +28,14 @@ export interface FolderOption {
     inPortal: boolean;
 }
 
+/** Envolvido da pasta nova que ainda não é cliente do processo. */
+export interface SwitchFolderCandidate {
+    contactId: number;
+    name: string;
+    position: string | null;
+    type: string;
+}
+
 export interface SwitchFolderResult {
     dryRun: boolean;
     processNumber: string;
@@ -34,6 +43,9 @@ export interface SwitchFolderResult {
     to: { legalOneId: number; folder: string; active: boolean };
     kept: { investments: number; updates: number; documents: number; calculationLogs: number; hasCalculation: boolean };
     newClients: string[];
+    /** Só nas versões do servidor que aceitam tirar envolvidos */
+    candidates?: SwitchFolderCandidate[];
+    excluded?: number;
     syncError?: string;
 }
 
@@ -54,6 +66,7 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
     const [loadError, setLoadError] = useState<string | null>(null);
     const [selected, setSelected] = useState<number | null>(null);
     const [preview, setPreview] = useState<SwitchFolderResult | null>(null);
+    const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
     const [busy, setBusy] = useState(false);
 
     const authHeaders = async () => {
@@ -63,7 +76,7 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
 
     useEffect(() => {
         if (!open) return;
-        setOptions(null); setLoadError(null); setSelected(null); setPreview(null);
+        setOptions(null); setLoadError(null); setSelected(null); setPreview(null); setExcludedIds(new Set());
         let cancelled = false;
         (async () => {
             try {
@@ -78,7 +91,15 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, legalOneId]);
 
-    const choose = (id: number) => { setSelected(id); setPreview(null); };
+    const choose = (id: number) => { setSelected(id); setPreview(null); setExcludedIds(new Set()); };
+
+    const toggleCandidate = (contactId: number, keep: boolean) => {
+        setExcludedIds(prev => {
+            const next = new Set(prev);
+            if (keep) next.delete(contactId); else next.add(contactId);
+            return next;
+        });
+    };
 
     const runPreview = async () => {
         if (selected === null) return;
@@ -89,6 +110,7 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
                 { targetLegalOneId: selected, dryRun: true },
                 { headers: await authHeaders() });
             setPreview(data);
+            setExcludedIds(new Set());
         } catch (err) {
             toaster.create({ title: 'Não foi possível montar a prévia', description: errorMessage(err, 'Tente de novo.'), type: 'error' });
         } finally {
@@ -102,7 +124,9 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
         try {
             const { data } = await axios.post<SwitchFolderResult>(
                 `${apiBaseUrl}/api/assets/${legalOneId}/switch-folder`,
-                { targetLegalOneId: preview.to.legalOneId },
+                excludedIds.size > 0
+                    ? { targetLegalOneId: preview.to.legalOneId, excludeContactIds: [...excludedIds] }
+                    : { targetLegalOneId: preview.to.legalOneId },
                 { headers: await authHeaders() });
             toaster.create({
                 title: 'Pasta trocada',
@@ -121,6 +145,8 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
         }
     };
 
+    const candidates = preview?.candidates;
+    const keptCandidates = candidates?.filter(c => !excludedIds.has(c.contactId)) ?? [];
     const others = options?.filter(o => !o.isCurrent) ?? [];
     const current = options?.find(o => o.isCurrent);
 
@@ -195,11 +221,37 @@ export function SwitchFolderDialog({ open, onClose, legalOneId }: SwitchFolderDi
                                             Continuam no processo: {preview.kept.investments} cliente(s), {preview.kept.updates} andamento(s), {preview.kept.documents} documento(s)
                                             {preview.kept.hasCalculation ? ', o cálculo' : ''} e {preview.kept.calculationLogs} registro(s) no histórico de cálculos.
                                         </Text>
-                                        <Text>
-                                            {preview.newClients.length > 0
-                                                ? `Entram como clientes, sem associado: ${preview.newClients.join(', ')}.`
-                                                : 'Nenhum cliente novo: os envolvidos da pasta nova já estão no processo.'}
-                                        </Text>
+                                        {candidates && candidates.length > 0 ? (
+                                            <Box>
+                                                <Text>
+                                                    Envolvidos da pasta nova que ainda não estão no processo. Os marcados entram como clientes, sem associado;
+                                                    desmarque quem não é cliente (advogado, parte contrária).
+                                                </Text>
+                                                <VStack align="stretch" gap={1} mt={2} role="group" aria-label="Envolvidos que entram como clientes">
+                                                    {candidates.map(c => (
+                                                        <Checkbox.Root
+                                                            key={c.contactId}
+                                                            checked={!excludedIds.has(c.contactId)}
+                                                            onCheckedChange={(d) => toggleCandidate(c.contactId, Boolean(d.checked))}
+                                                            disabled={busy}
+                                                        >
+                                                            <Checkbox.HiddenInput />
+                                                            <Checkbox.Control bgColor={'gray.100'} color={'black'} />
+                                                            <Checkbox.Label>{c.name}{c.position ? ` (${c.position})` : ''}</Checkbox.Label>
+                                                        </Checkbox.Root>
+                                                    ))}
+                                                </VStack>
+                                                {keptCandidates.length === 0 && (
+                                                    <Text mt={2} color="gray.400">Nenhum envolvido entra: o processo fica só com os clientes de hoje.</Text>
+                                                )}
+                                            </Box>
+                                        ) : (
+                                            <Text>
+                                                {preview.newClients.length > 0
+                                                    ? `Entram como clientes, sem associado: ${preview.newClients.join(', ')}.`
+                                                    : 'Nenhum cliente novo: os envolvidos da pasta nova já estão no processo.'}
+                                            </Text>
+                                        )}
                                         <Text>Depois, a sincronização traz os andamentos e documentos da pasta nova e os recursos e incidentes dela.</Text>
                                     </VStack>
                                 </Box>
