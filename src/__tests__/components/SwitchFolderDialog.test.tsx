@@ -26,7 +26,12 @@ const PREVIEW = {
     from: { legalOneId: 100, folder: 'Proc-0000100' },
     to: { legalOneId: 200, folder: 'Proc-0000200', active: true },
     kept: { investments: 2, updates: 5, documents: 3, calculationLogs: 4, hasCalculation: true },
-    newClients: ['Cliente Novo'],
+    newClients: ['Cliente Novo', 'Advogado Fictício'],
+    candidates: [
+        { contactId: 2, name: 'Cliente Novo', position: 'Exequente', type: 'Customer' },
+        { contactId: 5, name: 'Advogado Fictício', position: null, type: 'Customer' },
+    ],
+    excluded: 0,
 };
 
 const open = () => {
@@ -59,7 +64,8 @@ describe('SwitchFolderDialog', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Ver o que muda' }));
 
         expect(await screen.findByText(/Continuam no processo: 2 cliente\(s\), 5 andamento\(s\), 3 documento\(s\), o cálculo e 4 registro/)).toBeInTheDocument();
-        expect(screen.getByText(/Entram como clientes, sem associado: Cliente Novo/)).toBeInTheDocument();
+        expect(screen.getByRole('checkbox', { name: 'Cliente Novo (Exequente)' })).toBeChecked();
+        expect(screen.getByRole('checkbox', { name: 'Advogado Fictício' })).toBeChecked();
         expect(axiosMock.post).toHaveBeenCalledTimes(1);
         expect(axiosMock.post.mock.calls[0][1]).toEqual({ targetLegalOneId: 200, dryRun: true });
 
@@ -71,6 +77,34 @@ describe('SwitchFolderDialog', () => {
         expect(axiosMock.post.mock.calls[1][1]).toEqual({ targetLegalOneId: 200 });
         expect(onClose).toHaveBeenCalled();
         expect(toasts.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+    });
+
+    it('o envolvido desmarcado vai na lista dos que ficam de fora', async () => {
+        open();
+        fireEvent.click(await screen.findByRole('button', { name: /Proc-0000200/ }));
+        axiosMock.post.mockResolvedValueOnce({ data: PREVIEW });
+        fireEvent.click(screen.getByRole('button', { name: 'Ver o que muda' }));
+
+        const advogado = await screen.findByRole('checkbox', { name: 'Advogado Fictício' });
+        fireEvent.click(advogado);
+        await waitFor(() => expect(advogado).not.toBeChecked());
+
+        axiosMock.post.mockResolvedValueOnce({ data: { ...PREVIEW, dryRun: false, newClients: ['Cliente Novo'], excluded: 1 } });
+        fireEvent.click(screen.getByRole('button', { name: 'Trocar pasta' }));
+
+        await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/processos/200'));
+        expect(axiosMock.post.mock.calls[1][1]).toEqual({ targetLegalOneId: 200, excludeContactIds: [5] });
+    });
+
+    it('com o servidor antigo, sem a lista de envolvidos, mostra os nomes como antes', async () => {
+        open();
+        fireEvent.click(await screen.findByRole('button', { name: /Proc-0000200/ }));
+        const { candidates, excluded, ...antigo } = PREVIEW;
+        axiosMock.post.mockResolvedValueOnce({ data: { ...antigo, newClients: ['Cliente Novo'] } });
+        fireEvent.click(screen.getByRole('button', { name: 'Ver o que muda' }));
+
+        expect(await screen.findByText(/Entram como clientes, sem associado: Cliente Novo/)).toBeInTheDocument();
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     });
 
     it('a recusa do servidor aparece e nada muda de endereço', async () => {
