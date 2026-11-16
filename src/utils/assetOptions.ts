@@ -10,6 +10,10 @@
  * Os processos que já estão na carteira chegam junto com o usuário, dentro de cada
  * investimento. Por isso entram aqui primeiro: a linha mostra o próprio processo
  * mesmo que a lista geral ainda não tenha carregado.
+ *
+ * Desde 16/11 a lista geral vem de `/api/assets/options` (só id, número e apelido):
+ * a lista completa passava do tempo limite com a base inteira, e "Adicionar Processo"
+ * ficava desabilitado.
  */
 
 import type { AssetSummary } from '@/types/api';

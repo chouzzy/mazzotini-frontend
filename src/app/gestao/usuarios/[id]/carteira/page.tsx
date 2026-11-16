@@ -18,7 +18,7 @@ import { useParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
 import { createListCollection, useFilter, Combobox, Portal } from "@chakra-ui/react";
-import { PaginatedAssetsResponse } from "@/types/api";
+import { AssetOptionsResponse } from "@/types/api";
 import { AssetOption, buildAssetOptions } from "@/utils/assetOptions";
 
 // ============================================================================
@@ -275,9 +275,10 @@ export default function UserCarteiraPage() {
     const [investmentSearch, setInvestmentSearch] = useState('');
 
     const { data: userData, isLoading: isLoadingUser, error: userError, mutate: mutateUser } = useApi<any>(`/api/management/users/${userId}`);
-    // Lista de todos os processos: só é necessária para adicionar um processo novo.
-    // É pesada, então a tela não espera por ela.
-    const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<PaginatedAssetsResponse>('/api/assets?limit=9999');
+    // Lista de todos os processos: só é necessária para adicionar um processo novo, então a
+    // tela não espera por ela. Vem da lista curta (número e apelido), porque a lista completa
+    // (`/api/assets?limit=9999`) passou do tempo limite com a base inteira.
+    const { data: allAssetsResponse, isLoading: isLoadingAssets, error: assetsError } = useApi<AssetOptionsResponse>('/api/assets/options');
     const { data: associatesRaw, isLoading: isLoadingAssociates, error: associatesError } = useApi<AssociateOption[]>('/api/users/associates');
     // O próprio cliente não pode ser o associado dos processos dele (o servidor recusa)
     const associateOptions: AssociateOption[] = useMemo(
