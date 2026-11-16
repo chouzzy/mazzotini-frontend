@@ -85,3 +85,8 @@ export interface PaginatedAssetsResponse {
         totalPages: number;
     };
 }
+
+/** Lista curta de todos os processos (`GET /api/assets/options`, só admin e operador), para os seletores. */
+export interface AssetOptionsResponse {
+    items: Pick<AssetSummary, 'id' | 'legalOneId' | 'processNumber' | 'nickname'>[];
+}

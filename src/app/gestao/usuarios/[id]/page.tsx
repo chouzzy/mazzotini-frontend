@@ -14,7 +14,7 @@ import { useRouter, useParams } from "next/navigation";
 import { maskCPFOrCNPJ, maskPhone, unmask } from "@/utils/masks";
 import { useApi } from "@/hooks/useApi";
 import Link from 'next/link';
-import { UserStagingDocument } from '@/types/api';
+import { AssetOptionsResponse, UserStagingDocument } from '@/types/api';
 import { AddressBlock } from "@/app/components/management/AddressBlock";
 import { InvestmentsSummary } from "@/app/components/management/InvestmentsSummary";
 import { ReferralDialog } from "@/app/components/management/ReferralDialog";
@@ -119,7 +119,8 @@ const SECTION_CATEGORIES = createListCollection({
 function AdminStagingDocumentsSection({ userId }: { userId: string }) {
     const { getAccessTokenSilently } = useAuth0();
     const { data, isLoading, mutate } = useApi<{ user: any; docs: UserStagingDocument[] }>(`/api/management/users/${userId}/staging-documents`);
-    const { data: userAssets, isLoading: isLoadingAssets } = useApi<{ items: { legalOneId: number; processNumber: string; nickname?: string | null }[] }>(`/api/assets?limit=999&page=1`);
+    // Todos os processos, pela lista curta: a lista completa limitada a 999 deixava de fora o resto da base
+    const { data: userAssets, isLoading: isLoadingAssets } = useApi<AssetOptionsResponse>(`/api/assets/options`);
 
     const [selectedDoc, setSelectedDoc]           = useState<UserStagingDocument | null>(null);
     const [selectedAsset, setSelectedAsset]       = useState<string>('');
