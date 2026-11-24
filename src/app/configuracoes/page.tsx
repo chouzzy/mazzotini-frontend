@@ -49,6 +49,23 @@ interface BackfillStatus {
     currentProcess: string | null;
     startedAt: string | null;
     finishedAt: string | null;
+    /** Números pedidos no "Processo específico". */
+    requested?: string[];
+    /** Números pedidos que não existem no portal. */
+    notFound?: string[];
+    /** Andamento do "Processo específico", que roda à parte do "Vincular todos". */
+    targeted?: BackfillStatus;
+}
+
+type BackfillScope = 'full' | 'targeted';
+
+interface SyncContractsStatus {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    startedAt: string | null;
+    finishedAt: string | null;
+    lastResult: { documentsImported: number; documentsSkipped: number; errors: string[] } | null;
+    lastError: string | null;
+    alreadyRunning?: boolean;
 }
 
 // ─── Toggle Card ─────────────────────────────────────────────────────────────
@@ -121,19 +138,42 @@ function ConfiguracoesContent() {
     const [retryingEnrichments, setRetryingEnrichments] = useState(false);
     const [backfillStatus, setBackfillStatus] = useState<BackfillStatus | null>(null);
     const [backfillTarget, setBackfillTarget] = useState('');
+    // Qual vinculação o painel acompanha: o "Vincular todos" ou o "Processo específico".
+    const [backfillScope, setBackfillScope] = useState<BackfillScope>('full');
+    const backfillScopeRef = useRef<BackfillScope>('full');
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const syncPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const authHeaders = async () => {
+        const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
+        return { Authorization: `Bearer ${token}` };
+    };
+
+    const chooseBackfillScope = (scope: BackfillScope) => {
+        backfillScopeRef.current = scope;
+        setBackfillScope(scope);
+    };
+
+    /** O andamento da vinculação que o painel acompanha. */
+    const pickBackfillState = (data: BackfillStatus): BackfillStatus | null =>
+        backfillScopeRef.current === 'targeted' ? (data.targeted ?? null) : data;
+
+    const fetchBackfillStatus = async () => {
+        const res = await axios.get<BackfillStatus>(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors/status`,
+            { headers: await authHeaders() }
+        );
+        return res.data;
+    };
 
     const startPolling = () => {
         if (pollRef.current) return;
         pollRef.current = setInterval(async () => {
             try {
-                const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-                const res = await axios.get<BackfillStatus>(
-                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors/status`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                setBackfillStatus(res.data);
-                if (res.data.status !== 'running') {
+                const state = pickBackfillState(await fetchBackfillStatus());
+                if (!state) return;
+                setBackfillStatus(state);
+                if (state.status !== 'running') {
                     clearInterval(pollRef.current!);
                     pollRef.current = null;
                     setBackfillingInvestors(false);
@@ -142,7 +182,89 @@ function ConfiguracoesContent() {
         }, 3000);
     };
 
-    useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+    const applySyncStatus = (data: SyncContractsStatus) => {
+        if (data.lastResult) {
+            setSyncResult({
+                imported: data.lastResult.documentsImported,
+                skipped: data.lastResult.documentsSkipped,
+                errors: data.lastResult.errors,
+            });
+        }
+    };
+
+    const stopSyncPolling = () => {
+        if (syncPollRef.current) clearInterval(syncPollRef.current);
+        syncPollRef.current = null;
+    };
+
+    const startSyncPolling = () => {
+        if (syncPollRef.current) return;
+        syncPollRef.current = setInterval(async () => {
+            try {
+                const res = await axios.get<SyncContractsStatus>(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/sync-fee-contracts/status`,
+                    { headers: await authHeaders() }
+                );
+                const data = res.data;
+                if (data.status === 'running') return;
+                stopSyncPolling();
+                setSyncingContracts(false);
+                applySyncStatus(data);
+                if (data.status === 'completed' && data.lastResult) {
+                    toaster.create({
+                        title: 'Sincronização concluída!',
+                        description: `${data.lastResult.documentsImported} importado(s), ${data.lastResult.documentsSkipped} ignorado(s).`,
+                        type: 'success',
+                    });
+                } else if (data.status === 'error') {
+                    toaster.create({
+                        title: 'A sincronização falhou.',
+                        description: data.lastError ?? 'Tente de novo em alguns minutos.',
+                        type: 'error',
+                    });
+                }
+            } catch { /* silencia erros de polling */ }
+        }, 3000);
+    };
+
+    // Ao abrir a tela, retoma o acompanhamento do que já está rodando no servidor.
+    useEffect(() => {
+        if (myProfile?.role !== 'ADMIN') return;
+        (async () => {
+            try {
+                const data = await fetchBackfillStatus();
+                if (data.targeted?.status === 'running') {
+                    chooseBackfillScope('targeted');
+                    setBackfillStatus(data.targeted);
+                    setBackfillingInvestors(true);
+                    startPolling();
+                } else if (data.status === 'running') {
+                    chooseBackfillScope('full');
+                    setBackfillStatus(data);
+                    setBackfillingInvestors(true);
+                    startPolling();
+                }
+            } catch { /* sem o status, a tela segue normal */ }
+            try {
+                const res = await axios.get<SyncContractsStatus>(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/sync-fee-contracts/status`,
+                    { headers: await authHeaders() }
+                );
+                if (res.data.status === 'running') {
+                    setSyncingContracts(true);
+                    startSyncPolling();
+                } else {
+                    applySyncStatus(res.data);
+                }
+            } catch { /* backend antigo, sem a rota de status */ }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myProfile?.role]);
+
+    useEffect(() => () => {
+        if (pollRef.current) clearInterval(pollRef.current);
+        if (syncPollRef.current) clearInterval(syncPollRef.current);
+    }, []);
 
     const handleSettingChange = async (field: keyof SystemSettings, value: boolean) => {
         setSavingSettings(true);
@@ -205,22 +327,36 @@ function ConfiguracoesContent() {
     const handleBackfillInvestors = async () => {
         setBackfillingInvestors(true);
         setBackfillStatus(null);
+        const target = backfillTarget.trim();
+        const previousScope = backfillScopeRef.current;
+        chooseBackfillScope(target ? 'targeted' : 'full');
         try {
-            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-            const target = backfillTarget.trim();
             const body = target ? { processNumbers: [target] } : {};
             await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/backfill-investors`,
                 body,
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: await authHeaders() }
             );
             toaster.create({
-                title: target ? `Backfill iniciado para ${target}` : 'Backfill iniciado!',
+                title: target ? `Vinculação iniciada para ${target}` : 'Vinculação de todos os processos iniciada!',
                 type: 'success',
             });
             startPolling();
-        } catch {
-            toaster.create({ title: 'Erro ao iniciar backfill.', type: 'error' });
+        } catch (err: any) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.error;
+            if (status === 409) {
+                // Já está rodando: mostra o andamento dessa execução em vez de um erro.
+                toaster.create({ title: message ?? 'Essa vinculação já está em andamento.', type: 'warning' });
+                startPolling();
+                return;
+            }
+            chooseBackfillScope(previousScope);
+            toaster.create({
+                title: 'Não foi possível iniciar a vinculação.',
+                description: message ?? 'Tente de novo em alguns minutos.',
+                type: 'error',
+            });
             setBackfillingInvestors(false);
         }
     };
@@ -229,21 +365,36 @@ function ConfiguracoesContent() {
         setSyncingContracts(true);
         setSyncResult(null);
         try {
-            const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-            const res = await axios.post(
+            const res = await axios.post<SyncContractsStatus & { documentsImported?: number; documentsSkipped?: number; errors?: string[] }>(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assets/sync-fee-contracts`,
                 {},
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: await authHeaders() }
             );
-            setSyncResult({
-                imported: res.data.documentsImported ?? 0,
-                skipped:  res.data.documentsSkipped  ?? 0,
-                errors:   res.data.errors            ?? [],
+            // Backend antigo: responde o resultado direto, sem rodar em segundo plano.
+            if (res.data.status === undefined && res.data.documentsImported !== undefined) {
+                setSyncResult({
+                    imported: res.data.documentsImported ?? 0,
+                    skipped: res.data.documentsSkipped ?? 0,
+                    errors: res.data.errors ?? [],
+                });
+                toaster.create({ title: 'Sincronização concluída!', type: 'success' });
+                setSyncingContracts(false);
+                return;
+            }
+            toaster.create({
+                title: res.data.alreadyRunning
+                    ? 'A sincronização já estava em andamento.'
+                    : 'Sincronização iniciada.',
+                description: 'Ela roda no servidor; pode levar alguns minutos. Você pode sair desta tela.',
+                type: 'info',
             });
-            toaster.create({ title: 'Sincronização concluída!', type: 'success' });
-        } catch {
-            toaster.create({ title: 'Erro ao sincronizar os documentos.', type: 'error' });
-        } finally {
+            startSyncPolling();
+        } catch (err: any) {
+            toaster.create({
+                title: 'Erro ao sincronizar os documentos.',
+                description: err?.response?.data?.error,
+                type: 'error',
+            });
             setSyncingContracts(false);
         }
     };
@@ -515,7 +666,7 @@ function ConfiguracoesContent() {
                                     Processo específico (opcional)
                                 </Field.Label>
                                 <Input
-                                    placeholder="Ex: 1017936-75.2024.8.26.0100"
+                                    placeholder="Ex: 0001234-56.2020.8.26.0100"
                                     value={backfillTarget}
                                     onChange={e => setBackfillTarget(e.target.value)}
                                     bgColor="gray.800"
@@ -533,7 +684,8 @@ function ConfiguracoesContent() {
                             <Button
                                 colorPalette="blue"
                                 variant="solid"
-                                loading={backfillingInvestors}
+                                // Com o "Vincular todos" rodando, o processo específico continua liberado.
+                                loading={backfillingInvestors && backfillScope === (backfillTarget.trim() ? 'targeted' : 'full')}
                                 onClick={handleBackfillInvestors}
                                 gap={2}
                                 size="sm"
@@ -555,8 +707,9 @@ function ConfiguracoesContent() {
                                             backfillStatus.status === 'completed' ? 'green.400' :
                                             backfillStatus.status === 'error' ? 'red.400' : 'blue.400'
                                         }>
-                                            {backfillStatus.status === 'running' ? 'Vinculando...' :
-                                             backfillStatus.status === 'completed' ? 'Concluído' : 'Erro'}
+                                            {backfillScope === 'targeted' ? 'Processo específico: ' : 'Todos os processos: '}
+                                            {backfillStatus.status === 'running' ? 'vinculando...' :
+                                             backfillStatus.status === 'completed' ? 'concluído' : 'erro'}
                                         </Text>
                                     </HStack>
                                     <Text fontSize="xs" color="gray.500">
@@ -599,6 +752,12 @@ function ConfiguracoesContent() {
                                 {backfillStatus.status === 'running' && backfillStatus.currentProcess && (
                                     <Text fontSize="2xs" color="gray.600" mt={2} fontFamily="mono">
                                         {backfillStatus.currentProcess}
+                                    </Text>
+                                )}
+
+                                {!!backfillStatus.notFound?.length && (
+                                    <Text fontSize="xs" color="orange.300" mt={2}>
+                                        Não encontrado no portal: <Text as="span" fontFamily="mono">{backfillStatus.notFound.join(', ')}</Text>
                                     </Text>
                                 )}
                             </Box>
