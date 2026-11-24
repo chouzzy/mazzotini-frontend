@@ -136,6 +136,25 @@ export const parseBR = (s: string): number => {
 export const formatBR = (value: number): string =>
     value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
 
+const RATE_UNIT_SHORT: Record<string, string> = { AM: 'a.m.', AA: 'a.a.', AD: 'a.d.' };
+
+/**
+ * Taxa dos juros compensatórios de um cálculo do histórico, com a unidade ("12% a.a."), lida do
+ * retrato dos parâmetros gravado no log. Com vários cálculos, uma taxa por cálculo, separadas por
+ * " · ". Sem juros compensatórios, "—". Sem retrato (logs anteriores a 19/10, do cron antigo), null.
+ */
+export const compensatoryRateSummary = (snapshot: any): string | null => {
+    if (!snapshot || typeof snapshot !== 'object') return null;
+    const extras = Array.isArray(snapshot.extraCalculations) ? snapshot.extraCalculations : [];
+    const parts = [snapshot, ...extras].map((p: any) => {
+        const rate = Number(p?.compensatoryRate) || 0;
+        if (rate <= 0) return '—';
+        const unit = RATE_UNIT_SHORT[p?.compensatoryRateUnit] ?? 'a.m.';
+        return `${rate.toLocaleString('pt-BR', { maximumFractionDigits: 6 })}% ${unit}`;
+    });
+    return parts.every(p => p === '—') ? '—' : parts.join(' · ');
+};
+
 /**
  * Soma N meses a uma data ISO. Como o EDATE do Excel, o dia vira o último do mês de destino quando
  * ele é mais curto (31/01 + 1 mês = 28/02), em vez de transbordar para o mês seguinte.
