@@ -18,13 +18,14 @@ import {
     Textarea,
     Field,
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import { UserProfile } from '@/types';
 import { PiCheckCircle, PiXCircle, PiDownloadDuotone, PiX, PiScalesDuotone } from 'react-icons/pi';
 import { maskCEP, maskCPFOrCNPJ, maskPhone } from '@/utils/masks';
 import { toaster } from '@/components/ui/toaster';
+import { ShadowCandidatesSection } from './ShadowCandidatesSection';
 
 interface ApprovalDialogProps {
     user: UserProfile | null;
@@ -56,19 +57,27 @@ interface InvestmentPreview {
 export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: ApprovalDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [shadowUserIds, setShadowUserIds] = useState<string[]>([]);
     const { getAccessTokenSilently } = useAuth0();
+
+    // A escolha dos cadastros de nome parecido vale só para o usuário aberto.
+    useEffect(() => { setShadowUserIds([]); }, [user?.id]);
 
     const handleApprove = async () => {
         if (!user) return;
         setIsLoading(true);
         try {
             const token = await getAccessTokenSilently({ authorizationParams: { audience: process.env.NEXT_PUBLIC_API_AUDIENCE! } });
-            await axios.patch(
+            const { data } = await axios.patch<{ merged?: unknown[] }>(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/management/users/${user.id}/approve`,
-                {},
+                { shadowUserIds },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            toaster.create({ title: "Perfil Aprovado!", description: `${user.name} agora tem acesso à plataforma.`, type: "success" });
+            const mergedCount = data?.merged?.length ?? 0;
+            const mergedNote = mergedCount
+                ? ` ${mergedCount === 1 ? '1 cadastro importado do Legal One foi juntado' : `${mergedCount} cadastros importados do Legal One foram juntados`} à conta.`
+                : '';
+            toaster.create({ title: "Perfil Aprovado!", description: `${user.name} agora tem acesso à plataforma.${mergedNote}`, type: "success" });
             onUpdateSuccess();
         } catch (error: any) {
             console.error("Erro ao aprovar perfil:", error);
@@ -199,6 +208,13 @@ export function ApprovalDialog({ user, isOpen, onClose, onUpdateSuccess }: Appro
                                     </VStack>
                                 </Box>
                             )}
+
+                            <ShadowCandidatesSection
+                                userId={user.id}
+                                selectedIds={shadowUserIds}
+                                onChange={setShadowUserIds}
+                                disabled={isLoading}
+                            />
 
                             {/* Bloco de Documentos */}
                             <Box>

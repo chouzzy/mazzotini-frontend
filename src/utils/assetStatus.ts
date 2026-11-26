@@ -58,6 +58,12 @@ const STATUS_MAP: Record<string, StatusPresentation> = {
         client: 'Liquidado',
         colorPalette: 'gray',
     },
+    // Gravado pelo job de domingo quando o processo está baixado no Legal One (D22).
+    Encerrado: {
+        internal: 'Encerrado',
+        client: 'Encerrado',
+        colorPalette: 'gray',
+    },
     PENDING_ENRICHMENT: {
         internal: 'Aguardando Legal One',
         client: 'Em processamento',
