@@ -35,6 +35,7 @@ const BASE_STATUS_ITEMS = [
     { label: "Ativo", value: "Ativo" },
     { label: "Em Negociação", value: "Em Negociação" },
     { label: "Liquidado", value: "Liquidado" },
+    { label: "Encerrado", value: "Encerrado" },
 ];
 
 // Status da nossa integração, não do processo do cliente. Ficam atrás da flag
