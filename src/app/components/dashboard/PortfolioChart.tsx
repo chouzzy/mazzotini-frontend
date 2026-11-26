@@ -9,6 +9,7 @@ const COLORS = {
   'Ativo': '#38A169', // green
   'Em Negociação': '#D69E2E', // yellow
   'Liquidado': '#718096', // gray
+  'Encerrado': '#A0AEC0', // gray claro
 };
 
 interface PortfolioChartProps {

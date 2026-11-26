@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    addMonthsISO, calculationError, formatBR, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
+    addMonthsISO, calculationError, compensatoryRateSummary, formatBR, MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate,
     parseReferenceMonthInput, toDisplayDate, toDraft, toDrafts, toPayload, CalcDraft, InstallmentType,
 } from '@/utils/calculationForm';
 
@@ -285,5 +285,20 @@ describe('revisão de 23/10', () => {
 
         expect(result.ok).toBe(true);
         if (result.ok) expect(result.payload.feesFixedValue).toBe(0);
+    });
+});
+
+describe('compensatoryRateSummary (histórico)', () => {
+    it('mostra a taxa com a unidade, uma por cálculo', () => {
+        expect(compensatoryRateSummary({ compensatoryRate: 12, compensatoryRateUnit: 'AA' })).toBe('12% a.a.');
+        expect(compensatoryRateSummary({
+            compensatoryRate: 0, compensatoryRateUnit: 'AM',
+            extraCalculations: [{ label: 'Cálculo 2', compensatoryRate: 0.5, compensatoryRateUnit: 'AM' }],
+        })).toBe('— · 0,5% a.m.');
+    });
+
+    it('sem juros, traço; log antigo sem retrato, null', () => {
+        expect(compensatoryRateSummary({ compensatoryRate: 0 })).toBe('—');
+        expect(compensatoryRateSummary(undefined)).toBeNull();
     });
 });

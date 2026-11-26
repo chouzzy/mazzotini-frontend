@@ -10,6 +10,7 @@ import {
     PiCheckFat, PiX, PiCircleNotch, PiHandshake, PiUsersThree,
 } from 'react-icons/pi';
 import { useApi } from '@/hooks/useApi';
+import { BackfillErrorItem, backfillErrorsFileName, backfillErrorsToCsv } from '@/utils/backfillErrors';
 import { useAuth0 } from '@auth0/auth0-react';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
 import { ReferralToProcessesSection } from '@/app/components/management/ReferralToProcessesSection';
@@ -47,6 +48,8 @@ interface BackfillStatus {
     alreadyLinked: number;
     skipped: number;
     errors: number;
+    /** Os erros com o processo e o motivo (backend novo). */
+    errorList?: BackfillErrorItem[];
     currentProcess: string | null;
     startedAt: string | null;
     finishedAt: string | null;
@@ -398,6 +401,18 @@ function ConfiguracoesContent() {
             });
             setSyncingContracts(false);
         }
+    };
+
+    const downloadBackfillErrors = (errors: BackfillErrorItem[]) => {
+        const blob = new Blob([backfillErrorsToCsv(errors)], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = backfillErrorsFileName();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     };
 
     const formatDuration = (ms: number | null) => {
@@ -760,6 +775,49 @@ function ConfiguracoesContent() {
                                     <Text fontSize="xs" color="orange.300" mt={2}>
                                         Não encontrado no portal: <Text as="span" fontFamily="mono">{backfillStatus.notFound.join(', ')}</Text>
                                     </Text>
+                                )}
+
+                                {!!backfillStatus.errorList?.length && (
+                                    <Box mt={4}>
+                                        <HStack justify="space-between" mb={2} wrap="wrap" gap={2}>
+                                            <Text fontSize="xs" fontWeight="bold" color="red.300">
+                                                {backfillStatus.errorList.length} erro(s) nesta execução
+                                            </Text>
+                                            <Button
+                                                size="xs"
+                                                variant="outline"
+                                                colorPalette="gray"
+                                                gap={1}
+                                                onClick={() => downloadBackfillErrors(backfillStatus.errorList!)}
+                                            >
+                                                <Icon as={PiDownloadSimple} boxSize={3} />
+                                                Exportar planilha
+                                            </Button>
+                                        </HStack>
+                                        <Box maxH="260px" overflowY="auto" overflowX="auto" borderRadius="md" border="1px solid" borderColor="gray.700">
+                                            <Table.Root size="sm" variant="line">
+                                                <Table.Header>
+                                                    <Table.Row>
+                                                        <Table.ColumnHeader fontSize="2xs">Processo</Table.ColumnHeader>
+                                                        <Table.ColumnHeader fontSize="2xs">Contato</Table.ColumnHeader>
+                                                        <Table.ColumnHeader fontSize="2xs">Motivo</Table.ColumnHeader>
+                                                    </Table.Row>
+                                                </Table.Header>
+                                                <Table.Body>
+                                                    {backfillStatus.errorList.map((e, i) => (
+                                                        <Table.Row key={`${e.processNumber}-${e.contactId ?? 'p'}-${i}`}>
+                                                            <Table.Cell fontSize="xs" fontFamily="mono" whiteSpace="nowrap">{e.processNumber}</Table.Cell>
+                                                            <Table.Cell fontSize="xs" color="gray.400">{e.contactId ?? '—'}</Table.Cell>
+                                                            <Table.Cell fontSize="xs">{e.reason}</Table.Cell>
+                                                        </Table.Row>
+                                                    ))}
+                                                </Table.Body>
+                                            </Table.Root>
+                                        </Box>
+                                        <Text fontSize="2xs" color="gray.600" mt={1}>
+                                            A lista fica guardada até a próxima execução ou até o servidor reiniciar.
+                                        </Text>
+                                    </Box>
                                 )}
                             </Box>
                         )}

@@ -18,7 +18,7 @@ import { Toaster, toaster } from '@/components/ui/toaster';
 import { useApi } from '@/hooks/useApi';
 import { CALCULATOR_INDEXES } from '@/utils/indexOptions';
 import {
-    addMonthsISO, calculationError, CalcDraft, CalculationPayload, currentMonthISO, DeductionPoint, formatBR,
+    addMonthsISO, calculationError, CalcDraft, CalculationPayload, compensatoryRateSummary, currentMonthISO, DeductionPoint, formatBR,
     MORATORY_MODES, newCalculationFrom, nextCalculationLabel, parseBR, parseDisplayDate, parseReferenceMonthInput,
     toDisplayDate, toDrafts, toPayload,
 } from '@/utils/calculationForm';
@@ -1270,6 +1270,7 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                         <Table.ColumnHeader color="brand.400" px={4}>Referência</Table.ColumnHeader>
                                         <Table.ColumnHeader color="brand.400" px={4}>Calculado em</Table.ColumnHeader>
                                         <Table.ColumnHeader color="brand.400" px={4}>Por</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="brand.400" px={4}>Juros comp.</Table.ColumnHeader>
                                         <Table.ColumnHeader color="brand.400" px={4} textAlign="right">Valor Corrigido</Table.ColumnHeader>
                                         <Table.ColumnHeader color="brand.400" px={4} textAlign="right">Total Geral</Table.ColumnHeader>
                                         <Table.ColumnHeader px={2} />
@@ -1288,6 +1289,13 @@ export function CalculatorTab({ asset, onRefresh }: TabProps) {
                                                 <Badge colorPalette={log.calculatedBy === 'cron' ? 'gray' : 'blue'} variant="outline" size="xs">
                                                     {log.calculatedBy === 'cron' ? 'Automático' : 'Manual'}
                                                 </Badge>
+                                            </Table.Cell>
+                                            <Table.Cell px={4} py={3} fontSize="sm" color="gray.400">
+                                                {compensatoryRateSummary(log.paramsSnapshot) ?? (
+                                                    <Text as="span" fontSize="xs" color="gray.500" title="Cálculo anterior a 19/10: os parâmetros usados não foram registrados">
+                                                        não registrado
+                                                    </Text>
+                                                )}
                                             </Table.Cell>
                                             <Table.Cell px={4} py={3} fontSize="sm" textAlign="right">{formatBRL(log.correctedValue)}</Table.Cell>
                                             <Table.Cell px={4} py={3} textAlign="right">
