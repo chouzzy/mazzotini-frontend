@@ -63,13 +63,73 @@ interface BackfillStatus {
 
 type BackfillScope = 'full' | 'targeted';
 
+interface SyncContractsResultView {
+    imported: number;
+    skipped: number;
+    errors: string[];
+    skipReasons: Record<string, number>;
+    pending: string[];
+    importedWithoutProcess: number;
+}
+
 interface SyncContractsStatus {
     status: 'idle' | 'running' | 'completed' | 'error';
     startedAt: string | null;
     finishedAt: string | null;
-    lastResult: { documentsImported: number; documentsSkipped: number; errors: string[] } | null;
+    lastResult: {
+        documentsImported: number;
+        documentsSkipped: number;
+        errors: string[];
+        /** Desde a D25: quantos foram pulados por motivo e o que o escritório precisa conferir. */
+        skipReasons?: Record<string, number>;
+        pending?: string[];
+        importedWithoutProcess?: number;
+    } | null;
     lastError: string | null;
     alreadyRunning?: boolean;
+}
+
+// ─── Detalhe da sincronização dos contratos ─────────────────────────────────
+/**
+ * Por que um documento do contrato não chegou ao cliente: os motivos com o total e a lista
+ * para o escritório conferir no Legal One (id do documento, hashtag e pasta).
+ */
+function SyncContractsDetails({ result }: { result: SyncContractsResultView }) {
+    const reasons = Object.entries(result.skipReasons);
+    if (!reasons.length && !result.importedWithoutProcess && !result.errors.length) return null;
+
+    return (
+        <VStack align="stretch" gap={2} mt={4} fontSize="sm">
+            {result.importedWithoutProcess > 0 && (
+                <Text color="gray.400">
+                    {result.importedWithoutProcess} documento(s) gravado(s) só na lista do cliente, porque a pasta do contrato
+                    ainda não está no portal. Eles entram no processo quando a pasta for importada.
+                </Text>
+            )}
+            {reasons.length > 0 && (
+                <Box>
+                    <Text fontWeight="semibold" mb={1}>Não chegaram ao cliente:</Text>
+                    {reasons.map(([reason, count]) => (
+                        <Text key={reason} color="gray.300">{count} — {reason}</Text>
+                    ))}
+                </Box>
+            )}
+            {result.pending.length > 0 && (
+                <Box maxH="200px" overflowY="auto" borderWidth="1px" borderColor="gray.700" borderRadius="md" p={2}>
+                    {result.pending.map(line => (
+                        <Text key={line} fontFamily="mono" fontSize="xs" color="gray.400">{line}</Text>
+                    ))}
+                </Box>
+            )}
+            {result.errors.length > 0 && (
+                <Box maxH="160px" overflowY="auto" borderWidth="1px" borderColor="red.800" borderRadius="md" p={2}>
+                    {result.errors.map(line => (
+                        <Text key={line} fontFamily="mono" fontSize="xs" color="red.300">{line}</Text>
+                    ))}
+                </Box>
+            )}
+        </VStack>
+    );
 }
 
 // ─── Toggle Card ─────────────────────────────────────────────────────────────
@@ -137,7 +197,7 @@ function ConfiguracoesContent() {
     const [importing, setImporting] = useState(false);
     const [sinceDate, setSinceDate] = useState('');
     const [syncingContracts, setSyncingContracts] = useState(false);
-    const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
+    const [syncResult, setSyncResult] = useState<SyncContractsResultView | null>(null);
     const [backfillingInvestors, setBackfillingInvestors] = useState(false);
     const [retryingEnrichments, setRetryingEnrichments] = useState(false);
     const [backfillStatus, setBackfillStatus] = useState<BackfillStatus | null>(null);
@@ -192,6 +252,9 @@ function ConfiguracoesContent() {
                 imported: data.lastResult.documentsImported,
                 skipped: data.lastResult.documentsSkipped,
                 errors: data.lastResult.errors,
+                skipReasons: data.lastResult.skipReasons ?? {},
+                pending: data.lastResult.pending ?? [],
+                importedWithoutProcess: data.lastResult.importedWithoutProcess ?? 0,
             });
         }
     };
@@ -380,6 +443,9 @@ function ConfiguracoesContent() {
                     imported: res.data.documentsImported ?? 0,
                     skipped: res.data.documentsSkipped ?? 0,
                     errors: res.data.errors ?? [],
+                    skipReasons: {},
+                    pending: [],
+                    importedWithoutProcess: 0,
                 });
                 toaster.create({ title: 'Sincronização concluída!', type: 'success' });
                 setSyncingContracts(false);
@@ -877,6 +943,8 @@ function ConfiguracoesContent() {
                             </HStack>
                         )}
                     </HStack>
+
+                    {syncResult && <SyncContractsDetails result={syncResult} />}
                 </Box>
 
                 <ReferralToProcessesSection />
