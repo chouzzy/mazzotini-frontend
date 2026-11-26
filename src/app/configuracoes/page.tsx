@@ -12,6 +12,7 @@ import {
 import { useApi } from '@/hooks/useApi';
 import { useAuth0 } from '@auth0/auth0-react';
 import { AuthenticationGuard } from '@/app/components/auth/AuthenticationGuard';
+import { ReferralToProcessesSection } from '@/app/components/management/ReferralToProcessesSection';
 import { Toaster, toaster } from '@/components/ui/toaster';
 import axios from 'axios';
 import { useState, useEffect, useRef } from 'react';
@@ -819,6 +820,8 @@ function ConfiguracoesContent() {
                         )}
                     </HStack>
                 </Box>
+
+                <ReferralToProcessesSection />
             </VStack>
         </Flex>
     );
